@@ -25,8 +25,11 @@ function normalizeTokenName(raw) {
     // Remove trailing punctuation
     s = s.replace(/[.!,;:)\]]+$/g, '').trim();
 
-    // Strip trailing "opponent" (maneuver wording)
-    s = s.replace(/\s+opponent$/i, '').trim();
+    // Strip trailing target words used in maneuver wording (not part of the token/card name)
+    // Examples:
+    // - "Front Kick opponent" -> "Front Kick"
+    // - "Front Kick them" -> "Front Kick"
+    s = s.replace(/\s+(?:opponent|them|him|her)\b$/i, '').trim();
 
     // Collapse whitespace
     s = s.replace(/\s+/g, ' ').trim();
