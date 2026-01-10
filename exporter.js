@@ -500,19 +500,25 @@ export function generateLackeyCCGDeck() {
     });
     
     // Add persona marker and persona cards
-    text += `Starting:\n`;
-    
-    // Add wrestler
+    text += `Starting:
+`;
+
+    // Wrestler (labelled so it can't be confused with Manager in Lackey lists)
     if (state.selectedWrestler) {
-        text += `1\t${state.selectedWrestler.title}\n`;
+        text += `Wrestler:
+`;
+        text += `1	${state.selectedWrestler.title}
+`;
     }
-    
-    // Add manager
+
+    // Manager (labelled so it can't be confused with Wrestler in Lackey lists)
     if (state.selectedManager) {
-        text += `1\t${state.selectedManager.title}\n`;
+        text += `Manager:
+`;
+        text += `1	${state.selectedManager.title}
+`;
     }
-    
-    // Add kit cards
+// Add kit cards
     kitCards.forEach(card => {
         text += `1\t${card.title}\n`;
     });
