@@ -1,1 +1,2 @@
-# New-beta
+# AEW-TCG-Deck-Constructor-
+Deck builder for Playtest decks

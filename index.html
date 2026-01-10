@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEW TCG Deck Constructor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <h1>AEW TCG Deck Constructor</h1>
+    </header>
+
+    <main class="container">
+        <div class="search-panel">
+            <div class="panel-header">
+                <h2>Card Pool</h2>
+                <div class="view-controls-container">
+                    <div id="gridSizeControls" class="grid-size-controls">
+                        <label>Grid Columns:</label>
+                        <button data-columns="2">2</button>
+                        <button data-columns="3">3</button>
+                        <button data-columns="4">4</button>
+                    </div>
+                    <button id="viewModeToggle">Switch to List View</button>
+                </div>
+            </div>
+            <div class="filter-controls">
+                <input type="text" id="searchInput" placeholder="Search card name or text...">
+                <div id="cascadingFiltersContainer" class="cascading-filters"></div>
+                <div class="sort-filter-container">
+                    <div class="sort-controls">
+                        <label for="sortSelect">Sort by:</label>
+                        <select id="sortSelect">
+                            <option value="alpha-asc">Name (A-Z)</option>
+                            <option value="alpha-desc">Name (Z-A)</option>
+                            <option value="cost-asc">Cost (Low-High)</option>
+                            <option value="cost-desc">Cost (High-Low)</option>
+                            <option value="damage-desc">Damage (High-Low)</option>
+                            <option value="damage-asc">Damage (Low-High)</option>
+                            <option value="momentum-desc">Momentum (High-Low)</option>
+                            <option value="momentum-asc">Momentum (Low-High)</option>
+                        </select>
+                    </div>
+                    <div class="cost-filter-controls">
+                        <label><input type="checkbox" id="showZeroCost" checked> Show 0-Cost</label>
+                        <label><input type="checkbox" id="showNonZeroCost" checked> Show Non-0-Cost</label>
+                    </div>
+                </div>
+            </div>
+            <div id="searchResults" class="card-list list-view"></div>
+        </div>
+
+        <div class="deck-panel">
+            <div class="persona-selection">
+                <h2>Persona</h2>
+                <select id="wrestlerSelect"><option value="">-- Select Wrestler --</option></select>
+                <select id="managerSelect"><option value="">-- Select Manager --</option></select>
+            </div>
+
+            <div id="personaDisplay" class="persona-display-container"></div>
+
+            <h2 id="startingDeckHeader">Starting Deck (<span id="startingDeckCount">0</span>/24)</h2>
+            <div id="startingDeckList" class="deck-list-small"></div>
+
+            <h2 id="purchaseDeckHeader">Purchase Deck (<span id="purchaseDeckCount">0</span>/36+)</h2>
+            <div id="purchaseDeckList" class="deck-list-small"></div>
+
+            <div class="deck-actions">
+                <button id="importDeck">Import Deck</button>
+                <button id="exportDeck">Export as Text</button>
+                <button id="exportLackeyBtn">Export for LackeyCCG</button>
+                <button id="exportAsImageBtn">Export as Image</button>
+                <button id="exportAllCards">Export All Cards as Images</button>
+                <button id="clearDeck">Clear Deck</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="cardModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close-button">&times;</span>
+            <div id="modalCardContent"></div>
+        </div>
+    </div>
+
+    <div id="importModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close-button">&times;</span>
+            <h3>Import Decklist</h3>
+            <div class="import-controls">
+                <label for="deckFileInput">Import from .txt file:</label>
+                <input type="file" id="deckFileInput" accept=".txt">
+                <textarea id="deckTextInput" rows="10" placeholder="Or paste decklist here..."></textarea>
+                <button id="processImportBtn">Import</button>
+            </div>
+            <div id="importStatus" class="import-status"></div>
+        </div>
+    </div>
+
+    <!-- Test button for debugging -->
+    <button onclick="testExport()" style="position: fixed; bottom: 10px; right: 10px; z-index: 10000; padding: 10px; background: red; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        TEST EXPORT
+    </button>
+
+    <!-- Load dependencies FIRST -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <script type="module" src="main.js"></script>
+</body>
+</html> 
