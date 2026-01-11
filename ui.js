@@ -23,7 +23,7 @@ export function renderCardPool(cards) {
     searchResults.className = `card-list ${state.currentViewMode}-view`;
     if (state.currentViewMode === 'grid') searchResults.setAttribute('data-columns', state.numGridColumns);
     else searchResults.removeAttribute('data-columns');
-    
+
     if (cards.length === 0) {
         searchResults.innerHTML = '<p>No cards match the current filters.</p>';
         return;
@@ -54,24 +54,36 @@ export function renderCardPool(cards) {
 }
 
 export function renderPersonaDisplay() {
+    // If no wrestler, no persona display (kit is wrestler-derived)
     if (!state.selectedWrestler) { personaDisplay.style.display = 'none'; return; }
+
     personaDisplay.style.display = 'block';
     personaDisplay.innerHTML = '<h3>Persona & Kit</h3><div class="persona-card-list"></div>';
     const list = personaDisplay.querySelector('.persona-card-list');
-    list.innerHTML = ''; 
+    list.innerHTML = '';
+
     const cardsToShow = new Set();
-    const activePersona = [];
-    if (state.selectedWrestler) activePersona.push(state.selectedWrestler);
-    if (state.selectedManager) activePersona.push(state.selectedManager);
-    activePersona.forEach(p => cardsToShow.add(p));
-    const activePersonaTitles = activePersona.map(p => p.title);
-    const kitCards = state.cardDatabase.filter(card => state.isKitCard(card) && activePersonaTitles.includes(card['Signature For']));
+
+    // Always show selected wrestler
+    cardsToShow.add(state.selectedWrestler);
+
+    // Show selected manager (if any), but DO NOT use manager to derive kit cards
+    if (state.selectedManager) cardsToShow.add(state.selectedManager);
+
+    // Kit cards are derived ONLY from the selected wrestler
+    const wrestlerTitle = state.selectedWrestler.title;
+    const kitCards = state.cardDatabase.filter(card =>
+        state.isKitCard(card) && card['Signature For'] === wrestlerTitle
+    );
+
     kitCards.forEach(card => cardsToShow.add(card));
+
     const sortedCards = Array.from(cardsToShow).sort((a, b) => {
         if (a.card_type === 'Wrestler') return -1; if (b.card_type === 'Wrestler') return 1;
         if (a.card_type === 'Manager') return -1; if (b.card_type === 'Manager') return 1;
         return a.title.localeCompare(b.title);
     });
+
     sortedCards.forEach(card => {
         const item = document.createElement('div');
         item.className = 'persona-card-item';
@@ -129,4 +141,3 @@ export function filterDeckList(deckListElement, query) {
         item.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
     });
 }
-
