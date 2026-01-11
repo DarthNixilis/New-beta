@@ -22,7 +22,12 @@ function normalizeTokenName(raw) {
 
     let s = String(raw).trim();
 
-    // Remove trailing punctuation
+    
+
+    // Strip leading token cost prefixes like "4C" (e.g., "4C Brain Fog").
+    // Also handles optional parentheses like "(4C) Brain Fog".
+    s = s.replace(/^\(?\s*\d+\s*C\s*\)?\s+/i, '').trim();
+// Remove trailing punctuation
     s = s.replace(/[.!,;:)\]]+$/g, '').trim();
 
     // Strip trailing target words used in maneuver wording (not part of the token/card name)
