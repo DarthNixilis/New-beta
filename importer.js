@@ -6,9 +6,14 @@ import { renderDecks, renderPersonaDisplay } from './ui.js';
    Format detection
    ============================================================================ */
 
-function isLikelyLackeyDeck(lines) {
-    // Your Lackey export includes section headers like Purchase_Deck:, Starting:, Tokens:
-    // and uses tab-separated quantity lines "3\tCard Name"
+function isLikelyXmlDek(text) {
+    const t = String(text || '').trim();
+    return t.startsWith('<deck') || (t.includes('<superzone') && t.includes('Purchase_Deck'));
+}
+
+function isLikelyLackeyText(lines) {
+    // Lackey text export includes markers like Purchase_Deck:, Starting:, Tokens:
+    // and commonly uses tab-separated qty lines "3\tCard Name"
     return lines.some(l =>
         /purchase_deck\s*:/i.test(l) ||
         /^starting\s*:/i.test(l) ||
@@ -41,8 +46,8 @@ function parseCountAndTitle(line) {
 }
 
 function stripPersonaSuffix(title) {
-    // Your new Lackey export uses:
-    // "Kenny Omega Wrestler"
+    // Your Lackey export uses:
+    // "Adam Copeland Wrestler"
     // "Luthor Manager"
     const t = String(title || '').trim();
     const lower = t.toLowerCase();
@@ -57,7 +62,7 @@ function stripPersonaSuffix(title) {
 }
 
 /* ============================================================================
-   Plain text parser (your existing format, unchanged behavior)
+   Plain text parser (legacy format)
    ============================================================================ */
 
 function parsePlainTextDeck(lines) {
@@ -97,24 +102,22 @@ function parsePlainTextDeck(lines) {
         const cardName = match[2].trim();
         if (!state.cardTitleCache[cardName]) return;
 
-        for (let i = 0; i < count; i++) {
-            if (currentSection === 'starting') newStartingDeck.push(cardName);
-            else if (currentSection === 'purchase') newPurchaseDeck.push(cardName);
-        }
+        if (currentSection === 'starting') addCopies(newStartingDeck, cardName, count);
+        else if (currentSection === 'purchase') addCopies(newPurchaseDeck, cardName, count);
     });
 
     return { newWrestler, newManager, newStartingDeck, newPurchaseDeck };
 }
 
 /* ============================================================================
-   Lackey .dek parser (new)
+   Lackey text (.txt) parser
    ============================================================================ */
 
-function parseLackeyDeck(lines) {
-    // Your Lackey exporter layout:
-    // 1) Main list BEFORE "Purchase_Deck:"  -> starting deck (non-persona)
+function parseLackeyTextDeck(lines) {
+    // Expected layout:
+    // 1) main list BEFORE "Purchase_Deck:"  -> starting deck (non-persona)
     // 2) After "Purchase_Deck:"            -> purchase deck
-    // 3) After "Starting:"                 -> persona + kit cards (kit ignored), and then "Tokens:"
+    // 3) After "Starting:"                 -> persona + kit cards (kit ignored), then "Tokens:"
     // 4) After "Tokens:"                   -> tokens list (ignored)
     let section = 'main';
 
@@ -135,30 +138,34 @@ function parseLackeyDeck(lines) {
         if (/^starting\s*:/i.test(line)) { section = 'starting'; continue; }
         if (/^tokens\s*:/i.test(line)) { section = 'tokens'; continue; }
 
-        // Only parse count/title lines
+        // Tokens section is informational only
+        if (section === 'tokens') continue;
+
+        // Under Starting: we also accept "Adam Copeland Wrestler" WITHOUT a leading count,
+        // because Lackey users sometimes hand-edit these lines.
+        let count = 1;
+        let title = line;
+
         const parsed = parseCountAndTitle(line);
-        if (!parsed) continue;
-
-        const count = parsed.count;
-        let title = parsed.title;
-
-        if (section === 'tokens') {
-            // Informational only
-            continue;
+        if (parsed) {
+            count = parsed.count;
+            title = parsed.title;
+        } else {
+            // If we're not in the Starting section and there's no count, it's not a deck line.
+            if (section !== 'starting') continue;
         }
 
         if (section === 'starting') {
-            // Persona/Kits live here in your export
             const { baseTitle, role } = stripPersonaSuffix(title);
             title = baseTitle;
 
             const card = state.cardTitleCache[title];
             if (!card) continue;
 
-            // Ignore kit cards on import (your app derives them from persona)
+            // Ignore kit cards on import (app derives them from persona)
             if (typeof state.isKitCard === 'function' && state.isKitCard(card)) continue;
 
-            // Prefer explicit suffix, otherwise fall back to card_type
+            // Prefer explicit suffix; else fallback to card_type
             if (role === 'Wrestler' || card.card_type === 'Wrestler') {
                 newWrestler = card;
                 continue;
@@ -168,18 +175,14 @@ function parseLackeyDeck(lines) {
                 continue;
             }
 
-            // Anything else under Starting: is ignored (by design)
+            // Anything else under Starting: ignore
             continue;
         }
 
-        // Main list == starting deck (non-persona)
         if (section === 'main') {
             const card = state.cardTitleCache[title];
             if (!card) continue;
-
-            // Avoid accidentally importing persona cards into the starting deck
             if (card.card_type === 'Wrestler' || card.card_type === 'Manager') continue;
-
             addCopies(newStartingDeck, title, count);
             continue;
         }
@@ -187,10 +190,7 @@ function parseLackeyDeck(lines) {
         if (section === 'purchase') {
             const card = state.cardTitleCache[title];
             if (!card) continue;
-
-            // Avoid accidentally importing persona cards into purchase deck
             if (card.card_type === 'Wrestler' || card.card_type === 'Manager') continue;
-
             addCopies(newPurchaseDeck, title, count);
             continue;
         }
@@ -200,7 +200,97 @@ function parseLackeyDeck(lines) {
 }
 
 /* ============================================================================
-   Public API (used by paste + import button)
+   XML .dek parser (Cockatrice-style)
+   ============================================================================ */
+
+function parseXmlDek(text) {
+    let xml;
+    try {
+        xml = new DOMParser().parseFromString(String(text || ''), 'text/xml');
+    } catch (e) {
+        throw new Error('Could not parse .dek XML.');
+    }
+
+    // Helper to extract card names from a given superzone
+    function getNames(superzoneName) {
+        const zone = xml.querySelector(`superzone[name="${CSS.escape(superzoneName)}"]`);
+        if (!zone) return [];
+        const names = [];
+        zone.querySelectorAll('card > name').forEach(n => {
+            const v = (n.textContent || '').trim();
+            if (v) names.push(v);
+        });
+        return names;
+    }
+
+    const deckNames = getNames('Deck'); // starting (non-persona)
+    const purchaseNames = getNames('Purchase_Deck');
+    const startingNames = getNames('Starting'); // persona + kit (usually)
+    // Tokens zone intentionally ignored
+
+    // Count duplicates
+    function toCounts(names) {
+        const counts = new Map();
+        names.forEach(n => counts.set(n, (counts.get(n) || 0) + 1));
+        return counts;
+    }
+
+    const newStartingDeck = [];
+    const newPurchaseDeck = [];
+
+    const deckCounts = toCounts(deckNames);
+    for (const [title, count] of deckCounts.entries()) {
+        const card = state.cardTitleCache[title];
+        if (!card) continue;
+        if (card.card_type === 'Wrestler' || card.card_type === 'Manager') continue;
+        addCopies(newStartingDeck, title, count);
+    }
+
+    const purchaseCounts = toCounts(purchaseNames);
+    for (const [title, count] of purchaseCounts.entries()) {
+        const card = state.cardTitleCache[title];
+        if (!card) continue;
+        if (card.card_type === 'Wrestler' || card.card_type === 'Manager') continue;
+        addCopies(newPurchaseDeck, title, count);
+    }
+
+    // Persona detection from Starting superzone:
+    // Prefer card_type if known. If unknown, fall back to first as wrestler, second as manager.
+    let newWrestler = null;
+    let newManager = null;
+
+    const startingUnique = Array.from(new Set(startingNames));
+    const unknownPersona = [];
+
+    for (const title of startingUnique) {
+        const card = state.cardTitleCache[title];
+        if (!card) {
+            unknownPersona.push(title);
+            continue;
+        }
+
+        if (typeof state.isKitCard === 'function' && state.isKitCard(card)) continue;
+
+        if (card.card_type === 'Wrestler') newWrestler = card;
+        else if (card.card_type === 'Manager') newManager = card;
+        else unknownPersona.push(title);
+    }
+
+    // Fallback heuristic if wrestler isn't identified but we have items
+    if (!newWrestler && unknownPersona.length) {
+        const maybe = state.cardTitleCache[unknownPersona[0]];
+        if (maybe) newWrestler = maybe; // best effort
+    }
+    if (!newManager && unknownPersona.length > 1) {
+        const maybe = state.cardTitleCache[unknownPersona[1]];
+        if (maybe) newManager = maybe;
+    }
+
+    return { newWrestler, newManager, newStartingDeck, newPurchaseDeck };
+}
+
+/* ============================================================================
+   Public API
    ============================================================================ */
 
 export function parseAndLoadDeck(text) {
@@ -210,11 +300,13 @@ export function parseAndLoadDeck(text) {
     const managerSelect = document.getElementById('managerSelect');
 
     try {
-        const lines = String(text || '').trim().split(/\r?\n/);
+        const raw = String(text || '');
+        const lines = raw.trim().split(/\r?\n/);
 
-        const parsed = isLikelyLackeyDeck(lines)
-            ? parseLackeyDeck(lines)
-            : parsePlainTextDeck(lines);
+        let parsed;
+        if (isLikelyXmlDek(raw)) parsed = parseXmlDek(raw);
+        else if (isLikelyLackeyText(lines)) parsed = parseLackeyTextDeck(lines);
+        else parsed = parsePlainTextDeck(lines);
 
         state.setSelectedWrestler(parsed.newWrestler);
         state.setSelectedManager(parsed.newManager);
