@@ -2,331 +2,308 @@
 import * as state from './config.js';
 import { renderDecks, renderPersonaDisplay } from './ui.js';
 
-/* ============================================================================
-   Format detection
-   ============================================================================ */
-
-function isLikelyXmlDek(text) {
-    const t = String(text || '').trim();
-    return t.startsWith('<deck') || (t.includes('<superzone') && t.includes('Purchase_Deck'));
-}
-
-function isLikelyLackeyText(lines) {
-    // Lackey text export includes markers like Purchase_Deck:, Starting:, Tokens:
-    // and commonly uses tab-separated qty lines "3\tCard Name"
-    return lines.some(l =>
-        /purchase_deck\s*:/i.test(l) ||
-        /^starting\s*:/i.test(l) ||
-        /^tokens\s*:/i.test(l) ||
-        /^\s*\d+\s*\t/.test(l)
-    );
-}
-
-/* ============================================================================
-   Shared helpers
-   ============================================================================ */
-
-function addCopies(arr, title, count) {
-    for (let i = 0; i < count; i++) arr.push(title);
-}
-
-function parseCountAndTitle(line) {
-    const trimmed = String(line || '').trim();
-    if (!trimmed) return null;
-
-    // Lackey typical: "3\tCard Name"
-    let m = trimmed.match(/^(\d+)\s*\t\s*(.+)$/);
-    if (m) return { count: parseInt(m[1], 10), title: m[2].trim() };
-
-    // Fallback: "3 Card Name"
-    m = trimmed.match(/^(\d+)\s+(.+)$/);
-    if (m) return { count: parseInt(m[1], 10), title: m[2].trim() };
-
-    return null;
-}
-
-function stripPersonaSuffix(title) {
-    // Your Lackey export uses:
-    // "Adam Copeland Wrestler"
-    // "Luthor Manager"
-    const t = String(title || '').trim();
-    const lower = t.toLowerCase();
-
-    if (lower.endsWith(' wrestler')) {
-        return { baseTitle: t.slice(0, -(' wrestler'.length)).trim(), role: 'Wrestler' };
-    }
-    if (lower.endsWith(' manager')) {
-        return { baseTitle: t.slice(0, -(' manager'.length)).trim(), role: 'Manager' };
-    }
-    return { baseTitle: t, role: null };
-}
-
-/* ============================================================================
-   Plain text parser (legacy format)
-   ============================================================================ */
-
-function parsePlainTextDeck(lines) {
-    let newWrestler = null;
-    let newManager = null;
-    let newStartingDeck = [];
-    let newPurchaseDeck = [];
-    let currentSection = '';
-
-    lines.forEach(line => {
-        const trimmedLine = line.trim();
-        if (!trimmedLine || trimmedLine.toLowerCase().startsWith('kit')) return;
-
-        if (trimmedLine.toLowerCase().startsWith('wrestler:')) {
-            const wrestlerName = trimmedLine.substring(9).trim();
-            const wrestler = state.cardTitleCache[wrestlerName];
-            if (wrestler && wrestler.card_type === 'Wrestler') newWrestler = wrestler;
-            return;
-        }
-
-        if (trimmedLine.toLowerCase().startsWith('manager:')) {
-            const managerName = trimmedLine.substring(8).trim();
-            if (managerName.toLowerCase() !== 'none') {
-                const manager = state.cardTitleCache[managerName];
-                if (manager && manager.card_type === 'Manager') newManager = manager;
-            }
-            return;
-        }
-
-        if (trimmedLine.startsWith('--- Starting Deck')) { currentSection = 'starting'; return; }
-        if (trimmedLine.startsWith('--- Purchase Deck')) { currentSection = 'purchase'; return; }
-
-        const match = trimmedLine.match(/^(\d+)x\s+(.+)/);
-        if (!match) return;
-
-        const count = parseInt(match[1], 10);
-        const cardName = match[2].trim();
-        if (!state.cardTitleCache[cardName]) return;
-
-        if (currentSection === 'starting') addCopies(newStartingDeck, cardName, count);
-        else if (currentSection === 'purchase') addCopies(newPurchaseDeck, cardName, count);
-    });
-
-    return { newWrestler, newManager, newStartingDeck, newPurchaseDeck };
-}
-
-/* ============================================================================
-   Lackey text (.txt) parser
-   ============================================================================ */
-
-function parseLackeyTextDeck(lines) {
-    // Expected layout:
-    // 1) main list BEFORE "Purchase_Deck:"  -> starting deck (non-persona)
-    // 2) After "Purchase_Deck:"            -> purchase deck
-    // 3) After "Starting:"                 -> persona + kit cards (kit ignored), then "Tokens:"
-    // 4) After "Tokens:"                   -> tokens list (ignored)
-    let section = 'main';
-
-    let newWrestler = null;
-    let newManager = null;
-    let newStartingDeck = [];
-    let newPurchaseDeck = [];
-
-    for (const raw of lines) {
-        const line = String(raw || '').trim();
-        if (!line) continue;
-
-        // Skip comments
-        if (line.startsWith('#') || line.startsWith('//')) continue;
-
-        // Section markers
-        if (/^purchase_deck\s*:/i.test(line)) { section = 'purchase'; continue; }
-        if (/^starting\s*:/i.test(line)) { section = 'starting'; continue; }
-        if (/^tokens\s*:/i.test(line)) { section = 'tokens'; continue; }
-
-        // Tokens section is informational only
-        if (section === 'tokens') continue;
-
-        // Under Starting: we also accept "Adam Copeland Wrestler" WITHOUT a leading count,
-        // because Lackey users sometimes hand-edit these lines.
-        let count = 1;
-        let title = line;
-
-        const parsed = parseCountAndTitle(line);
-        if (parsed) {
-            count = parsed.count;
-            title = parsed.title;
-        } else {
-            // If we're not in the Starting section and there's no count, it's not a deck line.
-            if (section !== 'starting') continue;
-        }
-
-        if (section === 'starting') {
-            const { baseTitle, role } = stripPersonaSuffix(title);
-            title = baseTitle;
-
-            const card = state.cardTitleCache[title];
-            if (!card) continue;
-
-            // Ignore kit cards on import (app derives them from persona)
-            if (typeof state.isKitCard === 'function' && state.isKitCard(card)) continue;
-
-            // Prefer explicit suffix; else fallback to card_type
-            if (role === 'Wrestler' || card.card_type === 'Wrestler') {
-                newWrestler = card;
-                continue;
-            }
-            if (role === 'Manager' || card.card_type === 'Manager') {
-                newManager = card;
-                continue;
-            }
-
-            // Anything else under Starting: ignore
-            continue;
-        }
-
-        if (section === 'main') {
-            const card = state.cardTitleCache[title];
-            if (!card) continue;
-            if (card.card_type === 'Wrestler' || card.card_type === 'Manager') continue;
-            addCopies(newStartingDeck, title, count);
-            continue;
-        }
-
-        if (section === 'purchase') {
-            const card = state.cardTitleCache[title];
-            if (!card) continue;
-            if (card.card_type === 'Wrestler' || card.card_type === 'Manager') continue;
-            addCopies(newPurchaseDeck, title, count);
-            continue;
-        }
-    }
-
-    return { newWrestler, newManager, newStartingDeck, newPurchaseDeck };
-}
-
-/* ============================================================================
-   XML .dek parser (Cockatrice-style)
-   ============================================================================ */
-
-function parseXmlDek(text) {
-    let xml;
-    try {
-        xml = new DOMParser().parseFromString(String(text || ''), 'text/xml');
-    } catch (e) {
-        throw new Error('Could not parse .dek XML.');
-    }
-
-    // Helper to extract card names from a given superzone
-    function getNames(superzoneName) {
-        const zone = xml.querySelector(`superzone[name="${CSS.escape(superzoneName)}"]`);
-        if (!zone) return [];
-        const names = [];
-        zone.querySelectorAll('card > name').forEach(n => {
-            const v = (n.textContent || '').trim();
-            if (v) names.push(v);
-        });
-        return names;
-    }
-
-    const deckNames = getNames('Deck'); // starting (non-persona)
-    const purchaseNames = getNames('Purchase_Deck');
-    const startingNames = getNames('Starting'); // persona + kit (usually)
-    // Tokens zone intentionally ignored
-
-    // Count duplicates
-    function toCounts(names) {
-        const counts = new Map();
-        names.forEach(n => counts.set(n, (counts.get(n) || 0) + 1));
-        return counts;
-    }
-
-    const newStartingDeck = [];
-    const newPurchaseDeck = [];
-
-    const deckCounts = toCounts(deckNames);
-    for (const [title, count] of deckCounts.entries()) {
-        const card = state.cardTitleCache[title];
-        if (!card) continue;
-        if (card.card_type === 'Wrestler' || card.card_type === 'Manager') continue;
-        addCopies(newStartingDeck, title, count);
-    }
-
-    const purchaseCounts = toCounts(purchaseNames);
-    for (const [title, count] of purchaseCounts.entries()) {
-        const card = state.cardTitleCache[title];
-        if (!card) continue;
-        if (card.card_type === 'Wrestler' || card.card_type === 'Manager') continue;
-        addCopies(newPurchaseDeck, title, count);
-    }
-
-    // Persona detection from Starting superzone:
-    // Prefer card_type if known. If unknown, fall back to first as wrestler, second as manager.
-    let newWrestler = null;
-    let newManager = null;
-
-    const startingUnique = Array.from(new Set(startingNames));
-    const unknownPersona = [];
-
-    for (const title of startingUnique) {
-        const card = state.cardTitleCache[title];
-        if (!card) {
-            unknownPersona.push(title);
-            continue;
-        }
-
-        if (typeof state.isKitCard === 'function' && state.isKitCard(card)) continue;
-
-        if (card.card_type === 'Wrestler') newWrestler = card;
-        else if (card.card_type === 'Manager') newManager = card;
-        else unknownPersona.push(title);
-    }
-
-    // Fallback heuristic if wrestler isn't identified but we have items
-    if (!newWrestler && unknownPersona.length) {
-        const maybe = state.cardTitleCache[unknownPersona[0]];
-        if (maybe) newWrestler = maybe; // best effort
-    }
-    if (!newManager && unknownPersona.length > 1) {
-        const maybe = state.cardTitleCache[unknownPersona[1]];
-        if (maybe) newManager = maybe;
-    }
-
-    return { newWrestler, newManager, newStartingDeck, newPurchaseDeck };
-}
-
-/* ============================================================================
-   Public API
-   ============================================================================ */
-
+/**
+ * Supported imports:
+ * 1) AEW Lackey .dek (XML) with <superzone name="Deck|Purchase_Deck|Starting|Tokens">...
+ * 2) Lackey-style text decks with sections like:
+ *      Starting:
+ *      Purchase_Deck:
+ *      Tokens:
+ *    And lines like: "3\tCard Name" or "3x Card Name" or "Card Name Wrestler"
+ * 3) Legacy export with headers like:
+ *      --- Starting Deck ---
+ *      --- Purchase Deck ---
+ *    And lines like: "3x Card Name"
+ */
 export function parseAndLoadDeck(text) {
-    const importStatus = document.getElementById('importStatus');
-    const importModal = document.getElementById('importModal');
-    const wrestlerSelect = document.getElementById('wrestlerSelect');
-    const managerSelect = document.getElementById('managerSelect');
+  const importStatus = document.getElementById('importStatus');
+  const importModal = document.getElementById('importModal');
+  const wrestlerSelect = document.getElementById('wrestlerSelect');
+  const managerSelect = document.getElementById('managerSelect');
 
-    try {
-        const raw = String(text || '');
-        const lines = raw.trim().split(/\r?\n/);
+  try {
+    const raw = (text ?? '').toString().replace(/^\uFEFF/, '').trim();
+    if (!raw) throw new Error('No deck text found.');
 
-        let parsed;
-        if (isLikelyXmlDek(raw)) parsed = parseXmlDek(raw);
-        else if (isLikelyLackeyText(lines)) parsed = parseLackeyTextDeck(lines);
-        else parsed = parsePlainTextDeck(lines);
+    // Decide format
+    const looksLikeXml = raw.startsWith('<') && /<\s*deck\b|<\s*cockatrice_deck\b|<\s*superzone\b/i.test(raw);
+    const looksLikeLackeyText = /(^|\n)\s*(Starting|Purchase_Deck|Purchase Deck|Tokens)\s*:/i.test(raw);
+    const looksLikeLegacy = /---\s*Starting Deck\s*---|---\s*Purchase Deck\s*---/i.test(raw);
 
-        state.setSelectedWrestler(parsed.newWrestler);
-        state.setSelectedManager(parsed.newManager);
+    const result = looksLikeXml
+      ? parseDekXml(raw)
+      : looksLikeLackeyText
+        ? parseLackeyText(raw)
+        : looksLikeLegacy
+          ? parseLegacyText(raw)
+          : parseFallbackList(raw);
 
-        wrestlerSelect.value = parsed.newWrestler ? parsed.newWrestler.title : "";
-        managerSelect.value = parsed.newManager ? parsed.newManager.title : "";
+    // Apply
+    state.setSelectedWrestler(result.wrestler);
+    state.setSelectedManager(result.manager);
 
-        state.setStartingDeck(parsed.newStartingDeck);
-        state.setPurchaseDeck(parsed.newPurchaseDeck);
+    wrestlerSelect.value = result.wrestler ? result.wrestler.title : '';
+    managerSelect.value = result.manager ? result.manager.title : '';
 
-        renderDecks();
-        renderPersonaDisplay();
-        document.dispatchEvent(new Event('filtersChanged'));
+    state.setStartingDeck(result.startingDeck);
+    state.setPurchaseDeck(result.purchaseDeck);
 
-        importStatus.textContent = 'Deck imported successfully!';
-        importStatus.style.color = 'green';
-        setTimeout(() => { importModal.style.display = 'none'; }, 1500);
-    } catch (error) {
-        console.error('Error parsing decklist:', error);
-        importStatus.textContent = `An unexpected error occurred: ${error.message}`;
-        importStatus.style.color = 'red';
+    renderDecks();
+    renderPersonaDisplay();
+    document.dispatchEvent(new Event('filtersChanged'));
+
+    importStatus.textContent = 'Deck imported successfully!';
+    importStatus.style.color = 'green';
+    setTimeout(() => { importModal.style.display = 'none'; }, 1200);
+  } catch (error) {
+    console.error('Error parsing decklist:', error);
+    importStatus.textContent = `Import failed: ${error.message}`;
+    importStatus.style.color = 'red';
+  }
+}
+
+function parseDekXml(xmlText) {
+  const parser = new DOMParser();
+  const xml = parser.parseFromString(xmlText, 'application/xml');
+  const parserError = xml.getElementsByTagName('parsererror')[0];
+  if (parserError) {
+    throw new Error('This .dek file is not valid XML (parser error).');
+  }
+
+  /** @type {string[]} */
+  const startingDeck = [];
+  /** @type {string[]} */
+  const purchaseDeck = [];
+  let wrestler = null;
+  let manager = null;
+
+  const superzones = Array.from(xml.getElementsByTagName('superzone'));
+  for (const sz of superzones) {
+    const zoneName = (sz.getAttribute('name') || '').trim();
+
+    // Each <card> can be either:
+    // - Cockatrice style: <card number="2" name="Foo" />
+    // - Your AEW style: <card><name>Foo</name>...</card>
+    const cards = Array.from(sz.getElementsByTagName('card'));
+
+    const pushCopies = (name, copies, targetArr) => {
+      if (!name) return;
+      for (let i = 0; i < copies; i++) targetArr.push(name);
+    };
+
+    for (const c of cards) {
+      let name = '';
+      let copies = 1;
+
+      // Cockatrice-style attrs
+      if (c.getAttribute) {
+        const attrName = (c.getAttribute('name') || '').trim();
+        const attrNumber = c.getAttribute('number');
+        if (attrName) name = attrName;
+        if (attrNumber && /^\d+$/.test(attrNumber)) copies = parseInt(attrNumber, 10);
+      }
+
+      // AEW-style <name> node
+      if (!name) {
+        const nameNode = c.getElementsByTagName('name')[0];
+        if (nameNode && nameNode.textContent) name = nameNode.textContent.trim();
+      }
+
+      if (!name) continue;
+
+      // Decide where it goes
+      if (/^Starting$/i.test(zoneName)) {
+        const card = state.cardTitleCache[name];
+        if (card?.card_type === 'Wrestler') wrestler = card;
+        else if (card?.card_type === 'Manager') manager = card;
+        else {
+          // In case someone stores Finisher / other Starting-only cards here
+          pushCopies(name, copies, startingDeck);
+        }
+        continue;
+      }
+
+      if (/^Deck$/i.test(zoneName)) {
+        pushCopies(name, copies, startingDeck);
+        continue;
+      }
+
+      if (/^Purchase_Deck$/i.test(zoneName) || /^Purchase Deck$/i.test(zoneName)) {
+        pushCopies(name, copies, purchaseDeck);
+        continue;
+      }
+
+      // Tokens or other zones are informational for builder; ignore safely.
     }
+  }
+
+  return { wrestler, manager, startingDeck, purchaseDeck };
+}
+
+function parseLackeyText(text) {
+  const startingDeck = [];
+  const purchaseDeck = [];
+  let wrestler = null;
+  let manager = null;
+
+  let section = '';
+
+  const lines = text.split(/\r?\n/);
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    // section headers
+    const header = line.replace(/\s+/g, ' ').toLowerCase();
+    if (header === 'starting:' || header === 'starting') { section = 'starting'; continue; }
+    if (header === 'purchase_deck:' || header === 'purchase_deck' || header === 'purchase deck:' || header === 'purchase deck') { section = 'purchase'; continue; }
+    if (header === 'tokens:' || header === 'tokens') { section = 'tokens'; continue; }
+
+    // ignore token section for builder
+    if (section === 'tokens') continue;
+
+    // Wrestler/Manager can appear as explicit lines inside Starting:
+    //  - "Kenny Omega Wrestler"
+    //  - "Luther Manager"
+    //  - optionally with counts: "1\tKenny Omega Wrestler" or "1x Kenny Omega Wrestler"
+    const persona = parseMaybePersonaLine(line);
+    if (persona) {
+      if (persona.card_type === 'Wrestler') wrestler = persona;
+      else if (persona.card_type === 'Manager') manager = persona;
+      continue;
+    }
+
+    // Count formats:
+    // - "3\tCard Name"
+    // - "3x Card Name"
+    // - "Card Name" (assume 1)
+    const parsed = parseCountedLine(line);
+    if (!parsed) continue;
+
+    const { count, name } = parsed;
+
+    if (!state.cardTitleCache[name]) {
+      // If someone pasted "Name Wrestler" without us recognizing it as persona:
+      const maybeStripped = name.replace(/\s+(Wrestler|Manager)$/i, '').trim();
+      if (state.cardTitleCache[maybeStripped]) {
+        for (let i = 0; i < count; i++) {
+          if (section === 'purchase') purchaseDeck.push(maybeStripped);
+          else startingDeck.push(maybeStripped);
+        }
+      }
+      continue;
+    }
+
+    for (let i = 0; i < count; i++) {
+      if (section === 'purchase') purchaseDeck.push(name);
+      else startingDeck.push(name);
+    }
+  }
+
+  return { wrestler, manager, startingDeck, purchaseDeck };
+}
+
+function parseLegacyText(text) {
+  const startingDeck = [];
+  const purchaseDeck = [];
+  let wrestler = null;
+  let manager = null;
+
+  let section = '';
+
+  const lines = text.split(/\r?\n/);
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (line.toLowerCase().startsWith('wrestler:')) {
+      const name = line.substring(9).trim();
+      const card = state.cardTitleCache[name];
+      if (card?.card_type === 'Wrestler') wrestler = card;
+      continue;
+    }
+    if (line.toLowerCase().startsWith('manager:')) {
+      const name = line.substring(8).trim();
+      const card = state.cardTitleCache[name];
+      if (card?.card_type === 'Manager') manager = card;
+      continue;
+    }
+
+    if (/^---\s*Starting Deck/i.test(line)) { section = 'starting'; continue; }
+    if (/^---\s*Purchase Deck/i.test(line)) { section = 'purchase'; continue; }
+
+    const parsed = parseCountedLine(line);
+    if (!parsed) continue;
+
+    const { count, name } = parsed;
+    if (!state.cardTitleCache[name]) continue;
+
+    for (let i = 0; i < count; i++) {
+      if (section === 'purchase') purchaseDeck.push(name);
+      else if (section === 'starting') startingDeck.push(name);
+    }
+  }
+
+  return { wrestler, manager, startingDeck, purchaseDeck };
+}
+
+function parseFallbackList(text) {
+  // If someone pastes just a list, treat it as Starting deck by default.
+  const startingDeck = [];
+  const purchaseDeck = [];
+  let wrestler = null;
+  let manager = null;
+
+  const lines = text.split(/\r?\n/);
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const persona = parseMaybePersonaLine(line);
+    if (persona) {
+      if (persona.card_type === 'Wrestler') wrestler = persona;
+      else if (persona.card_type === 'Manager') manager = persona;
+      continue;
+    }
+
+    const parsed = parseCountedLine(line) || { count: 1, name: line };
+    const { count, name } = parsed;
+
+    if (!state.cardTitleCache[name]) continue;
+    for (let i = 0; i < count; i++) startingDeck.push(name);
+  }
+
+  return { wrestler, manager, startingDeck, purchaseDeck };
+}
+
+function parseCountedLine(line) {
+  // "3\tName" or "3x Name" or "3 x Name"
+  let m = line.match(/^(\d+)\s*\t\s*(.+)$/);
+  if (m) return { count: parseInt(m[1], 10), name: m[2].trim() };
+
+  m = line.match(/^(\d+)\s*x\s+(.+)$/i);
+  if (m) return { count: parseInt(m[1], 10), name: m[2].trim() };
+
+  // "Name" only is valid too
+  if (line && !/^\d+/.test(line)) return { count: 1, name: line.trim() };
+
+  return null;
+}
+
+function parseMaybePersonaLine(line) {
+  // Strip an optional leading count (tab or "x")
+  const parsed = parseCountedLine(line);
+  const candidate = (parsed?.name ?? line).trim();
+
+  const stripped = candidate.replace(/\s+(Wrestler|Manager)$/i, '').trim();
+  const card = state.cardTitleCache[stripped];
+  if (!card) return null;
+
+  // If it's a Wrestler/Manager, treat as persona even if suffix isn't present.
+  if (card.card_type === 'Wrestler' || card.card_type === 'Manager') return card;
+
+  // If suffix exists, that overrides and allows matching even if card_type is wrong (but still needs to exist)
+  const hasSuffix = /\s+(Wrestler|Manager)$/i.test(candidate);
+  if (hasSuffix) return card;
+
+  return null;
 }
