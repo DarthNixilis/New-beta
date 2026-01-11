@@ -441,7 +441,7 @@ export function generateLackeyCCGDeck() {
     const activePersonaTitles = [];
     if (state.selectedWrestler) activePersonaTitles.push(state.selectedWrestler.title);
     if (state.selectedManager) activePersonaTitles.push(state.selectedManager.title);
-    const kitCards = state.cardDatabase.filter(card => state.isKitCard(card) && activePersonaTitles.includes(card['Signature For']));
+    const kitCards = (state.selectedWrestler ? state.cardDatabase.filter(card => state.isKitCard(card) && card['Signature For'] === state.selectedWrestler.title) : []);
     
     let text = '';
     
@@ -508,21 +508,16 @@ export function generateLackeyCCGDeck() {
     text += `Starting:
 `;
 
-    // Wrestler (labelled so it can't be confused with Manager in Lackey lists)
-    if (state.selectedWrestler) {
-        text += `Wrestler:
-`;
-        text += `1	${state.selectedWrestler.title}
-`;
-    }
 
-    // Manager (labelled so it can't be confused with Wrestler in Lackey lists)
-    if (state.selectedManager) {
-        text += `Manager:
-`;
-        text += `1	${state.selectedManager.title}
-`;
-    }
+// Persona cards (inline role labels for Lackey import)
+if (state.selectedWrestler) {
+    text += `1\t${state.selectedWrestler.title} Wrestler\n`;
+}
+
+if (state.selectedManager) {
+    text += `1\t${state.selectedManager.title} Manager\n`;
+}
+
 // Add kit cards
     kitCards.forEach(card => {
         text += `1\t${card.title}\n`;
