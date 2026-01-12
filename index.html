@@ -56,7 +56,9 @@
             <div class="persona-selection">
                 <h2>Persona</h2>
                 <select id="wrestlerSelect"><option value="">-- Select Wrestler --</option></select>
-                <select id="managerSelect"><option value="">-- Select Manager --</option></select>
+<select id="managerSelect"><option value="">-- Select Manager --</option></select>
+<select id="callNameSelect"><option value="">-- Select Call Name --</option></select>
+<select id="factionSelect"><option value="">-- Select Faction --</option></select>
             </div>
 
             <div id="personaDisplay" class="persona-display-container"></div>
@@ -91,7 +93,7 @@
             <h3>Import Decklist</h3>
             <div class="import-controls">
                 <label for="deckFileInput">Import from .txt file:</label>
-                <input type="file" id="deckFileInput" accept=".txt,.dek">
+                <input type="file" id="deckFileInput" accept=".txt">
                 <textarea id="deckTextInput" rows="10" placeholder="Or paste decklist here..."></textarea>
                 <button id="processImportBtn">Import</button>
             </div>
