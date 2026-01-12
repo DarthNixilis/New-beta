@@ -1,17 +1,6 @@
 // data-loader.js
 import * as state from './config.js';
 
-// --- DYNAMIC PATH DETECTION ---
-function getBasePath() {
-    const path = window.location.pathname;
-    const secondSlashIndex = path.indexOf('/', 1);
-    if (secondSlashIndex !== -1) {
-        return path.substring(0, secondSlashIndex + 1);
-    }
-    return '/';
-}
-// --- END DYNAMIC PATH DETECTION ---
-
 function escapeRegex(str) {
     return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -37,22 +26,42 @@ function deriveKeywordsFromText(rawText, keywordMatchers) {
     return found;
 }
 
+async function fetchWithTimeout(url, ms = 15000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), ms);
+    try {
+        return await fetch(url, { signal: controller.signal });
+    } finally {
+        clearTimeout(id);
+    }
+}
+
+function buildAssetUrl(filename) {
+    // Rock-solid on GitHub Pages because it anchors to the module location
+    const url = new URL(filename, import.meta.url);
+    // Cache-bust so GH Pages / mobile caches don’t lie to us
+    url.searchParams.set('v', String(Date.now()));
+    return url.toString();
+}
+
 export async function loadGameData() {
     const searchResults = document.getElementById('searchResults');
-    try {
-        searchResults.innerHTML = '<p>Loading card data...</p>';
 
-        const basePath = getBasePath();
-        const cardDbUrl = `${basePath}cardDatabase.txt?v=${new Date().getTime()}`;
-        const keywordsUrl = `${basePath}keywords.txt?v=${new Date().getTime()}`;
+    try {
+        if (searchResults) searchResults.innerHTML = '<p>Loading card data...</p>';
+
+        const cardDbUrl = buildAssetUrl('cardDatabase.txt');
+        const keywordsUrl = buildAssetUrl('keywords.txt');
+
+        console.log('Loading:', { cardDbUrl, keywordsUrl });
 
         const [cardResponse, keywordResponse] = await Promise.all([
-            fetch(cardDbUrl),
-            fetch(keywordsUrl)
+            fetchWithTimeout(cardDbUrl, 20000),
+            fetchWithTimeout(keywordsUrl, 20000)
         ]);
 
-        if (!cardResponse.ok) throw new Error(`Could not load cardDatabase.txt`);
-        if (!keywordResponse.ok) throw new Error(`Could not load keywords.txt`);
+        if (!cardResponse.ok) throw new Error(`Could not load cardDatabase.txt (Status: ${cardResponse.status})`);
+        if (!keywordResponse.ok) throw new Error(`Could not load keywords.txt (Status: ${keywordResponse.status})`);
 
         /* ---------------- KEYWORDS ---------------- */
 
@@ -62,7 +71,9 @@ export async function loadGameData() {
             if (!line.trim()) return;
             const parts = line.split(':');
             if (parts.length >= 2) {
-                parsedKeywords[parts[0].trim()] = parts.slice(1).join(':').trim();
+                const key = parts[0].trim();
+                const value = parts.slice(1).join(':').trim();
+                if (key) parsedKeywords[key] = value;
             }
         });
 
@@ -86,7 +97,7 @@ export async function loadGameData() {
                 else card[header] = value;
             });
 
-            /* ---- Normalize core fields ---- */
+            // Normalize core fields your app expects
             card.title = card['Card Name'];
             card.card_type = card['Type'];
             card.cost = card['Cost'] === 'N/a' ? null : card['Cost'];
@@ -94,13 +105,10 @@ export async function loadGameData() {
             card.momentum = card['Momentum'] === 'N/a' ? null : card['Momentum'];
 
             const rawText = card['Card Raw Game Text'] || '';
-            card.text_box = {
-                raw_text: rawText,
-                keywords: [],
-                traits: []
-            };
+            card.text_box = { raw_text: rawText, keywords: [], traits: [] };
 
-            /* ---- KEYWORDS ---- */
+            // Keywords:
+            // If there is a Keywords column, use it; otherwise derive from keywords.txt names
             if (typeof card.Keywords === 'string' && card.Keywords.trim()) {
                 card.text_box.keywords = card.Keywords
                     .split(',')
@@ -110,25 +118,21 @@ export async function loadGameData() {
                 card.text_box.keywords = deriveKeywordsFromText(rawText, keywordMatchers);
             }
 
-            /* ---- TRAITS ---- */
+            // Traits (column-based)
             if (typeof card.Traits === 'string' && card.Traits.trim()) {
                 card.Traits.split(',').forEach(traitStr => {
                     const [name, value] = traitStr.split(':');
-                    if (name) {
-                        card.text_box.traits.push({
-                            name: name.trim(),
-                            value: value ? value.trim() : undefined
-                        });
-                    }
+                    if (!name) return;
+                    card.text_box.traits.push({
+                        name: name.trim(),
+                        value: value ? value.trim() : undefined
+                    });
                 });
             }
 
-            /* ---- TARGET (THE FIX) ---- */
+            // TARGET (so renderer + filters can find it)
             if (card.Target) {
-                card.text_box.traits.push({
-                    name: 'Target',
-                    value: String(card.Target).trim()
-                });
+                card.text_box.traits.push({ name: 'Target', value: String(card.Target).trim() });
             }
 
             return card;
@@ -137,11 +141,23 @@ export async function loadGameData() {
         state.setCardDatabase(cards);
         state.buildCardTitleCache();
 
+        console.log(`Loaded ${cards.length} cards. Keywords: ${Object.keys(parsedKeywords).length}`);
         return true;
     } catch (err) {
-        console.error(err);
-        searchResults.innerHTML =
-            `<div style="color:red;padding:20px"><strong>Fatal Error:</strong> ${err.message}</div>`;
+        console.error('Fatal Error during data load:', err);
+
+        if (searchResults) {
+            searchResults.innerHTML = `
+                <div style="color:red;padding:16px;text-align:center;">
+                    <strong>FATAL ERROR:</strong> ${err.name === 'AbortError'
+                        ? 'Loading timed out (check connection or file path).'
+                        : err.message}
+                    <br><br>
+                    <button onclick="location.reload()">Retry</button>
+                </div>
+            `;
+        }
+
         return false;
     }
-} 
+}
