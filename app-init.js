@@ -5,85 +5,107 @@ import * as filters from './filters.js';
 import { initializeAllEventListeners } from './listeners.js';
 
 export function initializeApp() {
-    populatePersonaSelectors();
-    loadStateFromCache();
-    setupInitialUI();
-    addDeckSearchFunctionality();
-    filters.renderCascadingFilters();
-    ui.renderDecks();
-    ui.renderPersonaDisplay();
-    initializeAllEventListeners(refreshCardPool);
-    refreshCardPool();
+  populatePersonaSelectors();
+  loadStateFromCache();
+
+  filters.renderCascadingFilters();
+  ui.renderDecks();
+  ui.renderPersonaDisplay();
+
+  const refreshCardPool = () => {
+    const cards = filters.getFilteredAndSortedCardPool();
+    ui.renderCardPool(cards);
+  };
+
+  initializeAllEventListeners(refreshCardPool);
+  refreshCardPool();
 }
 
 function populatePersonaSelectors() {
-    const wrestlerSelect = document.getElementById('wrestlerSelect');
-    const managerSelect = document.getElementById('managerSelect');
-    const callNameSelect = document.getElementById('callNameSelect'); // NEW
-    const factionSelect = document.getElementById('factionSelect');   // NEW
+  const wrestlerSelect = document.getElementById('wrestlerSelect');
+  const managerSelect = document.getElementById('managerSelect');
+  const callNameSelect = document.getElementById('callNameSelect');
+  const factionSelect = document.getElementById('factionSelect');
 
-    // keep the first placeholder option, clear rest
-    wrestlerSelect.length = 1;
-    managerSelect.length = 1;
-    callNameSelect.length = 1;
-    factionSelect.length = 1;
+  if (!wrestlerSelect || !managerSelect || !callNameSelect || !factionSelect) return;
 
-    const byType = (type) =>
-        state.cardDatabase
-            .filter(c => c && c.card_type === type)
-            .sort((a, b) => a.title.localeCompare(b.title));
+  // Keep first option, clear rest
+  wrestlerSelect.length = 1;
+  managerSelect.length = 1;
+  callNameSelect.length = 1;
+  factionSelect.length = 1;
 
-    byType('Wrestler').forEach(c => wrestlerSelect.add(new Option(c.title, c.title)));
-    byType('Manager').forEach(c => managerSelect.add(new Option(c.title, c.title)));
-    byType('Call Name').forEach(c => callNameSelect.add(new Option(c.title, c.title))); // NEW
-    byType('Faction').forEach(c => factionSelect.add(new Option(c.title, c.title)));   // NEW
+  const byType = (type) =>
+    (state.cardDatabase || [])
+      .filter(c => c && c.card_type === type)
+      .sort((a, b) => a.title.localeCompare(b.title));
+
+  for (const c of byType('Wrestler')) wrestlerSelect.add(new Option(c.title, c.title));
+  for (const c of byType('Manager')) managerSelect.add(new Option(c.title, c.title));
+  for (const c of byType('Call Name')) callNameSelect.add(new Option(c.title, c.title));
+  for (const c of byType('Faction')) factionSelect.add(new Option(c.title, c.title));
+
+  wrestlerSelect.addEventListener('change', (e) => {
+    const title = e.target.value;
+    state.setSelectedWrestler(title ? state.getCardByTitleAndType(title, 'Wrestler') : null);
+    ui.renderPersonaDisplay();
+    state.saveStateToCache();
+    document.dispatchEvent(new Event('filtersChanged'));
+  });
+
+  managerSelect.addEventListener('change', (e) => {
+    const title = e.target.value;
+    state.setSelectedManager(title ? state.getCardByTitleAndType(title, 'Manager') : null);
+    ui.renderPersonaDisplay();
+    state.saveStateToCache();
+  });
+
+  callNameSelect.addEventListener('change', (e) => {
+    const title = e.target.value;
+    state.setSelectedCallName(title ? state.getCardByTitleAndType(title, 'Call Name') : null);
+    ui.renderPersonaDisplay();
+    state.saveStateToCache();
+  });
+
+  factionSelect.addEventListener('change', (e) => {
+    const title = e.target.value;
+    state.setSelectedFaction(title ? state.getCardByTitleAndType(title, 'Faction') : null);
+    ui.renderPersonaDisplay();
+    state.saveStateToCache();
+  });
 }
 
 function loadStateFromCache() {
-    const cachedState = localStorage.getItem(state.CACHE_KEY);
-    if (!cachedState) return;
+  const raw = localStorage.getItem(state.CACHE_KEY);
+  if (!raw) return;
 
-    try {
-        const parsed = JSON.parse(cachedState);
+  try {
+    const parsed = JSON.parse(raw);
 
-        state.setStartingDeck(parsed.startingDeck || []);
-        state.setPurchaseDeck(parsed.purchaseDeck || []);
+    state.setStartingDeck(parsed.startingDeck || []);
+    state.setPurchaseDeck(parsed.purchaseDeck || []);
 
-        const wrestlerSelect = document.getElementById('wrestlerSelect');
-        const managerSelect = document.getElementById('managerSelect');
-        const callNameSelect = document.getElementById('callNameSelect'); // NEW
-        const factionSelect = document.getElementById('factionSelect');   // NEW
+    const w = parsed.wrestler || '';
+    const m = parsed.manager || '';
+    const c = parsed.callName || '';
+    const f = parsed.faction || '';
 
-        if (parsed.wrestler) {
-            wrestlerSelect.value = parsed.wrestler;
-            state.setSelectedWrestler(state.getCardByTitleAndType(parsed.wrestler, 'Wrestler'));
-        }
-        if (parsed.manager) {
-            managerSelect.value = parsed.manager;
-            state.setSelectedManager(state.getCardByTitleAndType(parsed.manager, 'Manager'));
-        }
-        if (parsed.callName) { // NEW
-            callNameSelect.value = parsed.callName;
-            state.setSelectedCallName(state.getCardByTitleAndType(parsed.callName, 'Call Name'));
-        }
-        if (parsed.faction) { // NEW
-            factionSelect.value = parsed.faction;
-            state.setSelectedFaction(state.getCardByTitleAndType(parsed.faction, 'Faction'));
-        }
-    } catch (e) {
-        console.error("Failed to load from cache:", e);
-        localStorage.removeItem(state.CACHE_KEY);
-    }
-}
+    if (w) state.setSelectedWrestler(state.getCardByTitleAndType(w, 'Wrestler'));
+    if (m) state.setSelectedManager(state.getCardByTitleAndType(m, 'Manager'));
+    if (c) state.setSelectedCallName(state.getCardByTitleAndType(c, 'Call Name'));
+    if (f) state.setSelectedFaction(state.getCardByTitleAndType(f, 'Faction'));
 
-function setupInitialUI() {
-    // keep your existing implementation if present in your repo
-}
+    // Try to restore selects if they exist
+    const wrestlerSelect = document.getElementById('wrestlerSelect');
+    const managerSelect = document.getElementById('managerSelect');
+    const callNameSelect = document.getElementById('callNameSelect');
+    const factionSelect = document.getElementById('factionSelect');
 
-function addDeckSearchFunctionality() {
-    // keep your existing implementation if present in your repo
-}
-
-function refreshCardPool() {
-    // listeners.js passes in the real function; this is just to satisfy imports
+    if (wrestlerSelect) wrestlerSelect.value = w;
+    if (managerSelect) managerSelect.value = m;
+    if (callNameSelect) callNameSelect.value = c;
+    if (factionSelect) factionSelect.value = f;
+  } catch {
+    localStorage.removeItem(state.CACHE_KEY);
+  }
 }

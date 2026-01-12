@@ -1,117 +1,111 @@
 // listeners.js
 import * as state from './config.js';
 import * as ui from './ui.js';
+import * as filters from './filters.js';
 import * as deck from './deck.js';
-import { getFilteredAndSortedCardPool } from './filters.js';
-import { exportDeckAsText, exportDeckAsImages, exportAllCardsAsImages, exportDeckAsLackeyText } from './exporter.js';
 
 export function initializeAllEventListeners(refreshCardPool) {
-    const wrestlerSelect = document.getElementById('wrestlerSelect');
-    const managerSelect = document.getElementById('managerSelect');
-    const callNameSelect = document.getElementById('callNameSelect'); // NEW
-    const factionSelect = document.getElementById('factionSelect');   // NEW
+  const searchInput = document.getElementById('searchInput');
+  const sortSelect = document.getElementById('sortSelect');
+  const showZeroCost = document.getElementById('showZeroCost');
+  const showNonZeroCost = document.getElementById('showNonZeroCost');
 
-    const searchResults = document.getElementById('searchResults');
-    const startingDeckList = document.getElementById('startingDeckList');
-    const purchaseDeckList = document.getElementById('purchaseDeckList');
-    const personaDisplay = document.getElementById('personaDisplay');
+  const searchResults = document.getElementById('searchResults');
+  const startingDeckList = document.getElementById('startingDeckList');
+  const purchaseDeckList = document.getElementById('purchaseDeckList');
 
-    const clearDeckBtn = document.getElementById('clearDeck');
-    const exportDeckBtn = document.getElementById('exportDeck');
-    const exportAsImageBtn = document.getElementById('exportAsImageBtn');
-    const exportAllCardsBtn = document.getElementById('exportAllCards');
-    const exportLackeyBtn = document.getElementById('exportLackeyBtn');
+  const cardModal = document.getElementById('cardModal');
+  const modalCloseBtn = cardModal ? cardModal.querySelector('.modal-close-button') : null;
 
-    // Persona selection (FIXED: type-aware lookup)
-    wrestlerSelect.addEventListener('change', (e) => {
-        const title = e.target.value;
-        state.setSelectedWrestler(title ? state.getCardByTitleAndType(title, 'Wrestler') : null);
-        ui.renderPersonaDisplay();
-        refreshCardPool();
-        state.saveStateToCache();
+  // --- Refresh triggers ---
+  document.addEventListener('filtersChanged', () => refreshCardPool());
+
+  if (searchInput) {
+    searchInput.addEventListener('input', state.debounce(() => refreshCardPool(), 150));
+  }
+
+  if (sortSelect) {
+    sortSelect.addEventListener('change', (e) => {
+      state.setCurrentSort(e.target.value);
+      refreshCardPool();
     });
+  }
 
-    managerSelect.addEventListener('change', (e) => {
-        const title = e.target.value;
-        state.setSelectedManager(title ? state.getCardByTitleAndType(title, 'Manager') : null);
-        ui.renderPersonaDisplay();
-        refreshCardPool();
-        state.saveStateToCache();
+  if (showZeroCost) {
+    showZeroCost.addEventListener('change', (e) => {
+      state.setShowZeroCost(!!e.target.checked);
+      refreshCardPool();
     });
+  }
 
-    callNameSelect.addEventListener('change', (e) => { // NEW
-        const title = e.target.value;
-        state.setSelectedCallName(title ? state.getCardByTitleAndType(title, 'Call Name') : null);
-        ui.renderPersonaDisplay();
-        refreshCardPool();
-        state.saveStateToCache();
+  if (showNonZeroCost) {
+    showNonZeroCost.addEventListener('change', (e) => {
+      state.setShowNonZeroCost(!!e.target.checked);
+      refreshCardPool();
     });
+  }
 
-    factionSelect.addEventListener('change', (e) => { // NEW
-        const title = e.target.value;
-        state.setSelectedFaction(title ? state.getCardByTitleAndType(title, 'Faction') : null);
-        ui.renderPersonaDisplay();
-        refreshCardPool();
-        state.saveStateToCache();
-    });
-
-    // Card pool click handling
+  // --- Card pool interactions ---
+  if (searchResults) {
     searchResults.addEventListener('click', (e) => {
-        const target = e.target;
-        const cardTitle = target.dataset.title || target.closest('[data-title]')?.dataset.title;
-        if (!cardTitle) return;
+      const btn = e.target.closest('button');
+      if (btn && btn.dataset.title && btn.dataset.deckTarget) {
+        deck.addCardToDeck(btn.dataset.title, btn.dataset.deckTarget);
+        return;
+      }
 
-        if (target.tagName === 'BUTTON') {
-            deck.addCardToDeck(cardTitle, target.dataset.deckTarget);
-        } else {
-            ui.showCardModal(cardTitle);
-        }
+      const el = e.target.closest('[data-title]');
+      if (el && el.dataset.title) {
+        ui.openCardModal(el.dataset.title);
+      }
     });
+  }
 
-    // Deck list click handling
+  // --- Deck remove ---
+  if (startingDeckList) {
     startingDeckList.addEventListener('click', (e) => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
-        const title = btn.dataset.title;
-        if (title) deck.removeCardFromDeck(title, 'starting');
-        ui.renderDecks();
-        refreshCardPool();
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const title = btn.dataset.title;
+      const deckName = btn.dataset.deck;
+      if (title && deckName) deck.removeCardFromDeck(title, deckName);
     });
+  }
 
+  if (purchaseDeckList) {
     purchaseDeckList.addEventListener('click', (e) => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
-        const title = btn.dataset.title;
-        if (title) deck.removeCardFromDeck(title, 'purchase');
-        ui.renderDecks();
-        refreshCardPool();
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const title = btn.dataset.title;
+      const deckName = btn.dataset.deck;
+      if (title && deckName) deck.removeCardFromDeck(title, deckName);
     });
+  }
 
-    // Exports
-    clearDeckBtn?.addEventListener('click', () => {
-        deck.clearDecks();
-        ui.renderDecks();
-        ui.renderPersonaDisplay();
-        refreshCardPool();
-        state.saveStateToCache();
+  // --- Persona modal open (type-aware) ---
+  const personaDisplay = document.getElementById('personaDisplay');
+  if (personaDisplay) {
+    personaDisplay.addEventListener('click', (e) => {
+      const el = e.target.closest('[data-title]');
+      if (!el) return;
+      ui.openCardModal(el.dataset.title, el.dataset.type || null);
     });
+  }
 
-    exportDeckBtn?.addEventListener('click', exportDeckAsText);
-    exportAsImageBtn?.addEventListener('click', exportDeckAsImages);
-    exportAllCardsBtn?.addEventListener('click', exportAllCardsAsImages);
-    exportLackeyBtn?.addEventListener('click', exportDeckAsLackeyText);
+  // --- Modal close fixes ---
+  if (modalCloseBtn) {
+    modalCloseBtn.addEventListener('click', () => ui.closeCardModal());
+  }
 
-    // Persona display click -> modal (FIXED: include card type so duplicates open correctly)
-    personaDisplay?.addEventListener('click', (e) => {
-        const el = e.target.closest('[data-title]');
-        if (!el) return;
-        const title = el.dataset.title;
-        const type = el.dataset.type || null;
-        if (title) ui.showCardModal(title, type);
+  // Tap outside modal content closes it
+  if (cardModal) {
+    cardModal.addEventListener('click', (e) => {
+      if (e.target === cardModal) ui.closeCardModal();
     });
-}
+  }
 
-export function refreshCardPoolUI() {
-    const pool = getFilteredAndSortedCardPool();
-    ui.renderCardPool(pool);
+  // ESC closes it
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') ui.closeCardModal();
+  });
 }
