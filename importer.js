@@ -26,9 +26,12 @@ export function parseAndLoadDeck(text) {
     if (!raw) throw new Error('No deck text found.');
 
     // Decide format
-    const looksLikeXml = raw.startsWith('<') && /<\s*deck\b|<\s*cockatrice_deck\b|<\s*superzone\b/i.test(raw);
-    const looksLikeLackeyText = /(^|\n)\s*(Starting|Purchase_Deck|Purchase Deck|Tokens)\s*:/i.test(raw);
-    const looksLikeLegacy = /---\s*Starting Deck\s*---|---\s*Purchase Deck\s*---/i.test(raw);
+    const looksLikeXml =
+      raw.startsWith('<') && /<\s*deck\b|<\s*cockatrice_deck\b|<\s*superzone\b/i.test(raw);
+    const looksLikeLackeyText =
+      /(^|\n)\s*(Starting|Purchase_Deck|Purchase Deck|Tokens)\s*:/i.test(raw);
+    const looksLikeLegacy =
+      /---\s*Starting Deck\s*---|---\s*Purchase Deck\s*---/i.test(raw);
 
     const result = looksLikeXml
       ? parseDekXml(raw)
@@ -42,8 +45,8 @@ export function parseAndLoadDeck(text) {
     state.setSelectedWrestler(result.wrestler);
     state.setSelectedManager(result.manager);
 
-    wrestlerSelect.value = result.wrestler ? result.wrestler.title : '';
-    managerSelect.value = result.manager ? result.manager.title : '';
+    if (wrestlerSelect) wrestlerSelect.value = result.wrestler ? result.wrestler.title : '';
+    if (managerSelect) managerSelect.value = result.manager ? result.manager.title : '';
 
     state.setStartingDeck(result.startingDeck);
     state.setPurchaseDeck(result.purchaseDeck);
@@ -52,15 +55,108 @@ export function parseAndLoadDeck(text) {
     renderPersonaDisplay();
     document.dispatchEvent(new Event('filtersChanged'));
 
-    importStatus.textContent = 'Deck imported successfully!';
-    importStatus.style.color = 'green';
-    setTimeout(() => { importModal.style.display = 'none'; }, 1200);
+    if (importStatus) {
+      importStatus.textContent = 'Deck imported successfully!';
+      importStatus.style.color = 'green';
+    }
+
+    if (importModal) {
+      setTimeout(() => {
+        importModal.style.display = 'none';
+      }, 1200);
+    }
   } catch (error) {
     console.error('Error parsing decklist:', error);
-    importStatus.textContent = `Import failed: ${error.message}`;
-    importStatus.style.color = 'red';
+    if (importStatus) {
+      importStatus.textContent = `Import failed: ${error.message}`;
+      importStatus.style.color = 'red';
+    }
   }
 }
+
+/* ============================================================================
+   CLICK-SAFE IMPORT ENTRYPOINTS (Fixes "Import button does nothing")
+   ============================================================================ */
+
+/**
+ * importDeck()
+ * - If a textarea exists, it will import from it.
+ * - Otherwise it opens a file picker and imports from the selected file.
+ */
+export function importDeck() {
+  // Try textarea import first (common pattern)
+  const textArea =
+    document.getElementById('importText') ||
+    document.getElementById('importTextarea') ||
+    document.getElementById('deckImportText') ||
+    document.getElementById('deckImportTextarea');
+
+  if (textArea && (textArea.value || '').trim()) {
+    parseAndLoadDeck(textArea.value);
+    return;
+  }
+
+  // Otherwise use a file picker
+  importDeckFromFilePicker();
+}
+
+/**
+ * Opens a file picker and imports the chosen deck file.
+ * Works on Android and desktop.
+ */
+export function importDeckFromFilePicker() {
+  let input =
+    document.getElementById('importFileInput') ||
+    document.getElementById('deckImportFile');
+
+  if (!input) {
+    input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.dek,.xml,text/plain,application/xml';
+    input.id = 'importFileInput';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+  }
+
+  // Reset so selecting the same file twice still triggers change
+  input.value = '';
+
+  input.onchange = async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      parseAndLoadDeck(text);
+    } catch (err) {
+      console.error('[import] Failed to read file:', err);
+      const importStatus = document.getElementById('importStatus');
+      if (importStatus) {
+        importStatus.textContent = 'Import failed: could not read file.';
+        importStatus.style.color = 'red';
+      }
+    }
+  };
+
+  input.click();
+}
+
+/**
+ * Optional helper if your UI uses a modal:
+ * You can wire a button to openImportModal() and another to importDeck().
+ */
+export function openImportModal() {
+  const importModal = document.getElementById('importModal');
+  if (!importModal) {
+    console.warn('[import] importModal not found');
+    return;
+  }
+  importModal.style.display = 'block';
+}
+
+/* ============================================================================
+   PARSERS
+   ============================================================================ */
 
 function parseDekXml(xmlText) {
   const parser = new DOMParser();
@@ -116,10 +212,7 @@ function parseDekXml(xmlText) {
         const card = state.cardTitleCache[name];
         if (card?.card_type === 'Wrestler') wrestler = card;
         else if (card?.card_type === 'Manager') manager = card;
-        else {
-          // In case someone stores Finisher / other Starting-only cards here
-          pushCopies(name, copies, startingDeck);
-        }
+        else pushCopies(name, copies, startingDeck);
         continue;
       }
 
@@ -156,16 +249,15 @@ function parseLackeyText(text) {
     // section headers
     const header = line.replace(/\s+/g, ' ').toLowerCase();
     if (header === 'starting:' || header === 'starting') { section = 'starting'; continue; }
-    if (header === 'purchase_deck:' || header === 'purchase_deck' || header === 'purchase deck:' || header === 'purchase deck') { section = 'purchase'; continue; }
+    if (
+      header === 'purchase_deck:' || header === 'purchase_deck' ||
+      header === 'purchase deck:' || header === 'purchase deck'
+    ) { section = 'purchase'; continue; }
     if (header === 'tokens:' || header === 'tokens') { section = 'tokens'; continue; }
 
     // ignore token section for builder
     if (section === 'tokens') continue;
 
-    // Wrestler/Manager can appear as explicit lines inside Starting:
-    //  - "Kenny Omega Wrestler"
-    //  - "Luther Manager"
-    //  - optionally with counts: "1\tKenny Omega Wrestler" or "1x Kenny Omega Wrestler"
     const persona = parseMaybePersonaLine(line);
     if (persona) {
       if (persona.card_type === 'Wrestler') wrestler = persona;
@@ -173,17 +265,12 @@ function parseLackeyText(text) {
       continue;
     }
 
-    // Count formats:
-    // - "3\tCard Name"
-    // - "3x Card Name"
-    // - "Card Name" (assume 1)
     const parsed = parseCountedLine(line);
     if (!parsed) continue;
 
     const { count, name } = parsed;
 
     if (!state.cardTitleCache[name]) {
-      // If someone pasted "Name Wrestler" without us recognizing it as persona:
       const maybeStripped = name.replace(/\s+(Wrestler|Manager)$/i, '').trim();
       if (state.cardTitleCache[maybeStripped]) {
         for (let i = 0; i < count; i++) {
@@ -247,7 +334,6 @@ function parseLegacyText(text) {
 }
 
 function parseFallbackList(text) {
-  // If someone pastes just a list, treat it as Starting deck by default.
   const startingDeck = [];
   const purchaseDeck = [];
   let wrestler = null;
@@ -276,21 +362,18 @@ function parseFallbackList(text) {
 }
 
 function parseCountedLine(line) {
-  // "3\tName" or "3x Name" or "3 x Name"
   let m = line.match(/^(\d+)\s*\t\s*(.+)$/);
   if (m) return { count: parseInt(m[1], 10), name: m[2].trim() };
 
   m = line.match(/^(\d+)\s*x\s+(.+)$/i);
   if (m) return { count: parseInt(m[1], 10), name: m[2].trim() };
 
-  // "Name" only is valid too
   if (line && !/^\d+/.test(line)) return { count: 1, name: line.trim() };
 
   return null;
 }
 
 function parseMaybePersonaLine(line) {
-  // Strip an optional leading count (tab or "x")
   const parsed = parseCountedLine(line);
   const candidate = (parsed?.name ?? line).trim();
 
@@ -298,12 +381,25 @@ function parseMaybePersonaLine(line) {
   const card = state.cardTitleCache[stripped];
   if (!card) return null;
 
-  // If it's a Wrestler/Manager, treat as persona even if suffix isn't present.
   if (card.card_type === 'Wrestler' || card.card_type === 'Manager') return card;
 
-  // If suffix exists, that overrides and allows matching even if card_type is wrong (but still needs to exist)
   const hasSuffix = /\s+(Wrestler|Manager)$/i.test(candidate);
   if (hasSuffix) return card;
 
   return null;
 }
+
+/* ============================================================================
+   GLOBAL EXPOSURE (Fixes module-scope button calls)
+   ============================================================================ */
+
+window.AEW = window.AEW || {};
+window.AEW.parseAndLoadDeck = parseAndLoadDeck;
+window.AEW.importDeck = importDeck;
+window.AEW.importDeckFromFilePicker = importDeckFromFilePicker;
+window.AEW.openImportModal = openImportModal;
+
+window.parseAndLoadDeck = parseAndLoadDeck;
+window.importDeck = importDeck;
+window.importDeckFromFilePicker = importDeckFromFilePicker;
+window.openImportModal = openImportModal;

@@ -1,111 +1,86 @@
 // listeners.js
-import * as state from './config.js';
-import * as ui from './ui.js';
-import * as filters from './filters.js';
-import * as deck from './deck.js';
+// Robust button wiring for mobile + desktop.
+// - Waits for DOMContentLoaded
+// - Never hard-crashes if an element is missing
+// - Supports either:
+//    A) buttons with IDs (exportDeckBtn/importDeckBtn/etc)
+//    B) buttons with data-action="exportDeck" style attributes
+// - Supports handlers living on window or window.AEW
 
-export function initializeAllEventListeners(refreshCardPool) {
-  const searchInput = document.getElementById('searchInput');
-  const sortSelect = document.getElementById('sortSelect');
-  const showZeroCost = document.getElementById('showZeroCost');
-  const showNonZeroCost = document.getElementById('showNonZeroCost');
-
-  const searchResults = document.getElementById('searchResults');
-  const startingDeckList = document.getElementById('startingDeckList');
-  const purchaseDeckList = document.getElementById('purchaseDeckList');
-
-  const cardModal = document.getElementById('cardModal');
-  const modalCloseBtn = cardModal ? cardModal.querySelector('.modal-close-button') : null;
-
-  // --- Refresh triggers ---
-  document.addEventListener('filtersChanged', () => refreshCardPool());
-
-  if (searchInput) {
-    searchInput.addEventListener('input', state.debounce(() => refreshCardPool(), 150));
+(function () {
+  function getHandler(name) {
+    // Prefer namespaced handlers to avoid polluting global scope
+    if (window.AEW && typeof window.AEW[name] === "function") return window.AEW[name];
+    if (typeof window[name] === "function") return window[name];
+    return null;
   }
 
-  if (sortSelect) {
-    sortSelect.addEventListener('change', (e) => {
-      state.setCurrentSort(e.target.value);
-      refreshCardPool();
+  function wireById(id, handlerName) {
+    const el = document.getElementById(id);
+    if (!el) {
+      console.warn(`[listeners] Missing element id="${id}" (ok if you renamed it)`);
+      return;
+    }
+
+    const fn = getHandler(handlerName);
+    if (!fn) {
+      console.error(`[listeners] Handler "${handlerName}" not found on window or window.AEW`);
+      return;
+    }
+
+    el.addEventListener("click", (e) => {
+      try {
+        fn(e);
+      } catch (err) {
+        console.error(`[listeners] Error running "${handlerName}"`, err);
+      }
     });
+
+    console.log(`[listeners] Wired #${id} -> ${handlerName}()`);
   }
 
-  if (showZeroCost) {
-    showZeroCost.addEventListener('change', (e) => {
-      state.setShowZeroCost(!!e.target.checked);
-      refreshCardPool();
-    });
-  }
+  function wireByDataAction() {
+    const nodes = document.querySelectorAll("[data-action]");
+    if (!nodes.length) {
+      console.warn("[listeners] No [data-action] buttons found (that is fine)");
+      return;
+    }
 
-  if (showNonZeroCost) {
-    showNonZeroCost.addEventListener('change', (e) => {
-      state.setShowNonZeroCost(!!e.target.checked);
-      refreshCardPool();
-    });
-  }
+    nodes.forEach((el) => {
+      const action = el.getAttribute("data-action");
+      const fn = getHandler(action);
 
-  // --- Card pool interactions ---
-  if (searchResults) {
-    searchResults.addEventListener('click', (e) => {
-      const btn = e.target.closest('button');
-      if (btn && btn.dataset.title && btn.dataset.deckTarget) {
-        deck.addCardToDeck(btn.dataset.title, btn.dataset.deckTarget);
+      if (!fn) {
+        console.error(`[listeners] data-action="${action}" but handler not found`);
         return;
       }
 
-      const el = e.target.closest('[data-title]');
-      if (el && el.dataset.title) {
-        ui.openCardModal(el.dataset.title);
-      }
+      el.addEventListener("click", (e) => {
+        try {
+          fn(e);
+        } catch (err) {
+          console.error(`[listeners] Error running "${action}"`, err);
+        }
+      });
+
+      console.log(`[listeners] Wired [data-action="${action}"] -> ${action}()`);
     });
   }
 
-  // --- Deck remove ---
-  if (startingDeckList) {
-    startingDeckList.addEventListener('click', (e) => {
-      const btn = e.target.closest('button');
-      if (!btn) return;
-      const title = btn.dataset.title;
-      const deckName = btn.dataset.deck;
-      if (title && deckName) deck.removeCardFromDeck(title, deckName);
-    });
-  }
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("[listeners] DOMContentLoaded, wiring buttons...");
 
-  if (purchaseDeckList) {
-    purchaseDeckList.addEventListener('click', (e) => {
-      const btn = e.target.closest('button');
-      if (!btn) return;
-      const title = btn.dataset.title;
-      const deckName = btn.dataset.deck;
-      if (title && deckName) deck.removeCardFromDeck(title, deckName);
-    });
-  }
+    // If you have specific IDs, wire them here.
+    // These are common guesses. If your IDs differ, either:
+    // - add your real IDs here, OR
+    // - add data-action="exportDeck" etc in the HTML and it will auto-wire.
+    wireById("exportDeckBtn", "exportDeck");
+    wireById("exportAllBtn", "exportAll");
+    wireById("importDeckBtn", "importDeck");
 
-  // --- Persona modal open (type-aware) ---
-  const personaDisplay = document.getElementById('personaDisplay');
-  if (personaDisplay) {
-    personaDisplay.addEventListener('click', (e) => {
-      const el = e.target.closest('[data-title]');
-      if (!el) return;
-      ui.openCardModal(el.dataset.title, el.dataset.type || null);
-    });
-  }
+    // Auto-wire anything using data-action
+    wireByDataAction();
 
-  // --- Modal close fixes ---
-  if (modalCloseBtn) {
-    modalCloseBtn.addEventListener('click', () => ui.closeCardModal());
-  }
-
-  // Tap outside modal content closes it
-  if (cardModal) {
-    cardModal.addEventListener('click', (e) => {
-      if (e.target === cardModal) ui.closeCardModal();
-    });
-  }
-
-  // ESC closes it
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') ui.closeCardModal();
+    console.log("[listeners] Wiring complete.");
   });
-}
+})();
