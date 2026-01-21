@@ -1,53 +1,21 @@
 // listeners.js
-(function () {
-  // ---------- On-screen debug banner ----------
-  function ensureBanner() {
-    let b = document.getElementById("debugBanner");
-    if (b) return b;
 
-    b = document.createElement("div");
-    b.id = "debugBanner";
-    b.style.position = "fixed";
-    b.style.top = "0";
-    b.style.left = "0";
-    b.style.right = "0";
-    b.style.zIndex = "999999";
-    b.style.fontFamily = "monospace";
-    b.style.fontSize = "12px";
-    b.style.padding = "6px 8px";
-    b.style.background = "rgba(0,0,0,0.85)";
-    b.style.color = "#fff";
-    b.style.whiteSpace = "pre-wrap";
-    b.style.maxHeight = "35vh";
-    b.style.overflow = "auto";
-    b.textContent = "[listeners] loaded";
-    document.body.appendChild(b);
-    return b;
+export function initializeAllEventListeners() {
+  // ---------- helpers ----------
+  function qs(sel) {
+    return document.querySelector(sel);
+  }
+  function qsa(sel) {
+    return Array.from(document.querySelectorAll(sel));
   }
 
-  function banner(msg) {
-    try {
-      const b = ensureBanner();
-      b.textContent = msg;
-    } catch (_) {
-      // If body isn't ready yet, ignore.
-    }
+  function dispatchFiltersChanged() {
+    document.dispatchEvent(new Event('filtersChanged'));
   }
 
-  window.addEventListener("error", (e) => {
-    banner(`[ERROR]\n${e.message}\n${e.filename || ""}:${e.lineno || ""}`);
-  });
-
-  window.addEventListener("unhandledrejection", (e) => {
-    const r = e.reason;
-    const msg = r && r.message ? r.message : String(r);
-    banner(`[PROMISE ERROR]\n${msg}`);
-  });
-
-  // ---------- Helpers ----------
   function getHandler(name) {
-    if (window.AEW && typeof window.AEW[name] === "function") return window.AEW[name];
-    if (typeof window[name] === "function") return window[name];
+    if (window.AEW && typeof window.AEW[name] === 'function') return window.AEW[name];
+    if (typeof window[name] === 'function') return window[name];
     return null;
   }
 
@@ -58,89 +26,112 @@
       fn(...args);
       return true;
     } catch (e) {
-      banner(`[CALL ERROR]\n${name}()\n${e.message || e}`);
-      console.error(e);
+      console.error(`[listeners] Error calling ${name}()`, e);
       return false;
     }
   }
 
-  function qsAll(sel) {
-    return Array.from(document.querySelectorAll(sel));
-  }
+  // ---------- grid columns ----------
+  qsa('button').forEach(btn => {
+    const t = (btn.textContent || '').trim();
+    if (t !== '2' && t !== '3' && t !== '4') return;
 
-  function wireButtonByText(textIncludes, onClick) {
-    const btn = qsAll("button").find(b =>
-      (b.textContent || "").toLowerCase().includes(textIncludes.toLowerCase())
-    );
-    if (!btn) return null;
-    btn.addEventListener("click", (e) => {
+    btn.addEventListener('click', e => {
       e.preventDefault();
-      onClick(btn, e);
+      const n = Number(t);
+
+      if (!safeCall('setGridColumns', n)) {
+        const grid =
+          qs('#cardPool') ||
+          qs('#cardPoolGrid') ||
+          qs('.card-grid') ||
+          qs('.card-pool');
+
+        if (grid) {
+          grid.style.display = 'grid';
+          grid.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+        }
+      }
+
+      dispatchFiltersChanged();
     });
-    return btn;
+  });
+
+  // ---------- list / grid toggle ----------
+  const viewBtn = qsa('button').find(b =>
+    (b.textContent || '').toLowerCase().includes('switch to')
+  );
+
+  if (viewBtn) {
+    viewBtn.addEventListener('click', e => {
+      e.preventDefault();
+      const txt = viewBtn.textContent.toLowerCase();
+      const toList = txt.includes('list');
+
+      if (!safeCall('toggleListView', toList)) {
+        document.body.classList.toggle('list-view', toList);
+      }
+
+      viewBtn.textContent = toList
+        ? 'Switch to Grid View'
+        : 'Switch to List View';
+
+      dispatchFiltersChanged();
+    });
   }
 
-  // ---------- Wiring ----------
-  document.addEventListener("DOMContentLoaded", () => {
-    ensureBanner();
-    banner("[listeners] DOMContentLoaded: wiring...");
+  // ---------- search ----------
+  const search =
+    qs('#searchInput') ||
+    qsa('input').find(i =>
+      (i.placeholder || '').toLowerCase().includes('search')
+    );
 
-    // Grid columns: buttons with text "2" "3" "4"
-    qsAll("button").forEach((btn) => {
-      const t = (btn.textContent || "").trim();
-      if (t !== "2" && t !== "3" && t !== "4") return;
+  if (search) {
+    search.addEventListener('input', dispatchFiltersChanged);
+  }
 
-      btn.addEventListener("click", (e) => {
+  // ---------- sort ----------
+  const sort =
+    qs('#sortSelect') ||
+    qs('#sortDropdown') ||
+    qs('select');
+
+  if (sort) {
+    sort.addEventListener('change', dispatchFiltersChanged);
+  }
+
+  // ---------- checkboxes ----------
+  qsa('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', dispatchFiltersChanged);
+  });
+
+  // ---------- export ----------
+  qsa('button').forEach(btn => {
+    const t = (btn.textContent || '').toLowerCase();
+
+    if (t.includes('export')) {
+      btn.addEventListener('click', e => {
         e.preventDefault();
-        const n = parseInt(t, 10);
-
-        // Try app handler first, fallback to CSS
-        if (!safeCall("setGridColumns", n)) {
-          const container =
-            document.getElementById("cardPool") ||
-            document.getElementById("cardPoolGrid") ||
-            document.querySelector(".card-pool") ||
-            document.querySelector(".card-grid");
-          if (container) {
-            container.style.display = "grid";
-            container.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
-          }
+        if (
+          !safeCall('exportDeck') &&
+          !safeCall('exportDeckAsLackeyText') &&
+          !safeCall('exportDeckAsText')
+        ) {
+          console.error('[listeners] No export function found');
         }
       });
-    });
+    }
 
-    // Switch view button
-    const viewBtn = wireButtonByText("switch to", (btn) => {
-      const txt = (btn.textContent || "").toLowerCase();
-      const goingList = txt.includes("list");
-
-      // Try app handler first, fallback to body class
-      if (!safeCall("toggleListView", goingList)) {
-        document.body.classList.toggle("list-view", goingList);
-      }
-
-      // Always update label so you can see it worked
-      btn.textContent = goingList ? "Switch to Grid View" : "Switch to List View";
-    });
-
-    // Export (try several names)
-    wireButtonByText("export", () => {
-      if (
-        !safeCall("exportDeck") &&
-        !safeCall("exportDeckAsLackeyText") &&
-        !safeCall("exportDeckAsText")
-      ) {
-        banner("[listeners] No export function found on window/window.AEW");
-      }
-    });
-
-    // Import
-    wireButtonByText("import", () => {
-      if (!safeCall("importDeck")) {
-        banner("[listeners] importDeck() not found on window/window.AEW");
-      }
-    });
-
-    banner("[listeners] wiring complete");
+    if (t.includes('import')) {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        if (!safeCall('importDeck')) {
+          console.error('[listeners] importDeck() not found');
+        }
+      });
+    }
   });
-})();
+
+  console.log('[listeners] All event listeners initialized');
+}
