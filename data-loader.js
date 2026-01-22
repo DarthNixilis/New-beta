@@ -5,12 +5,9 @@ export async function loadGameData() {
   const searchResults = document.getElementById('searchResults');
 
   try {
-    if (searchResults) {
-      searchResults.innerHTML = '<p>Loading card data...</p>';
-    }
+    if (searchResults) searchResults.innerHTML = '<p>Loading card data...</p>';
 
-    // Option B: everything in repo root, relative to the current page.
-    // This works across New-beta, New-public, or any renamed repo.
+    // Option B: root files, relative to the current page (repo name never appears)
     const cacheBuster = Date.now();
     const cardDbUrl = `./cardDatabase.txt?v=${cacheBuster}`;
     const keywordsUrl = `./keywords.txt?v=${cacheBuster}`;
@@ -49,7 +46,7 @@ export async function loadGameData() {
           }
         });
 
-        // Normalize to your internal model
+        // Normalize to internal model
         card.title = card['Card Name'];
         card.card_type = card['Type'];
         card.cost = card['Cost'] === 'N/a' ? null : card['Cost'];
@@ -58,7 +55,6 @@ export async function loadGameData() {
 
         card.text_box = { raw_text: card['Card Raw Game Text'] };
 
-        // Keywords array
         if (card.Keywords) {
           card.text_box.keywords = card.Keywords
             .split(',')
@@ -68,7 +64,6 @@ export async function loadGameData() {
           card.text_box.keywords = [];
         }
 
-        // Traits array
         if (card.Traits) {
           card.text_box.traits = card.Traits
             .split(',')
@@ -117,7 +112,7 @@ export async function loadGameData() {
 
     return true;
   } catch (error) {
-    console.error("Fatal Error during data load:", error);
+    console.error('Fatal Error during data load:', error);
 
     if (searchResults) {
       searchResults.innerHTML =
