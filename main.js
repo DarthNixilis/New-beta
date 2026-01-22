@@ -2,24 +2,27 @@
 import { loadGameData } from './data-loader.js';
 import { initializeApp } from './app-init.js';
 
-// Check if dependencies are loaded
-console.log("JSZip available:", typeof window.JSZip !== 'undefined');
-console.log("html2canvas available:", typeof html2canvas !== 'undefined');
-
-async function startApp() {
-    const dataLoaded = await loadGameData();
-    if (dataLoaded) {
-        initializeApp();
-        // Test that exports are available
-        window.testExport = async () => {
-            console.log("Test export button clicked");
-            const { exportAllCardsAsImages } = await import('./master-export.js');
-            await exportAllCardsAsImages();
-        };
-    }
+function logDeps() {
+  console.log("JSZip available:", typeof window.JSZip !== 'undefined');
+  console.log("html2canvas available:", typeof window.html2canvas !== 'undefined');
 }
 
-// Wait a bit for scripts to load
-setTimeout(() => {
-    startApp();
-}, 500);
+async function startApp() {
+  logDeps();
+
+  const ok = await loadGameData();
+  if (!ok) return;
+
+  initializeApp();
+
+  // Keep your test button working
+  window.testExport = async () => {
+    console.log("Test export button clicked");
+    const { exportAllCardsAsImages } = await import('./master-export.js');
+    await exportAllCardsAsImages();
+  };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  startApp();
+});

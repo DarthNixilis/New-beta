@@ -1,4 +1,7 @@
 // data-loader.js
+// Loads cardDatabase.txt + keywords.txt from the SAME FOLDER as index.html
+// This is "Option B" and is the cleanest way to go beta -> public smoothly.
+
 import * as state from './config.js';
 
 export async function loadGameData() {
@@ -7,56 +10,59 @@ export async function loadGameData() {
   try {
     if (searchResults) searchResults.innerHTML = '<p>Loading card data...</p>';
 
-    // Option B: root files, relative to the current page (repo name never appears)
-    const cacheBuster = Date.now();
-    const cardDbUrl = `./cardDatabase.txt?v=${cacheBuster}`;
-    const keywordsUrl = `./keywords.txt?v=${cacheBuster}`;
+    // RELATIVE PATHS (works in /New-beta/, /public/, local server, etc.)
+    const cacheBust = `v=${Date.now()}`;
+    const cardDbUrl = `./cardDatabase.txt?${cacheBust}`;
+    const keywordsUrl = `./keywords.txt?${cacheBust}`;
 
     const [cardResponse, keywordResponse] = await Promise.all([
       fetch(cardDbUrl),
       fetch(keywordsUrl),
     ]);
 
-    if (!cardResponse.ok) {
-      throw new Error(`Could not load cardDatabase.txt (Status: ${cardResponse.status})`);
-    }
-    if (!keywordResponse.ok) {
-      throw new Error(`Could not load keywords.txt (Status: ${keywordResponse.status})`);
-    }
+    if (!cardResponse.ok) throw new Error(`Could not load cardDatabase.txt (Status: ${cardResponse.status})`);
+    if (!keywordResponse.ok) throw new Error(`Could not load keywords.txt (Status: ${keywordResponse.status})`);
 
-    // ---- Parse cards TSV ----
+    // -------------------------
+    // Parse card TSV
+    // -------------------------
     const tsvData = await cardResponse.text();
     const cardLines = tsvData.trim().split(/\r?\n/);
+    if (cardLines.length < 2) throw new Error('cardDatabase.txt looks empty or malformed.');
+
     const cardHeaders = cardLines.shift().trim().split('\t').map(h => h.trim());
 
     const parsedCards = cardLines
       .map(line => {
         const values = line.split('\t');
-        const card = {};
-
+        const row = {};
         cardHeaders.forEach((header, index) => {
-          const value = (values[index] || '').trim();
-
-          if (value === '' || value.toLowerCase() === 'null') {
-            card[header] = null;
-          } else if (!isNaN(value) && value !== '') {
-            card[header] = Number(value);
-          } else {
-            card[header] = value;
-          }
+          const value = (values[index] ?? '').toString().trim();
+          if (value === '' || value.toLowerCase() === 'null') row[header] = null;
+          else if (!isNaN(value) && value !== '') row[header] = Number(value);
+          else row[header] = value;
         });
 
-        // Normalize to internal model
-        card.title = card['Card Name'];
-        card.card_type = card['Type'];
-        card.cost = card['Cost'] === 'N/a' ? null : card['Cost'];
-        card.damage = card['Damage'] === 'N/a' ? null : card['Damage'];
-        card.momentum = card['Momentum'] === 'N/a' ? null : card['Momentum'];
+        // Map your TSV columns to the in-app model
+        const card = {};
+        card.title = row['Card Name'] ?? null;
+        card.card_type = row['Type'] ?? null;
 
-        card.text_box = { raw_text: card['Card Raw Game Text'] };
+        // Normalize stats (keep null when N/a)
+        const cost = row['Cost'];
+        const damage = row['Damage'];
+        const momentum = row['Momentum'];
 
-        if (card.Keywords) {
-          card.text_box.keywords = card.Keywords
+        card.cost = (cost === 'N/a' || cost === 'N/A') ? null : cost;
+        card.damage = (damage === 'N/a' || damage === 'N/A') ? null : damage;
+        card.momentum = (momentum === 'N/a' || momentum === 'N/A') ? null : momentum;
+
+        // Raw text
+        card.text_box = { raw_text: row['Card Raw Game Text'] ?? '' };
+
+        // Keywords
+        if (row['Keywords']) {
+          card.text_box.keywords = row['Keywords']
             .split(',')
             .map(name => ({ name: name.trim() }))
             .filter(k => k.name);
@@ -64,14 +70,15 @@ export async function loadGameData() {
           card.text_box.keywords = [];
         }
 
-        if (card.Traits) {
-          card.text_box.traits = card.Traits
+        // Traits
+        if (row['Traits']) {
+          card.text_box.traits = row['Traits']
             .split(',')
             .map(traitStr => {
-              const [name, value] = traitStr.split(':');
+              const parts = traitStr.split(':');
               return {
-                name: (name || '').trim(),
-                value: value ? value.trim() : undefined,
+                name: (parts[0] ?? '').trim(),
+                value: parts.length > 1 ? parts.slice(1).join(':').trim() : undefined,
               };
             })
             .filter(t => t.name);
@@ -79,47 +86,53 @@ export async function loadGameData() {
           card.text_box.traits = [];
         }
 
+        // Pass through any other columns you care about later
+        // Example: Signature For, Wrestler Kit, etc.
+        Object.keys(row).forEach(k => {
+          if (!(k in card)) card[k] = row[k];
+        });
+
         return card;
       })
-      .filter(card => card && card.title);
+      .filter(card => card.title && card.card_type);
 
     state.setCardDatabase(parsedCards);
 
-    // ---- Parse keywords file ----
+    // -------------------------
+    // Parse keywords.txt (Key: Definition)
+    // -------------------------
     const keywordText = await keywordResponse.text();
     const parsedKeywords = {};
     keywordText
       .trim()
       .split(/\r?\n/)
       .forEach(line => {
-        const l = line.trim();
-        if (!l) return;
-
-        const parts = l.split(':');
+        const clean = line.trim();
+        if (!clean) return;
+        const parts = clean.split(':');
         if (parts.length < 2) return;
-
         const key = parts[0].trim();
         const value = parts.slice(1).join(':').trim();
-        if (!key) return;
-
-        parsedKeywords[key] = value;
+        if (key) parsedKeywords[key] = value;
       });
 
     state.setKeywordDatabase(parsedKeywords);
+
+    // Build title caches for fast lookups (exporter/importer/deck logic depends on this)
     state.buildCardTitleCache();
 
-    console.log(`Loaded ${parsedCards.length} cards. Keywords: ${Object.keys(parsedKeywords).length}`);
-
+    console.log(`Loaded ${state.cardDatabase.length} cards. Keywords: ${Object.keys(state.keywordDatabase).length}`);
     return true;
   } catch (error) {
     console.error('Fatal Error during data load:', error);
 
     if (searchResults) {
-      searchResults.innerHTML =
-        `<div style="color: red; padding: 20px; text-align: center;">
-           <strong>FATAL ERROR:</strong> ${error.message}<br><br>
-           <button onclick="location.reload()">Retry</button>
-         </div>`;
+      searchResults.innerHTML = `
+        <div style="color: red; padding: 20px; text-align: center;">
+          <strong>FATAL ERROR:</strong> ${error.message}<br><br>
+          <button onclick="location.reload()">Retry</button>
+        </div>
+      `;
     }
 
     return false;
