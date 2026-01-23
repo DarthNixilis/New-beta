@@ -148,17 +148,10 @@ export function initializeAllEventListeners(refreshCardPool) {
 
     exportAsImageBtn.addEventListener('click', exportDeckAsImage);
     
-    // Export All Cards button with fallback
+    // Export All Cards button - now shows modal
     if (exportAllCardsBtn) {
-        exportAllCardsBtn.addEventListener('click', async () => {
-            try {
-                await exportAllCardsAsImages();
-            } catch (error) {
-                console.error("Export failed:", error);
-                if (confirm("ZIP export failed. Would you like to try downloading images individually instead?")) {
-                    await exportAllCardsAsImagesFallback();
-                }
-            }
+        exportAllCardsBtn.addEventListener('click', () => {
+            showExportModal();
         });
     }
     
@@ -186,6 +179,12 @@ export function initializeAllEventListeners(refreshCardPool) {
     const cardModal = document.getElementById('cardModal');
     const modalCloseButton = cardModal.querySelector('.modal-close-button');
 
+    // Export Modal elements
+    const exportModal = document.getElementById('exportModal');
+    const exportModalCloseBtn = exportModal.querySelector('.modal-close-button');
+    const cancelExportBtn = document.getElementById('cancelExport');
+    const startExportBtn = document.getElementById('startExport');
+
     importDeckBtn.addEventListener('click', () => {
         importModal.style.display = 'flex';
         document.getElementById('importStatus').textContent = '';
@@ -211,6 +210,62 @@ export function initializeAllEventListeners(refreshCardPool) {
             reader.readAsText(file);
         }
     });
+    
+    // Export Modal listeners
+    exportModalCloseBtn.addEventListener('click', () => exportModal.style.display = 'none');
+    cancelExportBtn.addEventListener('click', () => exportModal.style.display = 'none');
+    exportModal.addEventListener('click', (e) => { 
+        if (e.target === exportModal) exportModal.style.display = 'none'; 
+    });
+    
+    startExportBtn.addEventListener('click', async () => {
+        const exportType = document.querySelector('input[name="exportType"]:checked').value;
+        const exportSize = document.querySelector('input[name="exportSize"]:checked').value;
+        const exportFormat = document.querySelector('input[name="exportFormat"]:checked').value;
+        const exportNaming = document.querySelector('input[name="exportNaming"]:checked').value;
+        
+        let width = 400, height = 600;
+        
+        if (exportSize === 'custom') {
+            width = parseInt(document.getElementById('customWidth').value) || 400;
+            height = parseInt(document.getElementById('customHeight').value) || 600;
+        }
+        
+        // Show progress bar
+        document.getElementById('exportProgress').style.display = 'block';
+        startExportBtn.disabled = true;
+        cancelExportBtn.disabled = true;
+        
+        try {
+            const { exportCardsWithOptions } = await import('./master-export.js');
+            await exportCardsWithOptions({
+                cardType: exportType,
+                imageSize: exportSize,
+                format: exportFormat,
+                naming: exportNaming,
+                width: width,
+                height: height
+            });
+            
+            // Close modal after successful export
+            setTimeout(() => {
+                exportModal.style.display = 'none';
+                startExportBtn.disabled = false;
+                cancelExportBtn.disabled = false;
+                document.getElementById('exportProgress').style.display = 'none';
+                // Reset progress bar
+                document.getElementById('exportProgressBar').style.width = '0%';
+                document.getElementById('exportProgressBar').style.background = '#4CAF50';
+            }, 2000);
+            
+        } catch (error) {
+            console.error("Export failed:", error);
+            startExportBtn.disabled = false;
+            cancelExportBtn.disabled = false;
+            alert(`Export failed: ${error.message}`);
+        }
+    });
+
     modalCloseButton.addEventListener('click', () => cardModal.style.display = 'none');
     cardModal.addEventListener('click', (e) => { if (e.target === cardModal) cardModal.style.display = 'none'; });
     importModal.addEventListener('click', (e) => { if (e.target === importModal) importModal.style.display = 'none'; });
@@ -218,6 +273,7 @@ export function initializeAllEventListeners(refreshCardPool) {
         if (e.key === 'Escape') {
             cardModal.style.display = 'none';
             importModal.style.display = 'none';
+            exportModal.style.display = 'none';
             if (state.lastFocusedElement) { state.lastFocusedElement.focus(); }
         }
     });
@@ -288,4 +344,37 @@ function createTSVExportButton() {
     }
     
     return tsvBtn;
+}
+
+// Export Modal function
+function showExportModal() {
+    // Reset form
+    document.querySelector('input[name="exportType"][value="all"]').checked = true;
+    document.querySelector('input[name="exportSize"][value="standard"]').checked = true;
+    document.querySelector('input[name="exportFormat"][value="zip"]').checked = true;
+    document.querySelector('input[name="exportNaming"][value="pascal"]').checked = true;
+    
+    // Reset custom size inputs
+    document.getElementById('customWidth').value = '400';
+    document.getElementById('customHeight').value = '600';
+    
+    // Hide progress bar
+    document.getElementById('exportProgress').style.display = 'none';
+    
+    // Enable buttons
+    document.getElementById('startExport').disabled = false;
+    document.getElementById('cancelExport').disabled = false;
+    
+    // Reset progress bar
+    const progressBar = document.getElementById('exportProgressBar');
+    progressBar.style.width = '0%';
+    progressBar.style.background = '#4CAF50';
+    
+    // Clear status text
+    document.getElementById('exportProgressText').textContent = 'Preparing export...';
+    document.getElementById('exportProgressPercent').textContent = '0%';
+    document.getElementById('exportStatus').textContent = '';
+    
+    // Show modal
+    document.getElementById('exportModal').style.display = 'flex';
 }
