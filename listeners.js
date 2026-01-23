@@ -1,3 +1,5 @@
+[file name]: listeners.js
+[file content begin]
 // listeners.js
 import * as state from './config.js';
 import * as ui from './ui.js';
@@ -46,6 +48,8 @@ export function initializeAllEventListeners(refreshCardPool) {
     // DECK LISTENERS
     const wrestlerSelect = document.getElementById('wrestlerSelect');
     const managerSelect = document.getElementById('managerSelect');
+    const callNameSelect = document.getElementById('callNameSelect');
+    const factionSelect = document.getElementById('factionSelect');
     const startingDeckList = document.getElementById('startingDeckList');
     const purchaseDeckList = document.getElementById('purchaseDeckList');
     const personaDisplay = document.getElementById('personaDisplay');
@@ -57,6 +61,7 @@ export function initializeAllEventListeners(refreshCardPool) {
     // Create or get the LackeyCCG export button
     const exportLackeyBtn = document.getElementById('exportLackeyBtn') || createLackeyExportButton();
 
+    // Wrestler change listener
     wrestlerSelect.addEventListener('change', (e) => {
         const newWrestler = state.cardTitleCache[e.target.value] || null;
         state.setSelectedWrestler(newWrestler);
@@ -64,6 +69,8 @@ export function initializeAllEventListeners(refreshCardPool) {
         refreshCardPool();
         state.saveStateToCache();
     });
+    
+    // Manager change listener
     managerSelect.addEventListener('change', (e) => {
         const newManager = state.cardTitleCache[e.target.value] || null;
         state.setSelectedManager(newManager);
@@ -71,15 +78,43 @@ export function initializeAllEventListeners(refreshCardPool) {
         refreshCardPool();
         state.saveStateToCache();
     });
+    
+    // Call Name change listener
+    if (callNameSelect) {
+        callNameSelect.addEventListener('change', (e) => {
+            const newCallName = state.cardTitleCache[e.target.value] || null;
+            state.setSelectedCallName(newCallName);
+            ui.renderPersonaDisplay();
+            refreshCardPool();
+            state.saveStateToCache();
+        });
+    }
+    
+    // Faction change listener
+    if (factionSelect) {
+        factionSelect.addEventListener('change', (e) => {
+            const newFaction = state.cardTitleCache[e.target.value] || null;
+            state.setSelectedFaction(newFaction);
+            ui.renderPersonaDisplay();
+            refreshCardPool();
+            state.saveStateToCache();
+        });
+    }
+    
+    // Deck list click handlers
     [startingDeckList, purchaseDeckList, personaDisplay].forEach(container => {
         container.addEventListener('click', (e) => {
             const target = e.target;
             const cardTitle = target.dataset.title || target.closest('[data-title]')?.dataset.title;
             if (!cardTitle) return;
-            if (target.tagName === 'BUTTON' && target.dataset.deck) { deck.removeCardFromDeck(cardTitle, target.dataset.deck); } 
-            else { ui.showCardModal(cardTitle); }
+            if (target.tagName === 'BUTTON' && target.dataset.deck) { 
+                deck.removeCardFromDeck(cardTitle, target.dataset.deck); 
+            } else { 
+                ui.showCardModal(cardTitle); 
+            }
         });
     });
+    
     clearDeckBtn.addEventListener('click', () => {
         if (confirm('Are you sure you want to clear the entire deck?')) {
             state.setStartingDeck([]);
@@ -87,6 +122,7 @@ export function initializeAllEventListeners(refreshCardPool) {
             ui.renderDecks();
         }
     });
+    
     exportDeckBtn.addEventListener('click', () => {
         const text = generatePlainTextDeck();
         const blob = new Blob([text], { type: 'text/plain' });
@@ -199,3 +235,4 @@ function createLackeyExportButton() {
     
     return lackeyBtn;
 }
+[file content end]
