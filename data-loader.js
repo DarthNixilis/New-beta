@@ -2,90 +2,138 @@
 import * as state from './config.js';
 import { initializeApp } from './app-init.js';
 
-// --- DYNAMIC PATH DETECTION ---
+// Simple path detection
 function getBasePath() {
     const path = window.location.pathname;
-    // This handles project pages like /RepoName/
-    // It finds the first slash after the initial one.
-    const secondSlashIndex = path.indexOf('/', 1); 
+    const secondSlashIndex = path.indexOf('/', 1);
     if (secondSlashIndex !== -1) {
-        // Extracts the repository name part (e.g., "/RepoName/")
         return path.substring(0, secondSlashIndex + 1);
     }
-    // Fallback for root deployment (e.g., username.github.io) or local server
     return '/';
 }
-// --- END DYNAMIC PATH DETECTION ---
 
 export async function loadGameData() {
     const searchResults = document.getElementById('searchResults');
+    
     try {
         searchResults.innerHTML = '<p>Loading card data...</p>';
-
+        
         const basePath = getBasePath();
-        // Use the dynamically determined base path to build the correct URL
-        const cardDbUrl = `${basePath}cardDatabase.txt?v=${new Date().getTime()}`;
-        const keywordsUrl = `${basePath}keywords.txt?v=${new Date().getTime()}`;
-
-        console.log(`Attempting to load data from: ${basePath}`);
-
+        const cardDbUrl = basePath + 'cardDatabase.txt?v=' + new Date().getTime();
+        const keywordsUrl = basePath + 'keywords.txt?v=' + new Date().getTime();
+        
+        console.log('Loading from:', basePath);
+        
+        // Fetch both files
         const [cardResponse, keywordResponse] = await Promise.all([
             fetch(cardDbUrl),
             fetch(keywordsUrl)
         ]);
-
-        if (!cardResponse.ok) throw new Error(`Could not load cardDatabase.txt (Status: ${cardResponse.status})`);
-        if (!keywordResponse.ok) throw new Error(`Could not load keywords.txt (Status: ${keywordResponse.status})`);
         
+        if (!cardResponse.ok) {
+            throw new Error('Failed to load card database: ' + cardResponse.status);
+        }
+        if (!keywordResponse.ok) {
+            throw new Error('Failed to load keywords: ' + keywordResponse.status);
+        }
+        
+        // Parse card data
         const tsvData = await cardResponse.text();
-        const cardLines = tsvData.trim().split(/\r?\n/);
-        const cardHeaders = cardLines.shift().trim().split('\t').map(h => h.trim());
-        const parsedCards = cardLines.map(line => {
+        const lines = tsvData.trim().split(/\r?\n/);
+        const headers = lines[0].trim().split('\t').map(h => h.trim());
+        
+        const cards = [];
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i];
+            if (!line.trim()) continue;
+            
             const values = line.split('\t');
             const card = {};
-            cardHeaders.forEach((header, index) => {
-                const value = (values[index] || '').trim();
-                if (value === 'null' || value === '') card[header] = null;
-                else if (!isNaN(value) && value !== '') card[header] = Number(value);
-                else card[header] = value;
-            });
-            card.title = card['Card Name'];
-            card.card_type = card['Type'];
-            card.cost = card['Cost'] === 'N/a' ? null : card['Cost'];
-            card.damage = card['Damage'] === 'N/a' ? null : card['Damage'];
-            card.momentum = card['Momentum'] === 'N/a' ? null : card['Momentum'];
-            card.text_box = { raw_text: card['Card Raw Game Text'] };
-            if (card.Keywords) card.text_box.keywords = card.Keywords.split(',').map(name => ({ name: name.trim() })).filter(k => k.name);
-            else card.text_box.keywords = [];
-            if (card.Traits) card.text_box.traits = card.Traits.split(',').map(traitStr => {
-                const [name, value] = traitStr.split(':');
-                return { name: name.trim(), value: value ? value.trim() : undefined };
-            }).filter(t => t.name);
-            else card.text_box.traits = [];
-            return card;
-        }).filter(card => card.title);
-        state.setCardDatabase(parsedCards);
-
-        const keywordText = await keywordResponse.text();
-        const parsedKeywords = {};
-        const keywordLines = keywordText.trim().split(/\r?\n/);
-        keywordLines.forEach(line => {
-            if (line.trim() === '') return;
-            const parts = line.split(':');
-            if (parts.length >= 2) {
-                const key = parts[0].trim();
-                const value = parts.slice(1).join(':').trim();
-                parsedKeywords[key] = value;
+            
+            for (let j = 0; j < headers.length; j++) {
+                const header = headers[j];
+                let value = values[j] || '';
+                value = value.trim();
+                
+                if (value === '' || value === 'null') {
+                    card[header] = null;
+                } else if (!isNaN(value) && value !== '') {
+                    card[header] = Number(value);
+                } else {
+                    card[header] = value;
+                }
             }
-        });
-        state.setKeywordDatabase(parsedKeywords);
+            
+            // Normalize card structure
+            card.title = card['Card Name'] || '';
+            card.card_type = card['Type'] || '';
+            card.cost = (card['Cost'] === 'N/a' || card['Cost'] === 'N/A') ? null : card['Cost'];
+            card.damage = (card['Damage'] === 'N/a' || card['Damage'] === 'N/A') ? null : card['Damage'];
+            card.momentum = (card['Momentum'] === 'N/a' || card['Momentum'] === 'N/A') ? null : card['Momentum'];
+            
+            // Parse text box
+            card.text_box = {
+                raw_text: card['Card Raw Game Text'] || ''
+            };
+            
+            // Parse keywords
+            if (card.Keywords) {
+                card.text_box.keywords = card.Keywords.split(',')
+                    .map(k => ({ name: k.trim() }))
+                    .filter(k => k.name);
+            } else {
+                card.text_box.keywords = [];
+            }
+            
+            // Parse traits
+            if (card.Traits) {
+                card.text_box.traits = card.Traits.split(',')
+                    .map(t => {
+                        const parts = t.split(':');
+                        return {
+                            name: parts[0].trim(),
+                            value: parts[1] ? parts[1].trim() : undefined
+                        };
+                    })
+                    .filter(t => t.name);
+            } else {
+                card.text_box.traits = [];
+            }
+            
+            if (card.title) {
+                cards.push(card);
+            }
+        }
         
+        state.setCardDatabase(cards);
+        
+        // Parse keywords
+        const keywordText = await keywordResponse.text();
+        const keywordLines = keywordText.trim().split(/\r?\n/);
+        const keywords = {};
+        
+        for (const line of keywordLines) {
+            if (!line.trim()) continue;
+            const colonIndex = line.indexOf(':');
+            if (colonIndex > 0) {
+                const key = line.substring(0, colonIndex).trim();
+                const value = line.substring(colonIndex + 1).trim();
+                keywords[key] = value;
+            }
+        }
+        
+        state.setKeywordDatabase(keywords);
         state.buildCardTitleCache();
+        
+        console.log('Successfully loaded', cards.length, 'cards');
         return true;
-
+        
     } catch (error) {
-        console.error("Fatal Error during data load:", error);
-        searchResults.innerHTML = `<div style="color: red; padding: 20px; text-align: center;"><strong>FATAL ERROR:</strong> ${error.message}<br><br><button onclick="location.reload()">Retry</button></div>`;
+        console.error('Fatal error loading game data:', error);
+        searchResults.innerHTML = '<div style="color: red; padding: 20px; text-align: center;">' +
+            '<strong>FATAL ERROR:</strong> ' + error.message + '<br><br>' +
+            '<button onclick="location.reload()">Retry</button>' +
+            '</div>';
         return false;
     }
 }
