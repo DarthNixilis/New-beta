@@ -1,0 +1,222 @@
+Name	Type	Set	Cost	Damage	Momentum	Target	Traits	Starting	Game Text
+Sunglasses	Action	Advanced	6	0	4		Item		(Sloth) Ready Enters - Draw three cards then discard a card.   Staggered - Your (Slothx2 needed) cards have Relentless. 
+Outsmart	Action	Advanced	6	0	0				Uses 2  Tie-Up Action - Commit and remove a use counter: Play a maneuver, it gains Cunning Attack.
+Spit at Opponent 	Action	Advanced	4	0	2				Cycling. Ready Enters - Opponent chooses one: Discard a Response or pay 4M and lose 4 Stamina
+Gimmick Infringement	Action	Advanced	6	0	2				Enters - Choose a card in opponent's ring, Attempt a copy of that. Taz - That token gains Permanent this turn. 
+Sniper	Action	Advanced	1	0	3				Enters - Choose a Strike in your discard pile. If this is the Tie-Up phase and it has T:H you may play that card. Otherwise put it beneath your draw deck and draw a card. 
+Word of the Day	Action	Advanced	4	0	2			The Conglomeration	Enters - Choose any number of cards from your discard and market. You may pay 1M for each card to Tuck that card. If cards from your discard are tucked this way draw a card and gain 2 Stamina. Then refill your Market. 
+Compassionate	Action	Advanced	4	0					Enters - Each player puts a card from their Ring into their discard, they also Tuck a card from their Market, refill each players Market. 
+Father	Action	Advanced	0	0	1				Enters - Look at the top two cards of your Draw deck. Put one in your hand, discard the rest.  The Patriarchy - You may look at an additional card. Christian Cage - You may look at an additional card.  The Patriarch - You may look at an additional card. 
+Cash Cannons	Action	Advanced	3	0	2				Enters - Market two cards
+Graphics Mistake	Action	Advanced	6	0	3				Enters - Opponent discards a card, then Tucks a card from both their discard and market. 
+Rainmaker Pose	Action	Advanced	8	0	3			Kazuchika Okada Wrestler	Enters - Pay X Momentum to look at the top X cards of your Draw Deck, you may Tuck any number of those cards.  Special - If this would be put into your Discard from anywhere shuffle it into your Draw Deck instead. 
+Maximum Effort 	Action	Advanced	4	0	3				Enters - Play a maneuver from hand. It's Enters abilities trigger an additional time.
+Throw Money Around	Action	Advanced	0	0	1				Enters - Purchase a card, refill your Market. 
+BTE	Action	Advanced	4	0	2			The Elite	Enters - Put a card from your discard beneath your draw or purchase deck. Then draw two cards and gain 2 Stamina. 
+Sacrificing	Action	Advanced	2	0	3				Enters - Put a card from your ring into your Discard. Each player loses Stamina equal to its Momentum, you may also Tuck cards from your discard equal to its cost. 
+Fatigue	Action	Advanced	2	0	2				Enters - Put two -1M counters on a non-persona card in Opponent's Ring. If that card has 0M, put it into opponent's discard pile. 
+Versatile Striker	Action	Advanced	4	0	2				Enters - Reveal cards from the top of your Draw Deck until you reveal a Strike, play that card. If you have a Grapple in your ring it gets +3D, if you have a Submission in your ring it gains "Enters - Stun opponent then Scout." 
+Feeling Refreshed	Action	Advanced	1	0	2				Enters - Uncommit a card in your ring and gain 1 Stamina. 
+Skilled Boxer	Action	Advanced	3	0	2				Enters - You may purchase a Punch from your Market.  Ongoing - Your Punches are -1C. 
+Maintain Hold	Action	Advanced	7	0	2				Follow-Up - Enters - When played after a Submission Choose one: Attempt the Submission this followed or Try to Submit Opponent using the Followed Submission
+Spray Mist	Action	Advanced	4	0	3				Hidden  Enters - Opponent discards a card.  Turned - Create a Blinded token in Opponent's Ring.
+Elevated	Action	Advanced	5	0	3			Will Ospreay Wrestler	Hidden  Enters - You may look at the top four cards of your Purchase Deck and Tuck any of them. Put the rest back in any order.  Turned - Play the top card of your Purchase Deck face down. If it's reversed, Tuck it. 
+Lights Go Out	Action	Advanced	4	0	2				Hidden, Permanent.  Ongoing - Your face down cards have Permanent.  Turned - Play a card with Hidden from your discard face down. 
+Hide Under the Ring	Action	Advanced	2	0	2				Hidden.  Ongoing - Your maneuvers played face down have Pressing
+Friend of the Shadows	Action	Advanced	3	0	1				Hidden. Ongoing - Your face down cards have Permanent 
+Copeland Action	Action	Advanced	8	0	3			Adam Copeland Wrestler	Ongoing - Cards in your discard have Relentless if a copy of that card is in your ring.  Enters - You may discard any number of cards, draw that many cards.
+Where Did They Come From?	Action	Advanced	6	0	3				Ongoing - Cards played from outside your hand get +1D. (This includes Attempted tokens) 
+Locked Out 	Action	Advanced	3	0	2				Ongoing - Choose a card in opponent's market. They can't purchase that card. 
+Shake It Off 	Action	Advanced	2	0	2				Ongoing - Choose a card in opponent's ring. That card loses all abilities. 
+Selfless	Action	Advanced	8	0	4				Ongoing - Opponent's Hand, Hold, and Market are all +1.  Enters - Draw three cards and gain 3 Stamina. 
+Family Portrait	Action	Advanced	8	0	2			Don Callis Family	Ongoing - Whenever you Tuck a card, opponent must also Tuck a card from their discard. 
+Sharp Tongue	Action	Advanced	6	0	2				Ongoing - Your Actions are +1D. 
+Respected	Action	Advanced	3	0					Ongoing - Your cards played from outside your hand gain Pressing
+Baddest Plan on the Planet 	Action	Advanced	5	0	4		Punch	Mike Tyson Wrestler	Ongoing - Your gain Punches "Enters - Stun opponent then Scout". Enters - Create a Baddest Hands on the Planet Token in your Ring. 
+Educated Feet 	Action	Advanced	6	0	3				Ongoing - Your Kicks are +2D. Tie-Up Enters - Give a Kick in your Market Sudden this turn, if you can't draw a card. Recovery Enters - Put up to two Kicks from your discard beneath your draw deck then gain 1 Stamina for each Kick in your ring.
+I Am Your Father	Action	Advanced	4	0	3			The Patriarchy	Ongoing - Your maneuvers played from outside your hand have Cunning Attack.  Enters - You may Attempt to Draw Heat.  Christian Cage Enters - Non-Maneuver cards in your Market gain Sudden this turn (this only gives this to cards currently in your Market)
+Lights Out	Action	Advanced	12	0	2				Ongoing - Your Punches have Sudden and +2M.
+Olympic Bronze Boxer	Action	Advanced	8	0	4			Anthony Ogogo Wrestler	Ongoing - Your Punches have Sudden. 
+We Hurt People	Action	Advanced	6	0	2				Ongoing - Your Responses gain Power Attack. 
+Inspirational	Action	Advanced	10	0	5				Permanent, Resilient. Ongoing - Your Hand is +1.  The Patriarchy - When this is discarded, draw a card. 
+Rally the Crowd 	Action	Advanced	1	0	2				Permanent, Sturdy
+Wise	Action	Advanced	9	0	4				Permanent.  Ongoing - Your cards are -1C.  Christian Cage Enters - Attempt to Anger the Crowd. 
+Crowd Favorite	Action	Advanced	4	0	0				Permanent. Action - Commit and choose one: -Gain 1 Stamina, then you may Cycle a card. OR -Attempt to Get a Pop, this loses Permanent.
+Study the Tapes 	Action	Advanced	3	0	2				Permanent. Enters - Search your Purchase Deck for a Reversal card and put it in your Market. 
+Disarmer	Action	Advanced	5	0	2				Permanent. Ongoing - Your maneuvers with T:A are +1D.
+Headhunter	Action	Advanced	5	0	2				Permanent. Ongoing - Your maneuvers with T:H are +1D.
+Man Can't Stand, Can't Fight	Action	Advanced	5	0	2				Permanent. Ongoing - Your maneuvers with T:L are +1D.
+Man Can't Breath Can't Fight	Action	Advanced	5	0	2				Permanent. Ongoing - Your maneuvers with T:T are +1D.
+Joe is Gonna Kill You	Action	Advanced	5	0	2			Samoa Joe Wrestler	Ready Enters - Draw two cards. Recovery Enters - You may tuck a  card from your discard. If you do search your Purchase Deck for a card that shares a type with the tucked card and put it in your Market. If you don't, your Hand is +2 this turn. 
+Devoted	Action	Advanced	1	0	2				Relentless. Enters - Discard the bottom card of your Draw deck then Scout. 
+Loved	Action	Advanced	7	0	2				Relentless. Enters - Opponent Commits a card in their ring and tucks a card from their discard.  Christian Cage - Gain Stamina equal to the Momentum of the committed card.  Patriarch - You may Purchase a card with cost equal to or less than the Momentum of the Tucked card. 
+Courageous	Action	Advanced	6	0	4				Resilient, Relentless. Enters - You may look at the top three cards of your Draw Deck. Tuck one, discard one, put one in your hand.   Patriarch Trigger - When discarded, Scout.
+Win If You Can	Action	Advanced	13	0	6			Taz Wrestler	Resilient. Ongoing - All Grapples are +2D. 
+Anger the Crowd	Action	Advanced	1	0	5				Special - +3M outside the Recovery Phase. 
+Generous	Action	Advanced	5	0	2				Sudden. Enters - Each player draws three cards and gains 3 Stamina.   The Patriarchy - Has Relentless. 
+Ready Up	Action	Advanced	1	0	2				Sudden. Enters - Uncommit a card
+Powerful Grappler	Action	Advanced	6	0	3				Tie-Up Enters - Play a Grapple from hand or discard. If played from hand it gains Power Attack. If reversed being played from discard, put it beneath your draw deck. 
+Cunning Striker 	Action	Advanced	6	0	2				Tie-Up Enters - Play a Strike from hand or discard. If played from hand it gains Cunning Attack
+Focused Submissionist 	Action	Advanced	6	0	3				Tie-Up Enters - Play a Submission from hand or discard. If played from hand it gains Focus Attack. If reversed being played from discard, put it beneath your draw deck. 
+Forethought	Action	Advanced	0	0	1				Uses 3. Action - Commit and remove a Use Counter: Scout
+Go For a Cheap Pop	Action	Advanced	1	0	0				Uses 4. Special - This is +1M for each Use Counter on it and when this becomes committed for any reason remove a Use Counter. 
+Chaos	Boon	Advanced	0	0	0				Ongoing - All maneuvers are +1D. Each Player's Hand is +1.
+Inspired	Boon	Advanced	0	0	1				Ongoing - Your Hand is +1.
+Beast 	Boon	Advanced	0	0	3				Ongoing - Your maneuvers are +1D
+Baddest Hands on the Planet 	Boon	Advanced	0	0	0				Permanent. Ongoing - Your Punches are +1D/+1M.
+The Rainmaker	Call Name	Advanced			6			The Rainmaker	None, isn't the Momentum enough? 
+Daddy Magic	Call Name	Advanced			2			Daddy Magic	Ongoing - Your Market is +1 if it contains an Action card
+The Gov'na	Call Name	Advanced			2		Boxer	The Gov'na	Ongoing - Your Punches are -1C.
+The Baddest Man on the Planet	Call Name	Advanced			2		Boxer	Baddest Man on the Planet	Ongoing - Your Punches are +1M.  Your Starting Draw Deck may contain up to 3C of Punches. 
+Native Beast	Call Name	Advanced			3			Native Beast	Your maneuvers with no printed abilities are -2C. 
+Patriarch	Call Name	Advanced			2			Patriarch	Your Starting deck may contain one copy of the following cards: Devoted, Sacrificing, Respected, and Compassionate. 
+The Rated-R Superstar	Call Name	Advanced			3			The Rated-R Superstar	Your Starting Draw Deck may contain an additional copy of three 0C cards, and may contain up to 4 total cost in cards. 
+Hangman	Call Name	Advanced			2			Hangman	Your Starting Draw Deck may contain one copy of the card Running Lariat and up to 3 cost of other cards. 
+Speedball	Call Name	Advanced			3			Speedball	Your Starting Draw Deck may contain up to 4 cost of Kicks, and 3 cost of other cards
+Iron	Call Name	Advanced			3		Boxer	Iron	Your starting draw deck may contain up to 4 cost of Punches and 3 cost of any other cards. 
+Samoan Submission Machine	Call Name	Advanced			2			Samoan Submission Machine	Your Starting Draw Deck may include one copy of the card Sleeper and up to 3 cost worth of other cards. 
+By God 	Call Name	Advanced			1			By God	Your Starting Draw deck may include up to 3 cost of any cards. Don Callis - You may also include one copy of Will of the Invisible Hand. 
+Timeless	Call Name	Advanced			1			Timeless	Your Starting Draw Deck may include up to 3 cost worth of Actions and 2 cost of any cards.
+Wild Thing	Call Name	Advanced			1			Wild Thing	Your Starting Draw Deck may include up to 3 cost worth of Maneuvers and 2 cost of any cards.
+The Patriarchy	Faction	Advanced			4			The Patriarchy	Flip - Choose a card in your Market to gain Sudden this turn, a card in your discard to gain Relentless this turn, Scout, then you may Attempt to Draw Heat. Christian Cage - You may pick an additional card from both your Market and Discard. 
+Don Callis Family 	Faction	Advanced			3			Don Callis Family	Flip - Choose up to three cards from your discard. Tuck one, put one beneath your draw deck, put one in your hand. Don Callis - Pick a fourth card, and any of the three modes. 
+The Hurt Syndicate	Faction	Advanced			2			The Hurt Syndicate	Flip - Create a Beast and an Inspired token in your ring. Create a Winded and Bell Ringer tokens in your opponent's ring. Choose one of those to gain Permanent this turn. 
+Death Riders	Faction	Advanced			2			Death Riders	Flip - Create two Chaos tokens in your ring. One of them gains Permanent this turn. 
+The Elite	Faction	Advanced			2			The Elite	Flip - Draw three cards. 
+The Conglomeration	Faction	Advanced			3			The Conglomeration	Flip - Pay XM. If X is 1 or more, draw a card. 3 or more gain 3 Stamina. If 5 or more you may Tuck any number of cards from your Market, refill your Market. If 7 or more put any number of cards from your discard beneath your draw deck and tuck any number of them.  Gain X Stamina. 
+Blackpool Combat Club 	Faction	Advanced			3			Blackpool Combat Club	Flip - Play a maneuver from your discard. It gains +3D and Permanent this turn.
+Muscle Buster	Grapple	Advanced	20*	14	14	H		Samoa Joe Wrestler	*Costs half when played from a location other than your hand (like from being granted Sudden or Relentless, or any other effect that tells you to play by paying) 
+Last Supper	Grapple	Advanced	13	5	5	T			Can Reverse any card if it is at least the second card played consecutively. Enters - Try to Pin opponent 
+Shoulder Capture Suplex	Grapple	Advanced	8	6	4	A	Suplex		Can Reverse any Kick
+School Boy	Grapple	Advanced	11	3	3	T			Can Reverse any maneuver with an Enters ability. Enters - Try to Pin opponent. 
+T-Bone Suplex	Grapple	Advanced	8	6	4	T	Suplex		Can Reverse any Punch
+Vertical Suplex	Grapple	Advanced	6	6	6	T	Suplex		Can Reverse any Suplex. 
+Stunner	Grapple	Advanced	14	10	12	H			Focus Attack  Follow Up - Has Sudden and Relentless if being played after a Kick.  Enters - Stun opponent, twice.
+Stundog Millionaire	Grapple	Advanced	8	6	6	H			Cunning Attack  Can Reverse High Risks, Suplexes, and Slams  Orange Cassidy - Can reverse any card that can beat you (Damage more than your Stamina, has Enters - Try to Pin Opponent, or Submit, or Knockout, or Passout)
+Fake Handshake	Grapple	Advanced	0	1	2	A			Cunning Attack 
+Ripcord	Grapple	Advanced	4	0	2	A	Setup		Enters - Choose one: Play a maneuver from your Market by paying for it. If it's reversed, Tuck it. OR Attempt to Lariat opponent 
+Fisherman's Suplex 	Grapple	Advanced	9	7	7	T	Suplex		Enters - Choose up to one card from each Market. Tuck those cards. 
+Powerbomb	Grapple	Advanced	9	10	10	T	Slam		Enters - Create a Winded token in your opponent's ring and a Beast token in your ring. Choose one of those to gain Permanent this turn.
+Fall-Away Slam	Grapple	Advanced	5	8	8	T	Slam		Enters - If you have a Strike in your ring put up to two cards from your discard beneath your draw deck, if you have a Submission in your ring Stun Opponent then Scout. 
+Deadeye 	Grapple	Advanced	9	6	6				Enters - Play a maneuver with T:T from your discard by paying for it. Hangman - Only need to pay half. Adam Page - It gains Power Attack. 
+Lateral Press	Grapple	Advanced	7	1	2	T	Setup		Enters - Try to Pin opponent 
+Bridging German Suplex	Grapple	Advanced	9	5	5	T	Suplex		Enters - Try to Pin opponent.   Capitalize - If this was played after Drop Step this is +4M for this Pin. 
+Roll Up	Grapple	Advanced	9	2	3	T			Follow-Up - Try to Pin opponent
+Beast Bomb	Grapple	Advanced	18	16	16	T	Slam	Nyla Rose Wrestler	Ongoing - Your maneuvers with no printed abilities are +3D. Enters - You may have this gain Permanent this turn. 
+Arm Breaker	Grapple	Advanced	8	6	6	A			Relentless
+Double Leg Takedown	Grapple	Advanced	5	3	3	L	Setup		Relentless. Enters - You may discard a card. If you do, you may play a maneuver from your discard. If that card is reversed, put it beneath your draw deck. 
+Styles Clash 	Grapple	Advanced	12	6	10	T			Resilient 
+Snap Dragon Suplex	Grapple	Advanced	6	6	6	H	Suplex		Sudden. Kenny Omega - Cost -2.
+Samoan Drop	Grapple	Advanced	3	6	6	T			This is +1D for each maneuver type in your ring (Strike, Grapple, Submission) 
+Suplex	Grapple	Advanced	0	4	3	T	Suplex		
+Brain Fog	Injury	Advanced	X	0	0				Nothing
+Blinded	Injury	Advanced	0	0	0				Ongoing - Your Hand is -1.
+Winded	Injury	Advanced	0		0				Ongoing - Your Hold is -1
+Bell Ringer	Injury	Advanced	0	0	0				Ongoing - Your Market is -1.
+Ruby Soho Manager	Manager	Advanced			3			Ruby Soho Manager	Angelo Parker - Your Starting Hand is +1 (this does not effect your hands after your opening hand). Action - Commit : Attempt to Get a Pop, it gains "Enters - Choose one : Gain 2 Stamina or Scout."
+Beth Copeland Manager	Manager	Advanced			3			Beth Copeland Wrestler	Ongoing - Cards in your Market have Sudden if there is a copy of that card in your ring. 
+Anthony Ogogo Manager	Manager	Advanced			3		Boxer	Anthony Ogogo Manager	Ongoing - During your Recovery Phase your Punches are -1C. 
+Christian Cage Manager	Manager	Advanced			4			Christian Cage Manager	Ongoing - Your cards played from outside your hand are +1D (this affects Tokens being Attempted)
+Big Stoke Manager	Manager	Advanced			3			Stokely Hathaway	Ongoing - Your Market is +1.
+Kenny Omega Manager	Manager	Advanced			3			Kenny Omega Manager	Ready Action - Commit : Tuck a card from your hand draw two cards
+Toni Storm Manage	Manager	Advanced			3			Toni Storm Manager	Recovery Action - Pay 2M, Commit: Put an Action from your Discard beneath your Draw Deck.
+Sting Manager	Manager	Advanced			3			Sting Manager	Response - Commit, Pay 2M, and discard a card: Reduce the damage of a opponent's maneuver by the discarded Momentum.
+Angelo Parker Manager 	Manager	Advanced			3			Angelo Parker Manager	Ruby Soho - Your Starting Hand is +1 (this does not effect your hands after your opening hand).  Action - Commit : Choose two cards in your Market. Purchase one, Tuck the other, then refill your Market (you must pay for the card you purchased). 
+Mike Tyson Manager	Manager	Advanced			3		Boxer	Mike Tyson Manager	Tie-Up Action - Attempt to Punch opponent, it gains "Enters - Stun opponent then Scout"
+Willow Nightingale Manager	Manager	Advanced			2			Willow Nightingale 	Trigger - At the beginning of each Recovery Phase gain 2 Stamina. 
+Kick His Fucking Head In 	Maneuver	Advanced	13	6	6			Blackpool Combat Club	Finisher, Power Attack, Focus Attack. This has all maneuver types and all Targets.
+Survive If I Let You	Response	Advanced	5	0	3		Suplex	Taz Wrestler	Combo Attack.  Reverse any card. Enters - Attempt to Suplex opponent. 
+You Think You Know Him	Response	Advanced	6	0	3			Adam Copeland Wrestler	Has Sudden if you have two pairs of cards in your ring.  Reverse any card.
+Repose	Response	Advanced	5	0	3				Hidden. Reverse any Strike. If played from Ring, reverse any maneuver
+Shut the Fuck Up	Response	Advanced	3	0	2				Permanent, Relentless. Reverse any Action. 
+Cowboy Shit	Response	Advanced	4	0	2			Adam Page Wrestler	Permanent. Reverse any maneuver. Response - Commit and discard a card to reduce the damage of the played maneuver by the discarded Momentum, this loses Permanent. 
+Learning Moment	Response	Advanced	5	0	5				Resilient, Relentless Reverse any maneuver of 4C or less. Special - Can't be played from hand and if this would be put into your Discard from your Ring, put it beneath your draw deck instead. 
+Grit and Determination 	Response	Advanced	10	0	3				Resilient. Reverse any maneuver of 8D or more. Enters - Attempt to Rally The Crowd. 
+I Think That Just Made Him Mad	Response	Advanced	6	0	10				Resilient. This card can not be played. 
+Cut the Angle	Response	Advanced	4	0	3				Reverse any Action or Grapple
+Seize the Initiative	Response	Advanced	4	0	3				Reverse any Action or Strike
+Break Concentration 	Response	Advanced	4	0	3				Reverse any Action or Submission 
+Enough of this Gay Banter	Response	Advanced	4	0	2				Reverse any Action. Enters - You may put a non-maneuver card from your discard beneath your Purchase Deck. If you do, gain Stamina equal to it's Momentum. 
+Until They Get Punched in the Face	Response	Advanced 	8	1	3		Punch		Reverse any Action. Special - You may Commit a Punch as an additional cost, if you do Reverse any card instead. Mike Tyson - Combo Attack
+Bitch	Response	Advanced	8	0	4			Kazuchika Okada Wrestler	Reverse any card. Special - If this would be put into your Discard from anywhere, shuffle it into your draw deck instead. 
+Stuff	Response	Advanced	2	0	3				Reverse any Grapple. If it's a Slam, Suplex, or Takedown draw a card
+Blown Spot	Response	Advanced	5	0	3				Reverse any maneuver not played from hand. Tuck that card.
+Nope	Response	Advanced	5	0	4			Samoa Joe Wrestler	Reverse any maneuver or action. Ignore any additional costs to play this reversal (this ignores Finisher and Pressing, etc...) 
+Ogogo Reversal	Response	Advanced	5	2	3			Anthony Ogogo Wrestler	Reverse any maneuver. Enters - You may play a Punch from your Discard or Market with cost less than our equal to the cost of the reversed card. 
+Bite the Ear	Response	Advanced	6	2	3		Punch	Mike Tyson Wrestler	Reverse any maneuver. Ongoing - Your Punches are +2D. 
+Slip 	Response	Advanced	2	0	3				Reverse any Strike. If it is a Punch, Lariat, or Kick, draw a card
+Hold Onto the Ropes	Response	Advanced	6	0	4				Rope Break, Resilient. Reverse any Submission, or Reverse any maneuver if you pay Momentum equal to its cost. 
+Catch the Ropes	Response	Advanced	3	0	2				Rope Break. Reverse any Strike, High Risk, Suplex, or Set-Up
+Steal the Mic	Response	Advanced	2	0	1				Sudden. Reverse any Action. Enters - Choose one - Attempt to Anger the Crowd or Attempt to Rally the Crowd 
+Low Effort Kick	Strike	Advanced 	2	2	6	L			(Sloth needed) Enters - Opponent discards a card.  Staggered - They discard two instead. 
+The 'Ol One-Two	Strike	Advanced	3	5	5	H	Punch, Setup		Anthony Ogogo - -1C. Enters - Play a Punch from your Hand or Discard, if it costs 3 or less, it gains Combo Attack. 
+Crane Kick	Strike	Advanced	4	6	6	H	Kick		Combo Attack
+Cross Punch	Strike	Advanced	0	2	2	H	Punch		Combo Attack
+Rear Hook	Strike	Advanced	1	3	4	H	Punch		Combo Attack
+Headbutt	Strike	Advanced	2	4	4	H			Enters - Create a 4C Brain Fog token in Opponent's Market.   Boxer - This gains the Punch trait. 
+Feign	Strike	Advanced	6	0	3	-			Enters - Create a Sucker Punch token in your Market. Ongoing - Punches in your Market have Echo. 
+Sweep	Strike	Advanced 	4	2	3	L	Kick, Set-up		Enters - Play a High Risk from your discard by paying for it.   Capitalize - The High Risk may come from your Market. 
+Kickboxing Jab Combo	Strike	Advanced	2	2	2	H	Punch		Enters - Stun opponent then Attempt to Front Kick them. 
+Lariat	Strike	Advanced	2	6	6	T	Lariat		Enters - Stun opponent. 
+Running Lariat	Strike	Advanced	4	5	5	T			Enters - Stun opponent. Hangman Enters - Scout
+Copeland's Spear	Strike	Advanced	18	10	16	T		Adam Copeland Wrestler	Finisher  As you play this you may Commit a card in your Ring, you may then discard a copy of that card from your hand. This gets +ND, where N is their combined Momentum.
+Rainmaker	Strike	Advanced	16	12	12	H	Lariat	Kazuchika Okada Wrestler	Finisher  Enters - You may shuffle your Discard, Market, and Purchase Deck into your Draw Deck. If you don't, your Hand, Hold, and Market are all +2 this turn. 
+Bronze Left Hand	Strike	Advanced						Anthony Ogogo Wrestler	Finisher  Ongoing - Your Punches have Relentless. 
+Hidden Blade	Strike	Advanced	15	11	11	H		Will Ospreay Wrestler	Finisher, Hidden, Stealth Attack. Ongoing - Your cards have Hidden. 
+Baddest Uppercut on the Planet	Strike	Advanced	20	16	16	H	Punch	Mike Tyson Wrestler	Finisher. Enters - If your Uncommited momentum from only other Punches is higher than your opponent's stamina, you win the game via Knockout. 
+Buckshot Lariat	Strike	Advanced	10	12	12	H		Adam Page Wrestler	Finisher. Follow-Up - Has Sudden and Relentless. 
+Trick Punch	Strike	Advanced	2	4	4	H	Punch		Has Echo and Sudden while you have A Punch in your ring
+Blindsided Punch	Strike	Advanced	0	3	3	H	Punch		Hidden.  Turned - Stun opponent 
+Repeated Disrespect	Strike	Advanced	2	2	2	H			Hidden. Turned - Put a charge counter on this, turn it face down again. This gains Permanent this turn.  Special - This is +1C/+1D for each counter on this. 
+Snap Leg Kick	Strike	Advanced	0	3	2	L	Kick		Ongoing - Your Kicks are -1C. Speedball Enters - This gains Permanent this turn. 
+Lead Hook	Strike	Advanced	0	2	2	H	Punch		Ongoing - Your Punches are -1C. Iron Enters - This gains Permanent this turn. 
+Charging Lariat 	Strike	Advanced	0	2	3	T	Lariat		Power Attack 
+Double Hand Chop	Strike	Advanced	1	2	3	T	Chop		Relentless, Focus Attack 
+Knife Edge Chop	Strike	Advanced	0	3	1	T	Chop		Relentless, Permanent 
+Open Hand Chop	Strike	Advanced	0	2	2	T	Chop		Relentless. Enters - Stun opponent. 
+Persistent Chop	Strike	Advanced	2	3	3	T	Chop		Resilient, Relentless 
+Payback Chop	Strike	Advanced 	0	2	3	T			Retaliate - +3D
+Comebacker Lariat	Strike	Advanced	4	5	5	H	Lariat		Retaliate - Has Sudden and Relentless
+Coffin Splash	Strike	Advanced	4	10	10	T	High Risk		Risky 3. Darby Allin - This does not have Risky. 
+Backhand Chop	Strike	Advanced	1	3	2	T	Chop		Sudden, Combo Attack
+Sucker Punch 	Strike	Advanced	4	4	4	H	Punch		Sudden, Focus Attack
+Taekwondo Head Kick	Strike	Advanced	5	4	4	H	Kick		Sudden, Permanent
+Mongolian Chop	Strike	Advanced	2	4	4	T	Chop		Sudden, Relentless
+Swift Chop	Strike	Advanced	1	3	3	T	Chop		Sudden. Special - When this enters your Market it gains Echo this turn
+Destination Unknown	Strike	Advanced	16	10	10	H		Ruby Soho Wrestler	This is +1D for each token in your ring.  Finisher.   Ongoing - Your Tokens have Permanent. 
+Forearm Shot	Strike	Advanced	0	3	1	H			
+Punch	Strike	Advanced	0	1	3	H	Punch		
+Running Boot	Strike	Advanced	4	9	9	H	High Risk, Kick		
+Side Kick	Strike	Advanced	2	6	6	T	Kick		
+Rear Naked Choke	Submission	Advanced	12	8	8	H			Enters - Try to Submit Opponent 
+Cross Arm Breaker	Submission	Advanced	12	8	8	A			Enters - Try to Submit Opponent. 
+Elbow Lock	Submission	Advanced	3	5	7	A			Enters - You may pay 5M. If you do, draw a card and gain 3 Stamina. 
+Tazmission	Submission	Advanced	18	13	13	H		Taz Wrestler	Finisher.  Enters - Try to Submit Opponent, any Suplex can add to this. 
+Scorpion Deathlock	Submission	Advanced 	10	10	10	L			Focus Attack
+Ankle Lock	Submission	Advanced	0	2	2	L			Focus Attack 
+Tarantula	Submission	Advanced	2	5	5	-			Illegal, Rope Break, Resilient
+Arm Scissor	Submission	Advanced	2	4	4	A			Ongoing - Opponent's maneuvers played from outside their hand deal half damage (round up)
+Torture Rack 	Submission	Advanced	12	8	8	T			Ongoing - Opponent's Market is -2.
+Chinlock	Submission	Advanced	4	6	6	H			Ongoing - To play Action cards opponent must either pay for them or Discard a card. 
+Crossface Chicken Wing	Submission	Advanced	2	6	6	-			Targets both Head and Arm (this card is considered to have no text as the Target icon would just have both targets) 
+Boston Crab	Submission	Advanced	8	4	4	T			Trigger - After opponent plays an Action card, Stun them. 
+Body Scissors	Submission	Advanced	7	7	7	T			
+Ruby Soho Wrestler	Wrestler	Advanced			4			Ruby Soho Wrestler	Action - Commit : Attempt to Get a Pop, it gains "Enters - Gain 2 Stamina and Scout".  Ongoing - Your Tokens are +1M.
+Vacant Wrestler	Wrestler	Advanced			3			Vacant	For your Kit choose one maneuver, one action, and one response regardless of wrestler logo. Those cards now have your logo. 
+Create-a-Wrestler Wrestler	Wrestler	Advanced			3			Create a Wrestler Wrestler	For your Kit choose one non-Kit Maneuver, Action, and Response. Those gain your logo, the maneuver gains Finisher. You can not include additional copies of those cards.
+Orange Cassidy Wrestler	Wrestler	Advanced 			2//6			Orange Cassidy Wrestler	Front: (Sloth) Ready Action - Commit: Reveal cards from your draw deck until you reveal a (Sloth) card, put it into your hand. Discard the rest, if none are found just shuffle your draw deck. // Staggered: Flip // Back: (Sloth) Ongoing - Your maneuvers are +1D for each (Sloth) card in your ring. 
+Kazuchika Okada Wrestler	Wrestler	Advanced			8			Kazuchika Okada Wrestler	None, isn't the Momentum enough? 
+Angelo Parker Wrestler	Wrestler	Advanced			4			Angelo Parker Wrestler	Ongoing - When you purchase a card you may also Tuck a card from your Market and replace it
+Will Ospreay Wrestler	Wrestler	Advanced			5			Will Ospreay Wrestler	Ongoing - Your face down cards have Hidden.   Tie-Up Action - Commit : Play a card from your hand face down (choose a maneuver type and a target, it's a 0/2/2)
+MJF Wrestler	Wrestler	Advanced			4			MJF Wrestler	Ongoing - Your Hand is +1.
+Exhaustion Sets In	Action	Advanced	8	0	2				Enters - Put a -1M Counter on all Permanent cards in the ring. Cards with 0M lose Permanent.
+Running On Empty	Action	Advanced	5	0	1				Enters - Committed cards with Permanent don't Uncommit as this turn ends.
+Nyla Rose Wrestler	Wrestler	Advanced			4			Nyla Rose Wrestler	Ongoing - Your maneuvers with no printed abilities gain 'Enters - Scout'. 
+The Young Bucks Wrestler	Wrestler	Advanced			4		Tag Team	The Young Bucks Wrestler	Ongoing - Your Market is +1.
+Samoa Joe Wrestler	Wrestler	Advanced			5			Samoa Joe Wrestler	Tie-Up Action - Commit and discard a card : Give up to two cards in your Market Sudden this turn. 
+Anthony Bowens Wrestler	Wrestler	Advanced			5			Anthony Bowens Wrestler	Tie-Up Action - Commit and discard a card : Play a maneuver from your hand, any Enters abilities on that card trigger an additional time 
+Taz Wrestler	Wrestler	Advanced			5			Taz Wrestler	Tie-Up Action - Commit: Attempt to Suplex opponent. 
+Mike Tyson Wrestler	Wrestler	Advanced			5		Boxer	Mike Tyson Wrestler	Tie-Up Action - Commit: Play a Punch with cost 5 or less from your Hand, Market, or Discard. It gets +2D and "Enters - Stun opponent then Scout".
+Adam Page Wrestler	Wrestler	Advanced			4			Adam Page Wrestler	Trigger - When your opponent hits with two consecutive maneuvers Scout and Attempt to Get a Pop. 
+Adam Copeland Wrestler  Wrestler	Wrestler	Advanced			4			Adam Copeland Wrestler 	You may have an additional copy of cards in your draw and purchase decks.
+Anthony Ogogo Wrestler	Wrestler	Advanced			3		Boxer	Anthony Ogogo Wrestler	Your Punches are -1C.

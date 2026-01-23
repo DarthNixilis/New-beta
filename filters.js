@@ -1,3 +1,5 @@
+[file name]: filters.js
+[file content begin]
 // filters.js
 
 import * as state from './config.js';
@@ -79,9 +81,18 @@ export function getFilteredAndSortedCardPool() {
     
     let cards = state.cardDatabase.filter(card => {
         if (!card || !card.title) return false; 
-        if (card.card_type === 'Wrestler' || card.card_type === 'Manager' || isKitCard(card)) return false;
+        
+        // Exclude persona cards from the pool (they have their own selectors)
+        if (['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type)) return false;
+        
+        // Exclude kit cards
+        if (state.isKitCard(card)) return false;
+        
+        // Cost filters
         if (!state.showZeroCost && card.cost === 0) return false;
         if (!state.showNonZeroCost && card.cost > 0) return false;
+        
+        // Search filter
         const rawText = card.text_box?.raw_text || '';
         return query === '' || card.title.toLowerCase().includes(query) || rawText.toLowerCase().includes(query);
     });
@@ -89,8 +100,4 @@ export function getFilteredAndSortedCardPool() {
     const filtered = applyAllFilters(cards);
     return applySort(filtered);
 }
-
-// Helper needed by this module
-function isKitCard(card) {
-    return card && typeof card['Wrestler Kit'] === 'string' && card['Wrestler Kit'].toUpperCase() === 'TRUE';
-}
+[file content end]

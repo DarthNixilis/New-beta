@@ -1,0 +1,153 @@
+Name	Type	Set	Cost	Damage	Momentum	Target	Traits	Starting	Game Text
+Dominating Presence	Action	Core	10	0	3			Bobby Lashley Wrestler	Relentless. Ongoing - Your maneuvers are +2D and Opponent's Hold is -1.
+Thumbs Down 	Response	Core	6	3	3			Bobby Lashley Wrestler	Power Attack. Reverse any maneuver. 
+The Hurt Lock	Submission	Core	18	12	12	H		Bobby Lashley Wrestler	Finisher, Focus Attack 
+Bobby Lashley Wrestler	Wrestler	Core			5			Bobby Lashley Wrestler	Tie-Up Action - Commit : Play a maneuver from your hand. It gains "Enters - Draw two cards." 
+Don Callis Manager	Manager	Core			3			Don Callis Manager	Ready Action - Commit and discard an Action card from your hand : Draw two cards.
+Purveyor of Violence 	Action	Core	8	0	4			Jon Moxley Wrestler	Enters - Reveal your the top six cards of your draw deck and pick a card from among them. Put that card into your hand then your opponent picks a maneuver from the remaining cards, play that maneuver. Discard the cards that are left. 
+Paradigm Shift 	Grapple	Core	15	10*	15	H	DDT	Jon Moxley Wrestler	*+1D for each maneuver in your ring.  Finisher  Ongoing - Your hand is +1.
+Unscripted Violence	Response	Core	5	0	3			Jon Moxley Wrestler	Reverse any maneuver. Enters - Reveal your hand to your opponent and they choose a maneuver from it. Play that maneuver, it can't be reversed but deals half damage (round up). 
+Jon Moxley Wrestler	Wrestler	Core			5			Jon Moxley Wrestler	Tie-Up Action - Commit : play a maneuver from your hand, it is +5D.
+I Must Bid You Adieu	Action	Core	10	0	3			Kenny Omega Wrestler	Enters - Opponent discards a card, you may put up to two cards from your discard beneath your draw deck, you may put up to two cards from your Market beneath your purchase deck (replace), draw a card, and gain 3 Stamina. 
+One Winged Angel 	Grapple	Core	20	20	20	H		Kenny Omega Wrestler	Finisher
+Goodbye And Good Night... 	Response	Core	5	0	5			Kenny Omega Wrestler	Reverse any Card. Enters - You may discard a card. If you do gain 2 Stamina and draw two cards. 
+Kenny Omega Wrestler	Wrestler	Core			5			Kenny Omega Wrestler	Ready Action - Commit : Discard a card then draw two cards. 
+Luthor Manager	Manager	Core			2			Luthor Manager	Recovery Action - Commit and choose an Action in your Ring. It gains Permanent this turn. 
+Marina Shafir Manager	Manager	Core			4			Marina Shafir Manager	Tie-Up Action - Commit - Play a maneuver from your hand, it gets +1D and gains 'Enters - Scout, then draw a card' 
+Taekwondo Master 	Action	Core	6	0	5			Mike Bailey Wrestler	Ongoing - Your Kicks are +2D. Enters - You may discard a card, if you do Play a Kick from your Discard. Otherwise Scout then draw a card. 
+Bow To Your Sensei	Response	Core	5	0	3			Mike Bailey Wrestler	Reverse any maneuver. Enters - You may put a Kick from your Discard beneath your draw deck. 
+Ultima Weapon	Strike	Core	12	15	15		High Risk	Mike Bailey Wrestler	Finisher.  Enters - You may put any number of Kicks from your discard pile beneath your draw deck. 
+Mike Bailey Wrestler	Wrestler	Core			3			Mike Bailey Wrestler	Tie-Up Action - Commit : Attempt to Kick opponent, it gains Permanent this turn. 
+MVP Manager	Manager 	Core			2			MVP Manager	Recovery Action - Commit : Put a maneuver with cost 4 or less from your discard beneath your draw deck.
+Prince Nana Manager	Manager	Core			2			Prince Nana Manager	Ready Action - Commit and discard the top two cards of your draw deck. If a maneuver is discarded this way draw a card and gain 2 Stamina. 
+Whose House?	Action	Core	8	0	3			Swerve Strickland Wrestler	Enters - Choose up to three cards from your discard and for each put it beneath your draw deck or purchase deck. Look at the top three cards of your Draw deck, you may play one of those cards, discard the rest. 
+Swerve's House	Response	Core	5	0	5			Swerve Strickland Wrestler	Reverse any Card.  Enters - Look at the top three cards of your Draw Deck you may discard any of them. Put the rest back on top of your Draw Deck in any order. 
+House Call	Strike	Core	15	10	15	H	Kick	Swerve Strickland Wrestler	Finisher. Enters - Opponent Tucks a card from their hand. 
+Swerve Strickland Wrestler	Wrestler	Core			5			Swerve Strickland Wrestler	Recovery Action - Commit : put a card from your discard pile under your draw deck. 
+Chin Up, Tits Out	Action	Core	7	0	2			Toni Storm Wrestler	Enters - Gain 4 Stamina then choose up to one Action card and up to one Maneuver from your discard. Put one of them into your hand, you may then play the other.
+Storm Zero	Grapple	Core	16	10	10	H		Toni Storm Wrestler	Finisher  This is +1D for each Action card in your ring.
+And Watch for the Shoe	Response	Core	7	0	5			Toni Storm Wrestler	Reverse any maneuver. Ongoing - Your Action cards are +1D
+Toni Storm Wrestler	Wrestler	Core			5			Toni Storm Wrestler	Recovery Action - Commit : Put up to two action cards from you discard benath your draw deck.
+Amazing Display of Power	Action	Core	0	0	2				Tie-Up Enters - You may play a maneuver from your hand or maneuver with cost 4 or less from your discard. If played from hand it gains Power Attack.
+Arrive In Style	Action	Core	0	0	1				Enters - Place up to two cards from your Market beneath your Purchase Deck, replace. Draw a card and gain 1 Stamina.
+Circle Opponent	Action	Core	0	0	1				Ready Enters - Draw two cards then discard a card. Tie-Up Play - Play a maneuver with cost 2 or less from your discard.
+Draw Heat	Action	Core	0	0	5				
+Get a Pop	Action	Core	0	0	2				Permanent.
+Irish Whip	Action	Core	0	0	2		Setup		Tie-Up Enters - Look at the top three cards of your Draw Deck, you may play a maneuver from among them. Discard the rest. 
+Quick Thinking	Action	Core	0	0	3				Enters - Discard a card then draw two cards. 
+Ready For a Fight	Action	Core	0	0	2				Ready Enters - Draw a card. Ongoing - Your maneuvers are +!D.
+Study Opponent	Action	Core	0	0	1				Enters - Draw a card, you may then Cycle a card (Discard a card to draw a card). Recovery Play - You may put a card from your Discard beneath your Purchase deck to Gain 3 Stamina.
+Take a Breather	Action	Core	0	0	2				Recovery Enters - Place a card from your discard beneath your draw deck. Gain 2 Stamina.
+A Little Bit of the Bubbly	Action	Core	1	0	2				Ongoing - Each player gets +1 Hand. Ready Enters - Choose an opponent to discard two cards. Chris Jericho Enters - Gain 3 Stamina.
+Burst of Energy	Action	Core	1	0	3				Recovery Enters - Shuffle up to three cards from your discard into your draw deck. Gain 3 Stamina.
+Grab the Mic	Action	Core	1	0	0				Sudden. Enters - Scout then choose one: Attempt to Draw Heat or Attempt to Get a Pop 
+I Digress	Action	Core	1	0	2				Enters - You may discard up to two cards. Place up to that many cards from your discard beneath your draw deck then draw that many cards and gain that much Stamina.
+Intimidate Opponent	Action	Core	1	0	2				Enters - Opponent discards a card.
+Tighten Your Grip	Action	Core	1	0	2				Follow-Up - Enters - The Followed Maneuver gains Permanent this turn.
+Chain Wrestling	Action	Core	3	0	2		Setup		Permanent. Tie-Up Action - Commit : Play a maneuver from your hand that shares a type with one in your ring. It gains 'Enters - Draw a card'. 
+Perpetual Offensive Motion	Action	Core	3	0	2				Follow-Up - When played after a maneuver you may play a maneuver ith less damage from your hand or discard. if that maneuver is a strike it gains "Play - Draw a card"
+Quicken the Pace	Action	Core	3	0	1				Permanent. Ongoing - Each player gets +1 Hand.
+Skilled Grappler	Action	Core	3	0	1				Permanent. Ongoing - Your Grapple maneuvers have Cost -1.
+Skilled Striker	Action	Core	3	0	1				Permanent. Ongoing - Your Strike maneuvers have Cost -1.
+Skilled Submissionist 	Action	Core	3	0	1				Permanent. Ongoing - Your Submission maneuvers have Cost -1.
+All Rounder	Action	Core	5	0	3				Enters - If you have a Strike in your ring, Scout. A Grapple in your ring, you may put up to one card from your discard beneath your draw deck. A Submission in your ring, you may Tuck up to two cards from your Discard. If you have all three, you may then Draw a card and gain 3 Stamina. 
+Heat Magnet	Action	Core	5	0	0				Permanent. Play - Draw a card. Ongoing - Your copies of Draw Heat gain Permanent.
+Heighten the Drama	Action	Core	5	0	1				Enters - Choose one: Attempt to Draw Heat, or Attempt to Get a Pop, or Attempt to Slap Opponent, or Attempt to Intimidate Opponent.  Toni Storm - The Token created gains 'Enters - Choose another option from Heighten the Drama. 
+Strategic Beatdown	Action	Core	5	0	2				Recovery Enters - Choose up to two non-response cards in your discard pile. Put up to one in your hand put the rest beneath either your draw deck or purchase deck.
+Will of the Invisible Hand	Action	Core	5	0	2				Enters - Draw a card and Attempt to Draw Heat. Ready - Draw an addiontional card. Don Callis - When discarded to an ability you control gain 1 Stamina and you may Tuck a card from your Discard 
+Grinding Halt	Action	Core	6	0	3				Ongoing - While uncommitted, maneuvers played from outside a player's hand non-cumulatively deal half damage, rounded up.
+Highly Consistent	Action	Core	6	0	2				Permanent. Ongoing - Maneuvers that share a name with a card in your ring are +2D.
+Amateurs	Action	Core	8	0	4				Ready Enters - Opponent may discard a maneuver with cost 5 or greater. If they do not, they discard two cards.
+World Class Endurance	Action	Core	10	0	5				Resilient. Recovery Enters - Shuffle up to five cards from your discard into your draw deck. Gain 5 Stamina.
+Arm Drag	Grapple	Core	0	2	4	A			Enters - Gain 1 Stamina
+Armbar Takedown	Grapple	Core	0	2	2	A	Setup		Enters - You may play a submission with Target: A from your hand or discard. If played from discard and is unsuccessful put it beneath your draw deck.
+Belly-to-Belly Takedown	Grapple	Core	0	2	2	T	Setup		Enters - You may play a submission with Target: T from your hand or discard. If played from discard and is unsuccessful put it beneath your draw deck.
+Collar and Elbow Lockup	Grapple	Core	0	3	3	-			Enters - Look at the top card of your draw deck, you may discard that. Then both players draw two cards. 
+Headlock Takedown	Grapple	Core	0	2	2	H	Setup		Enters - You may play a submission with Target: H from your hand or discard. If played from discard and is unsuccessful put it beneath your draw deck.
+Hip Toss	Grapple	Core	0	4	2	T			Permanent (This card is not removed from play as turns end)
+Single Leg Takedown	Grapple	Core	0	2	2	L	Setup		Enters - You may play a submission with Target: L from your hand or discard. If played from discard and is unsuccessful put it beneath your draw deck.
+Snapmare	Grapple	Core	0	1	6	H			
+Body Slam	Grapple	Core	1	3	2	T	Slam		Enters - If you have another Grapple in your ring, draw a card
+Belly-to-Back Suplex	Grapple	Core	2	7	4	T	Suplex		
+Drop Toe Hold	Grapple	Core	2	5	5	T			Enters - If you have a Strike in your ring, Stun opponent.
+Fireman's Carry	Grapple	Core	2	4	4	T			Enters - You may put up to one card from your discard beneath your draw deck.
+Flying Head Scissors	Grapple	Core	2	7	7	H	High Risk		
+Slam	Grapple	Core	2	6	3	T	Slam		
+Wristlock Slam	Grapple	Core	4	4	4	A	Slam		Focus Attack 
+German Suplex	Grapple	Core	5	8	8	H	Suplex		Enters - Opponent puts the top card of their draw deck and puts it into their market that card is +1 Cost this turn.
+Backbreaker	Grapple	Core	6	6	6	T			Enters - Stun opponent.
+Leg Drag	Grapple	Core	0	2	3	L			
+Knee Breaker	Grapple	Core	7	6	4	L			Enters - Choose a card opponent's market, discard, and Ring. They Tuck one of those cards. 
+Overhead Belly-to-Belly Suplex	Grapple	Core	8	10	8	T	Suplex		
+DDT	Grapple	Core	10	8	8	H	DDT		Enters - Choose a card in hit opponent's ring. Put that card into their discard.
+Chokeslam	Grapple	Core	12	12	12	H	Slam		
+Avalanche Brainbuster	Grapple	Core	14	12	12	H	High Risk, Suplex		Enters - Your opponent discards two cards.
+Piledriver	Grapple	Core	15	10	10	H			Enters - Opponent discards a card.
+Powerslam	Grapple 	Core	6	10	6	T	Slam		Permanent. 
+Anti-Air	Response	Core	0	2	2				Cycling  Reverse any High Risk.
+Block	Response	Core	0	0	2				Reverse any Strike.
+Break Free	Response	Core	0	0	2				Reverse any Grapple.
+Drop Step	Response	Core	0	0	2				Reverse any maneuver of 4D or less. Enters - Draw a card 
+Reach the Ropes	Response	Core	0	0	2				Rope Break  Reverse any Submission.
+Rookie Mistake 	Response	Core	0	0	2				Permanent. Reverse any 0 Cost card. 
+Rude Interruption	Response	Core	0	0	2				Reverse any Action
+Escape the Hold 	Response	Core	3	0	3				Reverse any Grapple or Submission 
+Shove Off	Response	Core	3	0	3				Reverse any Strike or Grapple
+Slip Away	Response	Core	3	0	3				Reverse any Strike or Submission 
+Had It Scouted	Response	Core	8	0	2				Reverse any Maneuver.
+Chop	Strike	Core	0	1	1	T	Chop		Enters - Scout
+European Uppercut	Strike	Core	0	5	3	T			Enters - Discard the top two cards of your Draw deck
+Front Kick	Strike	Core	0	4	4	T	Kick		
+Jab	Strike	Core	0	2	3	H	Punch, Setup 		Enters - You may play a strike from your discard by paying for it. Free if a Punch.
+Kick	Strike	Core	0	2	2	T	Kick		
+Overhand Punch	Strike	Core	0	3	6	H	Punch		
+Slap	Strike	Core	0	1	1	H			Permanent. Enters - Draw a card.
+Mounted Punches	Strike	Core	1	2	3	H	Punch		Permanent. Follow-Up - Power Attack.
+Running Clothesline	Strike	Core	1	5	5	T	Lariat		
+Spinning Back Elbow	Strike	Core	1	6	6	H			
+Haymaker	Strike	Core	2	5	3	H	Punch		Power Attack
+Opening Jab	Strike	Core	2	3*	3	H	Punch		*If this is your first maneuver this turn, this is +3D.
+Roundhouse to the Arm	Strike	Core	4	8	8	A	Kick		
+Short-Arm Clothesline	Strike	Core	4	7	7	A	Lariat		Permanent
+Shoulder Block	Strike	Core	4	8	8	T			
+Work the Body	Strike	Core	4	7	7	T	Punch		Permanent
+Leg Kick	Strike	Core	5	8	6	L	Kick		
+Roundhouse Kick	Strike	Core	5	10	8	H	Kick		
+Superkick	Strike	Core	5	7	7	H	Kick		Enters - Opponent discards a card.
+Crippling Chop Block	Strike	Core	6	8	6	L			Permanent
+Discuss Punch	Strike	Core	6	10	10	H	Punch		
+Missile Dropkick	Strike	Core	6	5	8	T	High Risk, Kick		Enters - Opponent discards a card. Follow-Up - +5D.
+Solbut	Strike	Core	6	6	4	T	Kick		Permanent. 
+Spinning Back Fist	Strike	Core	6	8*	12	H			*+2D for each maneuver in your ring with T: H
+Torkneedo	Strike	Core	7	10	10	H	High Risk		Enters - Opponent discards a card and you may draw a card. 
+Clothesline	Strike	Core	8	8	4	T	Lariat		Power Attack. Enters - Opponent discards a card.
+Pounce	Strike	Core	10	14	10	T			
+Top-Rope Splash	Strike	Core	10	10	10	T	High Risk		Power Attack 
+V-Trigger	Strike	Core	12	10	13	H			Kenny Omega - -4 Cost, Follow-Up - Enters - Opponent discards a card.
+Armbar	Submission	Core	0	3	3	A			Ongoing - Opponent's Hold is -1.
+Front Chancery	Submission	Core	0	3	3	H			Ongoing -Your Hand is +1. Enters - Gain 2 Stamina. 
+Hammerlock	Submission	Core	0	3	3	A			Enters - Gain 2 Stamina. Ongoing - Opponent's Punches are -1D.
+Overhand Wrist Lock	Submission	Core	0	3	3	A			
+Side Headlock	Submission	Core	0	1	3	H			Permanent
+Grounded Body Scissors	Submission	Core	1	3	3	T			Ongoing - Non-Maneuver cards in Opponent's Market are +2C.
+Grounded Hammer Lock	Submission	Core	1	3	3	A			Ongoing - Choose a card in Opponent's Market. They can't purchase or play that card. (You may pick Kit cards) 
+Grounded Headlock	Submission	Core	1	3	3	H			Ongoing - Choose a Non-Signature card in Opponent's Ring. That card loses all abilities except Permanent. It has 0M.
+Knee Bar	Submission	Core	1	5	3	L			Permanent. Enters - Gain 2 Stamina
+Showoff Lock	Submission	Core	1	1	1	-			Enters - Choose one: Attempt to Draw Heat or Attempt to Get a Pop. 
+Kneelock	Submission	Core	2	3	6	L			
+Wrist Control	Submission	Core	0	2	2	A			Enters - You may Tuck a card from your discard, if you do Stun opponent then Scout. 
+Standing Arm Lock	Submission	Core	2	4	2	A			Ongoing - Opponent's Grapples are +1C.
+Standing Leg Lock	Submission	Core	2	4	2	L			Ongoing - Opponent's Strikes are +1C.
+Standing Waist Lock	Submission	Core	2	4	2	T			Ongoing - Opponent's Submissions are +1C.
+Wrist Lock	Submission	Core	2	2	3	A			Sudden, Permanent.  Enters - Gain 2 Stamina. 
+Sleeper	Submission	Core	3	6	6	H			Enters - Stun opponent. That card loses Permanent this turn.
+Ankle Hook	Submission	Core	4	3	6	L			Focus Attack. Ongoing - Opponent's Kicks are -2D
+Fujiwara Armbar	Submission	Core	5	6	6	A			Ongoing - Your opponents Strikes are Cost +1.
+Arm Wringer 	Submission	Core	6	6	6	A			Ongoing - Your maneuvers with T:A are +2D.
+Bear Hug	Submission	Core	6	6	6	T			Ongoing - Your maneuvers with T:T are +2D.
+Neck Wringer	Submission	Core	6	6	6	T			Ongoing - Your maneuvers with T:H are +2D.
+Stump Puller	Submission	Core	6	6	6	L			Ongoing - Your maneuvers with T:L are +2D.
+Key Lock	Submission	Core	8	4	4	A			Ongoing - Choose a card in opponent's market. They can't purchase that card. 
+Single Leg Crab	Submission	Core	8	7	7	L			Ongoing - Opponent's market is -1.
+Bulldog Choke	Submission	Core	10	10	10	H			Ongoing - Opponent's Hand is -1. Jon Moxley - Damage +3.
+Figure Four Leg Lock	Submission	Core	16	12	12	L			
