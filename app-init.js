@@ -1,8 +1,8 @@
-// app-init.js - FIXED VERSION
+// app-init.js - MINIMAL FIX
 import * as state from './config.js';
 import * as ui from './ui.js';
 import * as filters from './filters.js';
-import { initializeAllEventListeners } from './listeners.js';
+// import { initializeAllEventListeners } from './listeners.js'; // REMOVE THIS LINE
 
 export function initializeApp() {
     populatePersonaSelectors();
@@ -12,16 +12,17 @@ export function initializeApp() {
     filters.renderCascadingFilters();
     ui.renderDecks();
     ui.renderPersonaDisplay();
-    // Event listeners will be initialized separately from main.js
-    // with the refreshCardPool function as parameter
+    // initializeAllEventListeners(refreshCardPool); // REMOVE THIS LINE
     refreshCardPool();
 }
 
+// Make this function available externally
 export function refreshCardPool() {
     const finalCards = filters.getFilteredAndSortedCardPool();
     ui.renderCardPool(finalCards);
 }
 
+// ... rest of the file remains exactly the same ...
 function populatePersonaSelectors() {
     const wrestlerSelect = document.getElementById('wrestlerSelect');
     const managerSelect = document.getElementById('managerSelect');
