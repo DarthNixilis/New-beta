@@ -1,11 +1,10 @@
-// ui.js - FIXED VERSION (lazy DOM lookups to avoid null refs on module load)
+// ui.js - FIXED VERSION (lazy DOM lookups + safe defaults)
 
 import * as state from './config.js';
 import { generateCardVisualHTML } from './card-renderer.js';
 
-// --- LAZY DOM REFERENCES ---
-// Because ES modules execute before the DOM is guaranteed ready,
-// we must NOT cache DOM nodes at top-level.
+// Because ES modules can evaluate before some state is initialized,
+// do NOT cache DOM nodes or assume view mode has a valid value.
 function getDOM() {
     const cardModal = document.getElementById('cardModal');
 
@@ -24,17 +23,30 @@ function getDOM() {
     };
 }
 
+// Safe defaults for view rendering
+function getSafeViewMode() {
+    return state.currentViewMode === 'grid' ? 'grid' : 'list';
+}
+
+function getSafeGridColumns() {
+    const n = Number(state.numGridColumns);
+    return Number.isFinite(n) && n >= 2 && n <= 6 ? n : 3;
+}
+
 // --- RENDERING FUNCTIONS ---
 
 export function renderCardPool(cards) {
     const { searchResults } = getDOM();
     if (!searchResults) return;
 
+    // Ensure it's visible and has sane classes
+    const mode = getSafeViewMode();
+    searchResults.style.display = '';
     searchResults.innerHTML = '';
-    searchResults.className = `card-list ${state.currentViewMode}-view`;
+    searchResults.className = `card-list ${mode}-view`;
 
-    if (state.currentViewMode === 'grid') {
-        searchResults.setAttribute('data-columns', state.numGridColumns);
+    if (mode === 'grid') {
+        searchResults.setAttribute('data-columns', String(getSafeGridColumns()));
     } else {
         searchResults.removeAttribute('data-columns');
     }
@@ -46,13 +58,13 @@ export function renderCardPool(cards) {
 
     cards.forEach(card => {
         const cardElement = document.createElement('div');
-        cardElement.className = state.currentViewMode === 'list' ? 'card-item' : 'grid-card-item';
+        cardElement.className = mode === 'list' ? 'card-item' : 'grid-card-item';
 
         if (state.isSignatureFor(card)) cardElement.classList.add('signature-highlight');
 
         cardElement.dataset.title = card.title;
 
-        if (state.currentViewMode === 'list') {
+        if (mode === 'list') {
             cardElement.innerHTML = `
                 <span data-title="${card.title}">
                     ${card.title} (C:${card.cost ?? 'N/A'}, D:${card.damage ?? 'N/A'}, M:${card.momentum ?? 'N/A'})
@@ -165,11 +177,7 @@ export function showCardModal(cardTitle) {
 }
 
 export function renderDecks() {
-    const {
-        startingDeckList,
-        purchaseDeckList
-    } = getDOM();
-
+    const { startingDeckList, purchaseDeckList } = getDOM();
     if (!startingDeckList || !purchaseDeckList) return;
 
     renderDeckList(startingDeckList, state.startingDeck);
@@ -218,7 +226,6 @@ function updateDeckCounts() {
     startingDeckCount.textContent = state.startingDeck.length;
     purchaseDeckCount.textContent = state.purchaseDeck.length;
 
-    // Color logic
     startingDeckCount.parentElement.style.color = state.startingDeck.length === 24 ? 'green' : 'red';
     startingDeckHeader.style.color = state.startingDeck.length === 24 ? 'green' : 'inherit';
 
