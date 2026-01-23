@@ -1,8 +1,8 @@
-// app-init.js - MINIMAL FIX
+// app-init.js
 import * as state from './config.js';
 import * as ui from './ui.js';
 import * as filters from './filters.js';
-// import { initializeAllEventListeners } from './listeners.js'; // REMOVE THIS LINE
+import { initializeAllEventListeners } from './listeners.js'; // Corrected path
 
 export function initializeApp() {
     populatePersonaSelectors();
@@ -12,17 +12,10 @@ export function initializeApp() {
     filters.renderCascadingFilters();
     ui.renderDecks();
     ui.renderPersonaDisplay();
-    // initializeAllEventListeners(refreshCardPool); // REMOVE THIS LINE
+    initializeAllEventListeners(refreshCardPool);
     refreshCardPool();
 }
 
-// Make this function available externally
-export function refreshCardPool() {
-    const finalCards = filters.getFilteredAndSortedCardPool();
-    ui.renderCardPool(finalCards);
-}
-
-// ... rest of the file remains exactly the same ...
 function populatePersonaSelectors() {
     const wrestlerSelect = document.getElementById('wrestlerSelect');
     const managerSelect = document.getElementById('managerSelect');
@@ -85,3 +78,9 @@ function addDeckSearchFunctionality() {
     startingDeckList.parentNode.insertBefore(startingDeckSearch, startingDeckList);
     purchaseDeckList.parentNode.insertBefore(purchaseDeckSearch, purchaseDeckList);
 }
+
+function refreshCardPool() {
+    const finalCards = filters.getFilteredAndSortedCardPool();
+    ui.renderCardPool(finalCards);
+}
+
