@@ -1,5 +1,5 @@
 Name	Type	Set	Cost	Damage	Momentum	Target	Traits	Starting	Game Text
-Adam Copeland Wrestler  Wrestler	Wrestler	Advanced			4			Adam Copeland Wrestler 	You may have an additional copy of cards in your draw and purchase decks.
+Adam Copeland Wrestler	Wrestler	Advanced			4			Adam Copeland Wrestler 	You may have an additional copy of cards in your draw and purchase decks.
 Adam Page Wrestler	Wrestler	Advanced			4			Adam Page Wrestler	Trigger - When your opponent hits with two consecutive maneuvers Scout and Attempt to Get a Pop. 
 Angelo Parker Finisher	Strike	Advanced	16	10	15			Angelo Parker Wrestler	As you play this you may Tuck a card from your Market. If you do, this gains Damage equal to that card's Momentum.  Finisher  Enters - You may tuck a card from your Market, if you do gain Stamina equal to that card's Momentum. Refill your market.
 Angelo Parker Manager 	Manager	Advanced			3			Angelo Parker Manager	Ruby Soho - Your Starting Hand is +1 (this does not effect your hands after your opening hand).  Action - Commit : Choose two cards in your Market. Purchase one, Tuck the other, then refill your Market (you must pay for the card you purchased). 
