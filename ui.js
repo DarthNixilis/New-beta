@@ -1,186 +1,239 @@
-// ui.js
+// ui.js - FIXED VERSION (lazy DOM lookups to avoid null refs on module load)
+
 import * as state from './config.js';
 import { generateCardVisualHTML } from './card-renderer.js';
 
-// DOM
-const searchResults = document.getElementById('searchResults');
+// --- LAZY DOM REFERENCES ---
+// Because ES modules execute before the DOM is guaranteed ready,
+// we must NOT cache DOM nodes at top-level.
+function getDOM() {
+    const cardModal = document.getElementById('cardModal');
 
-const startingDeckList = document.getElementById('startingDeckList');
-const purchaseDeckList = document.getElementById('purchaseDeckList');
-const startingDeckCount = document.getElementById('startingDeckCount');
-const purchaseDeckCount = document.getElementById('purchaseDeckCount');
-const startingDeckHeader = document.getElementById('startingDeckHeader');
-const purchaseDeckHeader = document.getElementById('purchaseDeckHeader');
-
-const personaDisplay = document.getElementById('personaDisplay');
-
-const cardModal = document.getElementById('cardModal');
-const modalCardContent = document.getElementById('modalCardContent');
-
-function countByTitle(list) {
-  const map = new Map();
-  for (const t of list) map.set(t, (map.get(t) || 0) + 1);
-  return map;
+    return {
+        searchResults: document.getElementById('searchResults'),
+        startingDeckList: document.getElementById('startingDeckList'),
+        purchaseDeckList: document.getElementById('purchaseDeckList'),
+        startingDeckCount: document.getElementById('startingDeckCount'),
+        purchaseDeckCount: document.getElementById('purchaseDeckCount'),
+        startingDeckHeader: document.getElementById('startingDeckHeader'),
+        purchaseDeckHeader: document.getElementById('purchaseDeckHeader'),
+        personaDisplay: document.getElementById('personaDisplay'),
+        cardModal,
+        modalCardContent: document.getElementById('modalCardContent'),
+        modalCloseButton: cardModal ? cardModal.querySelector('.modal-close-button') : null
+    };
 }
+
+// --- RENDERING FUNCTIONS ---
 
 export function renderCardPool(cards) {
-  if (!searchResults) return;
+    const { searchResults } = getDOM();
+    if (!searchResults) return;
 
-  searchResults.innerHTML = '';
+    searchResults.innerHTML = '';
+    searchResults.className = `card-list ${state.currentViewMode}-view`;
 
-  if (!cards || cards.length === 0) {
-    searchResults.innerHTML = `<p>No cards match the current filters.</p>`;
-    return;
-  }
-
-  // Basic layout: honor your grid/list CSS if present
-  searchResults.className = `card-list ${state.currentViewMode || 'grid'}-view`;
-  if ((state.currentViewMode || 'grid') === 'grid') {
-    searchResults.setAttribute('data-columns', String(state.numGridColumns || 2));
-  } else {
-    searchResults.removeAttribute('data-columns');
-  }
-
-  for (const card of cards) {
-    const wrapper = document.createElement('div');
-    wrapper.className = (state.currentViewMode === 'list') ? 'card-item' : 'grid-card-item';
-    wrapper.dataset.title = card.title;
-
-    if (state.currentViewMode === 'list') {
-      const line = document.createElement('span');
-      line.dataset.title = card.title;
-      line.textContent = `${card.title}  (C:${card.cost ?? 'N/A'} D:${card.damage ?? 'N/A'} M:${card.momentum ?? 'N/A'})`;
-      wrapper.appendChild(line);
+    if (state.currentViewMode === 'grid') {
+        searchResults.setAttribute('data-columns', state.numGridColumns);
     } else {
-      const visual = document.createElement('div');
-      visual.className = 'card-visual';
-      visual.dataset.title = card.title;
-      visual.innerHTML = generateCardVisualHTML(card);
-      wrapper.appendChild(visual);
+        searchResults.removeAttribute('data-columns');
     }
 
-    const btns = document.createElement('div');
-    btns.className = 'card-buttons';
-
-    if (card.cost === 0) {
-      btns.innerHTML = `
-        <button data-title="${card.title}" data-deck-target="starting">Starting</button>
-        <button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>
-      `;
-    } else {
-      btns.innerHTML = `
-        <button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>
-      `;
+    if (!cards || cards.length === 0) {
+        searchResults.innerHTML = '<p>No cards match the current filters.</p>';
+        return;
     }
 
-    wrapper.appendChild(btns);
-    searchResults.appendChild(wrapper);
-  }
-}
+    cards.forEach(card => {
+        const cardElement = document.createElement('div');
+        cardElement.className = state.currentViewMode === 'list' ? 'card-item' : 'grid-card-item';
 
-export function renderDecks() {
-  renderDeckList(startingDeckList, state.startingDeck, 'starting');
-  renderDeckList(purchaseDeckList, state.purchaseDeck, 'purchase');
+        if (state.isSignatureFor(card)) cardElement.classList.add('signature-highlight');
 
-  if (startingDeckCount) startingDeckCount.textContent = String(state.startingDeck.length);
-  if (purchaseDeckCount) purchaseDeckCount.textContent = String(state.purchaseDeck.length);
+        cardElement.dataset.title = card.title;
 
-  // Your color rules
-  if (startingDeckHeader && startingDeckCount) {
-    const ok = state.startingDeck.length === 24;
-    startingDeckHeader.style.color = ok ? 'green' : '';
-    startingDeckCount.parentElement.style.color = ok ? 'green' : 'red';
-  }
-  if (purchaseDeckHeader && purchaseDeckCount) {
-    const ok = state.purchaseDeck.length >= 36;
-    purchaseDeckHeader.style.color = ok ? 'green' : '';
-    purchaseDeckCount.parentElement.style.color = ok ? 'green' : 'red';
-  }
+        if (state.currentViewMode === 'list') {
+            cardElement.innerHTML = `
+                <span data-title="${card.title}">
+                    ${card.title} (C:${card.cost ?? 'N/A'}, D:${card.damage ?? 'N/A'}, M:${card.momentum ?? 'N/A'})
+                </span>
+            `;
 
-  state.saveStateToCache();
-}
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'card-buttons';
 
-function renderDeckList(el, list, deckName) {
-  if (!el) return;
-  el.innerHTML = '';
+            if (card.cost === 0) {
+                buttonsDiv.innerHTML = `
+                    <button data-title="${card.title}" data-deck-target="starting">Starting</button>
+                    <button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>
+                `;
+            } else {
+                buttonsDiv.innerHTML = `
+                    <button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>
+                `;
+            }
 
-  const counts = countByTitle(list);
-  for (const [title, qty] of counts.entries()) {
-    const row = document.createElement('div');
-    row.className = 'card-item';
-    row.innerHTML = `
-      <span data-title="${title}">${qty}x ${title}</span>
-      <button data-title="${title}" data-deck="${deckName}">Remove</button>
-    `;
-    el.appendChild(row);
-  }
+            cardElement.appendChild(buttonsDiv);
+        } else {
+            const visualHTML = generateCardVisualHTML(card);
+            cardElement.innerHTML = `<div class="card-visual" data-title="${card.title}">${visualHTML}</div>`;
+
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'card-buttons';
+
+            if (card.cost === 0) {
+                buttonsDiv.innerHTML = `
+                    <button data-title="${card.title}" data-deck-target="starting">Starting</button>
+                    <button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>
+                `;
+            } else {
+                buttonsDiv.innerHTML = `
+                    <button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>
+                `;
+            }
+
+            cardElement.appendChild(buttonsDiv);
+        }
+
+        searchResults.appendChild(cardElement);
+    });
 }
 
 export function renderPersonaDisplay() {
-  if (!personaDisplay) return;
+    const { personaDisplay } = getDOM();
+    if (!personaDisplay) return;
 
-  // Show persona panel even if only partial selection
-  const items = [];
+    if (!state.selectedWrestler) {
+        personaDisplay.style.display = 'none';
+        return;
+    }
 
-  if (state.selectedWrestler) items.push(state.selectedWrestler);
-  if (state.selectedManager) items.push(state.selectedManager);
-  if (state.selectedCallName) items.push(state.selectedCallName);
-  if (state.selectedFaction) items.push(state.selectedFaction);
+    personaDisplay.style.display = 'block';
+    personaDisplay.innerHTML = '<h3>Persona & Kit</h3><div class="persona-card-list"></div>';
 
-  // Kits derived ONLY from Wrestler
-  if (state.selectedWrestler) {
-    const wrestlerTitle = state.selectedWrestler.title;
-    const kits = (state.cardDatabase || []).filter(c =>
-      state.isKitCard(c) && c['Signature For'] === wrestlerTitle
+    const list = personaDisplay.querySelector('.persona-card-list');
+    list.innerHTML = '';
+
+    const cardsToShow = new Set();
+    const activePersona = [];
+
+    if (state.selectedWrestler) activePersona.push(state.selectedWrestler);
+    if (state.selectedManager) activePersona.push(state.selectedManager);
+
+    activePersona.forEach(p => cardsToShow.add(p));
+
+    const activePersonaTitles = activePersona.map(p => p.title);
+    const kitCards = state.cardDatabase.filter(card =>
+        state.isKitCard(card) && activePersonaTitles.includes(card['Signature For'])
     );
-    items.push(...kits);
-  }
 
-  personaDisplay.style.display = items.length ? 'block' : 'none';
-  if (!items.length) return;
+    kitCards.forEach(card => cardsToShow.add(card));
 
-  personaDisplay.innerHTML = `<h3>Persona & Kit</h3><div class="persona-card-list"></div>`;
-  const list = personaDisplay.querySelector('.persona-card-list');
+    const sortedCards = Array.from(cardsToShow).sort((a, b) => {
+        if (a.card_type === 'Wrestler') return -1;
+        if (b.card_type === 'Wrestler') return 1;
+        if (a.card_type === 'Manager') return -1;
+        if (b.card_type === 'Manager') return 1;
+        return a.title.localeCompare(b.title);
+    });
 
-  const order = { 'Wrestler': 0, 'Manager': 1, 'Call Name': 2, 'Faction': 3 };
-  items.sort((a, b) => {
-    const ao = order[a.card_type] ?? 99;
-    const bo = order[b.card_type] ?? 99;
-    if (ao !== bo) return ao - bo;
-    return a.title.localeCompare(b.title);
-  });
-
-  for (const card of items) {
-    const div = document.createElement('div');
-    div.className = 'persona-card-item';
-    div.textContent = card.title;
-    div.dataset.title = card.title;
-    div.dataset.type = card.card_type; // important for duplicates
-    list.appendChild(div);
-  }
+    sortedCards.forEach(card => {
+        const item = document.createElement('div');
+        item.className = 'persona-card-item';
+        item.textContent = card.title;
+        item.dataset.title = card.title;
+        list.appendChild(item);
+    });
 }
 
-// Modal helpers
-export function openCardModal(cardTitle, cardType = null) {
-  if (!cardModal || !modalCardContent) return;
+export function showCardModal(cardTitle) {
+    const { cardModal, modalCardContent, modalCloseButton } = getDOM();
+    if (!cardModal || !modalCardContent) return;
 
-  let card = null;
+    state.setLastFocusedElement(document.activeElement);
 
-  if (cardType && typeof state.getCardByTitleAndType === 'function') {
-    card = state.getCardByTitleAndType(cardTitle, cardType);
-  }
+    const card = state.cardDatabase.find(c => c.title === cardTitle);
+    if (!card) return;
 
-  if (!card) {
-    card = (state.cardDatabase || []).find(c => c && c.title === cardTitle) || null;
-  }
-  if (!card) return;
+    modalCardContent.innerHTML = generateCardVisualHTML(card);
 
-  modalCardContent.innerHTML = generateCardVisualHTML(card);
-  cardModal.style.display = 'flex';
+    cardModal.style.display = 'flex';
+    cardModal.setAttribute('role', 'dialog');
+    cardModal.setAttribute('aria-modal', 'true');
+
+    if (modalCloseButton) modalCloseButton.focus();
 }
 
-export function closeCardModal() {
-  if (!cardModal) return;
-  cardModal.style.display = 'none';
-  if (modalCardContent) modalCardContent.innerHTML = '';
+export function renderDecks() {
+    const {
+        startingDeckList,
+        purchaseDeckList
+    } = getDOM();
+
+    if (!startingDeckList || !purchaseDeckList) return;
+
+    renderDeckList(startingDeckList, state.startingDeck);
+    renderDeckList(purchaseDeckList, state.purchaseDeck);
+
+    updateDeckCounts();
+    state.saveStateToCache();
+}
+
+function renderDeckList(element, deck) {
+    element.innerHTML = '';
+
+    const cardCounts = deck.reduce((acc, cardTitle) => {
+        acc[cardTitle] = (acc[cardTitle] || 0) + 1;
+        return acc;
+    }, {});
+
+    Object.entries(cardCounts).forEach(([cardTitle, count]) => {
+        const card = state.cardDatabase.find(c => c.title === cardTitle);
+        if (!card) return;
+
+        const cardElement = document.createElement('div');
+        cardElement.className = 'card-item';
+
+        const deckName = element.id === 'startingDeckList' ? 'starting' : 'purchase';
+
+        cardElement.innerHTML = `
+            <span data-title="${card.title}">${count}x ${card.title}</span>
+            <button data-title="${card.title}" data-deck="${deckName}">Remove</button>
+        `;
+
+        element.appendChild(cardElement);
+    });
+}
+
+function updateDeckCounts() {
+    const {
+        startingDeckCount,
+        purchaseDeckCount,
+        startingDeckHeader,
+        purchaseDeckHeader
+    } = getDOM();
+
+    if (!startingDeckCount || !purchaseDeckCount || !startingDeckHeader || !purchaseDeckHeader) return;
+
+    startingDeckCount.textContent = state.startingDeck.length;
+    purchaseDeckCount.textContent = state.purchaseDeck.length;
+
+    // Color logic
+    startingDeckCount.parentElement.style.color = state.startingDeck.length === 24 ? 'green' : 'red';
+    startingDeckHeader.style.color = state.startingDeck.length === 24 ? 'green' : 'inherit';
+
+    purchaseDeckCount.parentElement.style.color = state.purchaseDeck.length >= 36 ? 'green' : 'red';
+    purchaseDeckHeader.style.color = state.purchaseDeck.length >= 36 ? 'green' : 'inherit';
+}
+
+export function filterDeckList(deckListElement, query) {
+    if (!deckListElement) return;
+
+    const items = deckListElement.querySelectorAll('.card-item');
+    const q = (query || '').toLowerCase();
+
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(q) ? '' : 'none';
+    });
 }

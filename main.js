@@ -1,6 +1,7 @@
-// main.js - UPDATED VERSION
+// main.js - FIXED VERSION (no dynamic import for refreshCardPool)
+
 import { loadGameData } from './data-loader.js';
-import { initializeApp } from './app-init.js';
+import { initializeApp, refreshCardPool } from './app-init.js';
 import { initializeAllEventListeners } from './listeners.js';
 
 // Check if dependencies are loaded
@@ -9,27 +10,20 @@ console.log("html2canvas available:", typeof html2canvas !== 'undefined');
 
 async function startApp() {
     const dataLoaded = await loadGameData();
-    if (dataLoaded) {
-        // First, initialize the app UI
-        initializeApp();
-        
-        // Then, initialize all event listeners
-        initializeAllEventListeners(() => {
-            // This is the refreshCardPool callback
-            import('./app-init.js').then(module => {
-                if (module.refreshCardPool) {
-                    module.refreshCardPool();
-                }
-            });
-        });
-        
-        // Test that exports are available
-        window.testExport = async () => {
-            console.log("Test export button clicked");
-            const { exportAllCardsAsImages } = await import('./master-export.js');
-            await exportAllCardsAsImages();
-        };
-    }
+    if (!dataLoaded) return;
+
+    // Initialize UI first (builds selectors, loads cache, renders first pool)
+    initializeApp();
+
+    // Bind all listeners with a stable refresh function reference
+    initializeAllEventListeners(refreshCardPool);
+
+    // Optional: dev test hook
+    window.testExport = async () => {
+        console.log("Test export button clicked");
+        const { exportAllCardsAsImages } = await import('./master-export.js');
+        await exportAllCardsAsImages();
+    };
 }
 
 // Start the app immediately
