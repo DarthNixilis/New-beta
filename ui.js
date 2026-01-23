@@ -54,28 +54,72 @@ export function renderCardPool(cards) {
 }
 
 export function renderPersonaDisplay() {
-    if (!state.selectedWrestler) { personaDisplay.style.display = 'none'; return; }
+    // Check if we have any persona selected
+    const hasPersona = state.selectedWrestler || state.selectedManager || 
+                       state.selectedCallName || state.selectedFaction;
+    
+    if (!hasPersona) { 
+        personaDisplay.style.display = 'none'; 
+        return; 
+    }
+    
     personaDisplay.style.display = 'block';
-    personaDisplay.innerHTML = '<h3>Persona & Kit</h3><div class="persona-card-list"></div>';
+    personaDisplay.innerHTML = '<h3>Selected Personas</h3><div class="persona-card-list"></div>';
     const list = personaDisplay.querySelector('.persona-card-list');
     list.innerHTML = ''; 
+    
     const cardsToShow = new Set();
     const activePersona = [];
+    
+    // Add all selected personas
     if (state.selectedWrestler) activePersona.push(state.selectedWrestler);
     if (state.selectedManager) activePersona.push(state.selectedManager);
-    activePersona.forEach(p => cardsToShow.add(p));
+    if (state.selectedCallName) activePersona.push(state.selectedCallName);
+    if (state.selectedFaction) activePersona.push(state.selectedFaction);
+    
+    // Get kit cards for all active personas
     const activePersonaTitles = activePersona.map(p => p.title);
-    const kitCards = state.cardDatabase.filter(card => state.isKitCard(card) && activePersonaTitles.includes(card['Signature For']));
+    const kitCards = state.cardDatabase.filter(card => 
+        state.isKitCard(card) && activePersonaTitles.includes(card['Signature For'])
+    );
+    
     kitCards.forEach(card => cardsToShow.add(card));
+    
+    // Add all personas to display
+    activePersona.forEach(p => cardsToShow.add(p));
+    
+    // Sort cards for display
     const sortedCards = Array.from(cardsToShow).sort((a, b) => {
-        if (a.card_type === 'Wrestler') return -1; if (b.card_type === 'Wrestler') return 1;
-        if (a.card_type === 'Manager') return -1; if (b.card_type === 'Manager') return 1;
+        // Personas first, then kit cards
+        const isPersonaA = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(a.card_type);
+        const isPersonaB = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(b.card_type);
+        
+        if (isPersonaA && !isPersonaB) return -1;
+        if (!isPersonaA && isPersonaB) return 1;
+        
+        // Then sort by card type
+        const typeOrder = { 'Wrestler': 1, 'Manager': 2, 'Call Name': 3, 'Faction': 4 };
+        const orderA = typeOrder[a.card_type] || 5;
+        const orderB = typeOrder[b.card_type] || 5;
+        
+        if (orderA !== orderB) return orderA - orderB;
+        
+        // Finally sort by title
         return a.title.localeCompare(b.title);
     });
+    
+    // Display all cards
     sortedCards.forEach(card => {
         const item = document.createElement('div');
         item.className = 'persona-card-item';
-        item.textContent = card.title;
+        
+        // Add type indicator for kit cards
+        if (state.isKitCard(card)) {
+            item.textContent = `[Kit] ${card.title}`;
+        } else {
+            item.textContent = card.title;
+        }
+        
         item.dataset.title = card.title;
         list.appendChild(item);
     });
@@ -129,4 +173,3 @@ export function filterDeckList(deckListElement, query) {
         item.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
     });
 }
-
