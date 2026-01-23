@@ -46,6 +46,8 @@ export function initializeAllEventListeners(refreshCardPool) {
     // DECK LISTENERS
     const wrestlerSelect = document.getElementById('wrestlerSelect');
     const managerSelect = document.getElementById('managerSelect');
+    const callNameSelect = document.getElementById('callNameSelect');
+    const factionSelect = document.getElementById('factionSelect');
     const startingDeckList = document.getElementById('startingDeckList');
     const purchaseDeckList = document.getElementById('purchaseDeckList');
     const personaDisplay = document.getElementById('personaDisplay');
@@ -74,6 +76,20 @@ export function initializeAllEventListeners(refreshCardPool) {
         refreshCardPool();
         state.saveStateToCache();
     });
+    callNameSelect.addEventListener('change', (e) => {
+        const newCallName = state.cardTitleCache[e.target.value] || null;
+        state.setSelectedCallName(newCallName);
+        ui.renderPersonaDisplay();
+        refreshCardPool();
+        state.saveStateToCache();
+    });
+    factionSelect.addEventListener('change', (e) => {
+        const newFaction = state.cardTitleCache[e.target.value] || null;
+        state.setSelectedFaction(newFaction);
+        ui.renderPersonaDisplay();
+        refreshCardPool();
+        state.saveStateToCache();
+    });
     [startingDeckList, purchaseDeckList, personaDisplay].forEach(container => {
         container.addEventListener('click', (e) => {
             const target = e.target;
@@ -87,7 +103,20 @@ export function initializeAllEventListeners(refreshCardPool) {
         if (confirm('Are you sure you want to clear the entire deck?')) {
             state.setStartingDeck([]);
             state.setPurchaseDeck([]);
+            state.setSelectedWrestler(null);
+            state.setSelectedManager(null);
+            state.setSelectedCallName(null);
+            state.setSelectedFaction(null);
+            
+            // Reset dropdowns
+            wrestlerSelect.value = "";
+            managerSelect.value = "";
+            callNameSelect.value = "";
+            factionSelect.value = "";
+            
             ui.renderDecks();
+            ui.renderPersonaDisplay();
+            refreshCardPool();
         }
     });
     exportDeckBtn.addEventListener('click', () => {
@@ -164,12 +193,21 @@ export function initializeAllEventListeners(refreshCardPool) {
         deckFileInput.value = '';
     });
     importModalCloseBtn.addEventListener('click', () => importModal.style.display = 'none');
-    processImportBtn.addEventListener('click', () => { if (deckTextInput.value) { parseAndLoadDeck(deckTextInput.value); } });
+    processImportBtn.addEventListener('click', () => { 
+        if (deckTextInput.value.trim()) { 
+            parseAndLoadDeck(deckTextInput.value); 
+        } else {
+            document.getElementById('importStatus').textContent = 'Please paste decklist or select a file.';
+            document.getElementById('importStatus').style.color = 'red';
+        }
+    });
     deckFileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (event) => { parseAndLoadDeck(event.target.result); };
+            reader.onload = (event) => { 
+                parseAndLoadDeck(event.target.result); 
+            };
             reader.readAsText(file);
         }
     });
