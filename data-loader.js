@@ -35,42 +35,102 @@ export async function loadGameData() {
 
         // Identify headers (Tab-separated)
         const headers = lines[0].split('\t').map(h => h.trim());
+        console.log('Headers found:', headers);
 
         const parsedCards = lines.slice(1).map((line, lineIdx) => {
             const cols = line.split('\t');
             const card = {};
 
             headers.forEach((header, index) => {
-                const value = cols[index] ? cols[index].trim() : "";
+                let value = cols[index] ? cols[index].trim() : "";
                 
                 // CRITICAL MAPPING: Maps your Google Sheet Headers to your Code Logic
                 if (header === "Card Name") {
                     card.title = value; 
                 } else if (header === "Type") {
-                    card.card_type = value; // Required for app-init.js filters
+                    card.card_type = value;
                 } else if (header === "Cost") {
-                    card.cost = (value === "N/A" || value === "") ? 0 : parseInt(value, 10) || 0;
+                    // Handle special values like "N/A", "N/A", or "1(Sloth)"
+                    if (value === "N/A" || value === "N/a" || value === "") {
+                        card.cost = 0;
+                    } else {
+                        // Extract numeric value (handles cases like "1(Sloth)" -> 1)
+                        const numMatch = value.match(/[\d.]+/);
+                        card.cost = numMatch ? parseInt(numMatch[0], 10) : 0;
+                    }
                 } else if (header === "Damage") {
                     card.damage = value;
                 } else if (header === "Momentum") {
                     card.momentum = value;
+                } else if (header === "Target") {
+                    // Store target in text_box.traits as expected by card-renderer.js
+                    if (value && value !== "") {
+                        if (!card.text_box) card.text_box = {};
+                        if (!card.text_box.traits) card.text_box.traits = [];
+                        card.text_box.traits.push({ name: "Target", value: value });
+                    }
+                } else if (header === "Traits") {
+                    if (value && value !== "") {
+                        if (!card.text_box) card.text_box = {};
+                        if (!card.text_box.traits) card.text_box.traits = [];
+                        // Handle multiple traits separated by commas
+                        const traits = value.split(',').map(t => t.trim()).filter(t => t);
+                        traits.forEach(traitName => {
+                            // Skip if it's already a Target trait
+                            if (traitName !== "Target") {
+                                card.text_box.traits.push({ name: traitName, value: null });
+                            }
+                        });
+                    }
                 } else if (header === "Card Raw Game Text") {
-                    // card-renderer.js expects card.text_box.raw_text
-                    card.text_box = {
-                        raw_text: value,
-                        traits: [] 
-                    };
+                    // Initialize text_box object
+                    if (!card.text_box) card.text_box = {};
+                    card.text_box.raw_text = value;
+                    
+                    // Extract keywords from raw text
+                    const keywords = ["Finisher", "Permanent", "Ongoing", "Power Attack", "Focus Attack", 
+                                    "Follow-Up", "Cycling", "Resilient", "Stun", "Relentless", 
+                                    "Sudden", "Enters", "Flip", "Hidden", "Turned", "Special"];
+                    const foundKeywords = [];
+                    keywords.forEach(keyword => {
+                        if (value.includes(keyword)) {
+                            foundKeywords.push({ name: keyword, value: null });
+                        }
+                    });
+                    
+                    if (foundKeywords.length > 0) {
+                        card.text_box.keywords = foundKeywords;
+                    }
+                } else if (header === "Wrestler Kit") {
+                    card['Wrestler Kit'] = value;
+                } else if (header === "Signature For") {
+                    card['Signature For'] = value;
+                } else if (header === "Set") {
+                    card.set = value;
                 } else {
-                    // Handle other columns like Set, Target, Traits, etc.
+                    // Handle other columns
                     const key = header.toLowerCase().replace(/ /g, '_');
                     card[key] = value;
                 }
             });
 
             // If a line doesn't have a name, skip it
-            if (!card.title) return null;
+            if (!card.title || card.title === "") return null;
+            
+            // Ensure text_box exists
+            if (!card.text_box) {
+                card.text_box = {
+                    raw_text: "",
+                    traits: [],
+                    keywords: []
+                };
+            }
+            
             return card;
         }).filter(c => c !== null);
+
+        console.log(`Parsed ${parsedCards.length} cards`);
+        console.log('Sample card:', parsedCards[0]);
 
         state.setCardDatabase(parsedCards);
 
@@ -101,4 +161,3 @@ export async function loadGameData() {
         return false;
     }
 }
-
