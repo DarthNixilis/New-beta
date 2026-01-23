@@ -56,6 +56,9 @@ export function initializeAllEventListeners(refreshCardPool) {
     
     // Create or get the LackeyCCG export button
     const exportLackeyBtn = document.getElementById('exportLackeyBtn') || createLackeyExportButton();
+    
+    // NEW: Create or get the TSV export button
+    const exportTSVBtn = document.getElementById('exportTSVBtn') || createTSVExportButton();
 
     wrestlerSelect.addEventListener('change', (e) => {
         const newWrestler = state.cardTitleCache[e.target.value] || null;
@@ -100,7 +103,7 @@ export function initializeAllEventListeners(refreshCardPool) {
         URL.revokeObjectURL(a.href);
     });
     
-    // NEW: LackeyCCG Export
+    // LackeyCCG Export
     exportLackeyBtn.addEventListener('click', () => {
         const text = generateLackeyCCGDeck();
         const blob = new Blob([text], { type: 'text/plain' });
@@ -126,6 +129,20 @@ export function initializeAllEventListeners(refreshCardPool) {
                 if (confirm("ZIP export failed. Would you like to try downloading images individually instead?")) {
                     await exportAllCardsAsImagesFallback();
                 }
+            }
+        });
+    }
+    
+    // NEW: TSV Database Export
+    if (exportTSVBtn) {
+        exportTSVBtn.addEventListener('click', async () => {
+            try {
+                // Import the TSV export function
+                const { exportAllCardsAsTSV } = await import('./master-export.js');
+                await exportAllCardsAsTSV();
+            } catch (error) {
+                console.error("TSV export failed:", error);
+                alert(`TSV export failed: ${error.message}`);
             }
         });
     }
@@ -198,4 +215,39 @@ function createLackeyExportButton() {
     }
     
     return lackeyBtn;
+}
+
+// NEW: Helper to create the TSV export button
+function createTSVExportButton() {
+    const deckActions = document.querySelector('.deck-actions');
+    if (!deckActions) return null;
+    
+    const tsvBtn = document.createElement('button');
+    tsvBtn.id = 'exportTSVBtn';
+    tsvBtn.textContent = 'Export TSV Database';
+    tsvBtn.style.backgroundColor = '#28a745';
+    tsvBtn.style.color = 'white';
+    tsvBtn.style.border = 'none';
+    tsvBtn.style.borderRadius = '4px';
+    tsvBtn.style.cursor = 'pointer';
+    tsvBtn.style.padding = '10px 15px';
+    tsvBtn.style.marginLeft = '10px';
+    tsvBtn.style.marginBottom = '5px';
+    tsvBtn.title = 'Export all cards in LackeyCCG database format (TSV)';
+    
+    // Insert after exportAllCardsBtn if it exists
+    const exportAllCardsBtn = document.getElementById('exportAllCards');
+    if (exportAllCardsBtn) {
+        deckActions.insertBefore(tsvBtn, exportAllCardsBtn.nextSibling);
+    } else {
+        // Otherwise insert after the last button
+        const lastButton = deckActions.querySelector('button:last-child');
+        if (lastButton) {
+            deckActions.insertBefore(tsvBtn, lastButton.nextSibling);
+        } else {
+            deckActions.appendChild(tsvBtn);
+        }
+    }
+    
+    return tsvBtn;
 }
