@@ -6,6 +6,8 @@ export let startingDeck = [];
 export let purchaseDeck = [];
 export let selectedWrestler = null;
 export let selectedManager = null;
+export let selectedCallName = null;
+export let selectedFaction = null;
 export let activeFilters = [{}, {}, {}];
 export let currentViewMode = 'grid';
 export let currentSort = 'alpha-asc';
@@ -14,12 +16,15 @@ export let showNonZeroCost = true;
 export let numGridColumns = 2;
 export let lastFocusedElement;
 export const CACHE_KEY = 'aewDeckBuilderCache';
+
 export function setCardDatabase(db) { cardDatabase = db; }
 export function setKeywordDatabase(db) { keywordDatabase = db; }
 export function setStartingDeck(deck) { startingDeck = deck; }
 export function setPurchaseDeck(deck) { purchaseDeck = deck; }
 export function setSelectedWrestler(wrestler) { selectedWrestler = wrestler; }
 export function setSelectedManager(manager) { selectedManager = manager; }
+export function setSelectedCallName(callName) { selectedCallName = callName; }
+export function setSelectedFaction(faction) { selectedFaction = faction; }
 export function setActiveFilters(filters) { activeFilters = filters; }
 export function setCurrentViewMode(mode) { currentViewMode = mode; }
 export function setCurrentSort(sort) { currentSort = sort; }
@@ -27,10 +32,12 @@ export function setShowZeroCost(value) { showZeroCost = value; }
 export function setShowNonZeroCost(value) { showNonZeroCost = value; }
 export function setNumGridColumns(num) { numGridColumns = num; }
 export function setLastFocusedElement(el) { lastFocusedElement = el; }
+
 export function toPascalCase(str) {
     if (!str) return '';
     return str.replace(/[^a-zA-Z0-9\s]+/g, '').split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
 }
+
 export function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -42,15 +49,19 @@ export function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
+
 export function saveStateToCache() {
-    const state = {
+    const stateToSave = {
         wrestler: selectedWrestler ? selectedWrestler.title : null,
         manager: selectedManager ? selectedManager.title : null,
+        callName: selectedCallName ? selectedCallName.title : null,
+        faction: selectedFaction ? selectedFaction.title : null,
         startingDeck: startingDeck,
         purchaseDeck: purchaseDeck
     };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+    localStorage.setItem(CACHE_KEY, JSON.stringify(stateToSave));
 }
+
 export function buildCardTitleCache() {
     cardTitleCache = {};
     cardDatabase.forEach(card => {
@@ -59,14 +70,23 @@ export function buildCardTitleCache() {
         }
     });
 }
+
 export function isKitCard(card) {
-    return card && typeof card['Wrestler Kit'] === 'string' && card['Wrestler Kit'].toUpperCase() === 'TRUE';
+    // NEW: Check if Starting column has a value (persona name)
+    return card && card['Starting'] && card['Starting'].trim() !== '';
 }
+
 export function isSignatureFor(card) {
-    if (!card || !card['Signature For']) return false;
+    // NEW: Check against Starting column instead of Signature For
+    if (!card || !card['Starting']) return false;
+    const personaName = card['Starting'].trim();
+    if (!personaName) return false;
+    
     const activePersonaTitles = [];
     if (selectedWrestler) activePersonaTitles.push(selectedWrestler.title);
     if (selectedManager) activePersonaTitles.push(selectedManager.title);
-    return activePersonaTitles.includes(card['Signature For']);
+    if (selectedCallName) activePersonaTitles.push(selectedCallName.title);
+    if (selectedFaction) activePersonaTitles.push(selectedFaction.title);
+    
+    return activePersonaTitles.includes(personaName);
 }
-
