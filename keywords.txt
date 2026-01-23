@@ -1,95 +1,24 @@
-Power Attack:
-As you play this maneuver, you may have it enter the Ring Committed. If you do, add this card’s printed Momentum to its Damage.
+Finisher: When an opponent attempts to reverse this, they must pay an additional cost: either pay Momentum from their Ring equal to this card's Damage, or discard a second valid reversal.
 
-Focus Attack:
-As you play this maneuver, you may Commit another card in your Ring with a matching Target. Add that card’s Momentum to this maneuver’s Damage.
+Permanent: This card is not removed from the Ring during the End of Turn sequence.
 
-Combo Attack:
-As you play this maneuver, you may Commit another card in your Ring that shares a Trait with it. Add that card’s Momentum to this maneuver’s Damage.
+Ongoing: This card's text provides a continuous effect while it is in the Ring.
 
-Cunning Attack:
-As you play this maneuver, you may Commit a non-maneuver card in your Ring. Add that card’s Momentum to this maneuver’s Damage.
+Power Attack: As you play this maneuver, you may have it enter the Ring committed to add its Momentum value to its Damage.
 
-Stealth Attack:
-As you play this maneuver, you may Commit a face-down card or a card with Hidden. Add that card’s Momentum to this maneuver’s Damage.
+Focus Attack: As you play this, you may commit another card in your Ring with the same Target to add its Momentum to this card's Damage.
 
-Stylish Attack:
-As you play this maneuver, you may Commit another card in your Ring that shares its Style symbol. Add that card’s Momentum to this maneuver’s Damage.
+Follow-Up: Grants additional effects if played immediately after a specified condition is met, ignoring normal priority.
 
-Permanent:
-This card is not removed from the Ring during the Ring Cleanup step.
+Cycling: You may discard this card from your hand at any time to draw a card.
 
-Ongoing:
-This card’s abilities are continuously active while it remains in the Ring.
+Resilient: You may discard this card from your hand before an opponent's maneuver resolves to reduce its damage by this card's Momentum.
 
-Uses:
-This card enters the Ring with N Use counters. It has Permanent while it has at least one counter.
+Stun: Your opponent must choose and commit one card in their Ring.
 
-Hidden:
-This card may be played face-down as a 0 Cost / 2 Damage / 2 Momentum maneuver. It gains Permanent for the current turn.
+Relentless: You may play this card from your discard pile by paying its Momentum cost. If reversed, it is placed on the bottom of your draw deck.
 
-Turned:
-An ability that triggers only when this card is revealed face-up after being face-down in the Ring.
+Sudden: You may play this card from your Market by paying double its Momentum cost.
 
-Flipped:
-A one-way transformation where this card turns face-down to resolve its ability, then remains in the Ring as a permanent Momentum source.
+Enters: An ability that triggers once, immediately after this card successfully enters the Ring.
 
-Staggered:
-This ability is active only while your Stamina is 25 or lower.
-
-Sturdy:
-This card counts as double its Momentum when defending during Pin or Submission attempts, and as two cards when Tucked during a Submission.
-
-Finisher:
-When an opponent attempts to reverse this maneuver, they must either Commit Momentum from their Ring equal to this card’s modified Damage, or discard an additional valid Response.
-
-Pressing:
-To reverse this maneuver, an opponent must Commit one card in their Ring in addition to playing a Response.
-
-Risky N:
-Any Response used to reverse this maneuver gains +N Damage.
-
-Resilient:
-You may discard this card from your hand during the Response window to reduce incoming Damage by its Momentum.
-
-Cycling:
-You may discard this card from your hand at any time you have priority to draw one card.
-
-Rope Break:
-If this card is Tucked during a Pin or Submission attempt, that attempt ends immediately.
-
-Follow-Up:
-You may play this card immediately after your previous card resolves successfully, ignoring normal priority rules.
-
-Enters:
-This ability triggers once, immediately after the card successfully enters the Ring.
-
-Relentless:
-You may play this card from your Discard Pile by paying its Momentum cost. If reversed, place it on the bottom of your Draw Deck.
-
-Sudden:
-You may play this card directly from your Market by paying double its modified purchase cost.
-
-Stun:
-When this resolves, your opponent must Commit one uncommitted card in their Ring.
-
-Scout:
-Look at the top card of your Draw Deck. You may leave it there or put it into your Discard Pile.
-
-Tuck:
-Move the card to the bottom of its owner’s Purchase Deck.
-
-Echo:
-While this card is in the Market, your Market size is increased by 1.
-
-Submit:
-Initiate the Submission alternate win condition mini-game.
-
-Retaliate:
-This card gains its listed bonus if played after an opponent’s successful card.
-
-Capitalize:
-This card gains its listed bonus if played after you successfully reverse a maneuver.
-
-Illegal:
-This maneuver cannot reduce an opponent’s Stamina to 0.
