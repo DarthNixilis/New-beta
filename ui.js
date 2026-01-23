@@ -1,5 +1,3 @@
-[file name]: ui.js
-[file content begin]
 // ui.js
 
 import * as state from './config.js';
@@ -56,51 +54,24 @@ export function renderCardPool(cards) {
 }
 
 export function renderPersonaDisplay() {
-    // Only show if we have at least one persona selected
-    const hasPersona = state.selectedWrestler || state.selectedManager || 
-                      state.selectedCallName || state.selectedFaction;
-    
-    if (!hasPersona) { 
-        personaDisplay.style.display = 'none'; 
-        return; 
-    }
-    
+    if (!state.selectedWrestler) { personaDisplay.style.display = 'none'; return; }
     personaDisplay.style.display = 'block';
     personaDisplay.innerHTML = '<h3>Persona & Kit</h3><div class="persona-card-list"></div>';
     const list = personaDisplay.querySelector('.persona-card-list');
     list.innerHTML = ''; 
-    
     const cardsToShow = new Set();
-    
-    // Add active persona cards
-    if (state.selectedWrestler) cardsToShow.add(state.selectedWrestler);
-    if (state.selectedManager) cardsToShow.add(state.selectedManager);
-    if (state.selectedCallName) cardsToShow.add(state.selectedCallName);
-    if (state.selectedFaction) cardsToShow.add(state.selectedFaction);
-    
-    // Get kit cards for all active personas
-    const activePersonaTitles = [];
-    if (state.selectedWrestler) activePersonaTitles.push(state.selectedWrestler.title);
-    if (state.selectedManager) activePersonaTitles.push(state.selectedManager.title);
-    if (state.selectedCallName) activePersonaTitles.push(state.selectedCallName.title);
-    if (state.selectedFaction) activePersonaTitles.push(state.selectedFaction.title);
-    
-    const kitCards = state.cardDatabase.filter(card => 
-        state.isKitCard(card) && activePersonaTitles.includes(card['Signature For'])
-    );
-    
+    const activePersona = [];
+    if (state.selectedWrestler) activePersona.push(state.selectedWrestler);
+    if (state.selectedManager) activePersona.push(state.selectedManager);
+    activePersona.forEach(p => cardsToShow.add(p));
+    const activePersonaTitles = activePersona.map(p => p.title);
+    const kitCards = state.cardDatabase.filter(card => state.isKitCard(card) && activePersonaTitles.includes(card['Signature For']));
     kitCards.forEach(card => cardsToShow.add(card));
-    
-    // Sort cards: Wrestler first, then Manager, then Call Name, then Faction, then others
     const sortedCards = Array.from(cardsToShow).sort((a, b) => {
-        const typeOrder = { 'Wrestler': 1, 'Manager': 2, 'Call Name': 3, 'Faction': 4 };
-        const orderA = typeOrder[a.card_type] || 5;
-        const orderB = typeOrder[b.card_type] || 5;
-        
-        if (orderA !== orderB) return orderA - orderB;
+        if (a.card_type === 'Wrestler') return -1; if (b.card_type === 'Wrestler') return 1;
+        if (a.card_type === 'Manager') return -1; if (b.card_type === 'Manager') return 1;
         return a.title.localeCompare(b.title);
     });
-    
     sortedCards.forEach(card => {
         const item = document.createElement('div');
         item.className = 'persona-card-item';
@@ -130,11 +101,7 @@ export function renderDecks() {
 
 function renderDeckList(element, deck) {
     element.innerHTML = '';
-    const cardCounts = deck.reduce((acc, cardTitle) => { 
-        acc[cardTitle] = (acc[cardTitle] || 0) + 1; 
-        return acc; 
-    }, {});
-    
+    const cardCounts = deck.reduce((acc, cardTitle) => { acc[cardTitle] = (acc[cardTitle] || 0) + 1; return acc; }, {});
     Object.entries(cardCounts).forEach(([cardTitle, count]) => {
         const card = state.cardDatabase.find(c => c.title === cardTitle);
         if (!card) return;
@@ -162,4 +129,4 @@ export function filterDeckList(deckListElement, query) {
         item.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
     });
 }
-[file content end]
+
