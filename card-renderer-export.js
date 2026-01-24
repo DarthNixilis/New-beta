@@ -4,29 +4,28 @@ import * as state from './config.js';
 export function generateCardVisualHTMLForExport(card, options = {}) {
     const isLackeySize = options.size === 'lackey' || options.width === 214;
 
+    // Colors tuned to match your screenshots
     const getCardColor = (type) => {
-        switch(type) {
-            case 'Action': return '#7D4AA6'; // purple-ish like your sample
-            case 'Strike': return '#FF6B6B';
-            case 'Grapple': return '#4ECDC4';
-            case 'Submission': return '#A8E6CF';
-            case 'Response': return '#FFD3B6';
-            case 'Manager': return '#DDA0DD';
-            case 'Wrestler': return '#87CEEB';
-            case 'Call Name': return '#98FB98';
-            case 'Faction': return '#D2B48C';
-            case 'Boon': return '#E6E6FA';
-            case 'Injury': return '#A9A9A9';
-            default: return '#FFFFFF';
+        switch (type) {
+            case 'Action':      return '#9B59B6'; // purple
+            case 'Wrestler':    return '#3E3E3E'; // dark gray
+            case 'Manager':     return '#3E3E3E'; // (not shown, but matches persona vibe)
+            case 'Response':    return '#C05050'; // red
+            case 'Submission':  return '#63A85C'; // green
+            case 'Grapple':     return '#D79A1E'; // orange
+            case 'Strike':      return '#4D82C6'; // blue
+            case 'Boon':        return '#18A7B5'; // teal
+            case 'Faction':     return '#28C2A1'; // mint/teal-green
+            case 'Injury':      return '#6E7781'; // gray
+            case 'Call Name':   return '#2E86C1'; // fallback (not in your shots)
+            default:            return '#777777'; // safe fallback
         }
     };
 
     const formatTextPlainish = (text) => {
         if (!text) return '';
-        // Keep it simple for tiny Lackey size: preserve periods into line breaks.
         let formatted = String(text).trim();
 
-        // Bold keywords (kept, but not too aggressive)
         formatted = formatted
             .replace(/\b(Enters|Ongoing|Trigger|Follow-Up|Finisher|Sudden|Permanent|Resilient|Relentless|Power Attack|Focus Attack|Cunning Attack|Combo Attack|Hidden|Set-up|Stealth Attack|High Risk|Sturdy|Aggressive|Risky|Illegal|Retaliate|Tie-Up|Ready|Recovery|Response|Reverse|Special|Cycling|Rope Break|Capitalize|Turned|Knockout|Pin|Submit|Passout)\b/gi, '<strong>$1</strong>')
             .replace(/\b(Scout|Attempt|Tuck|Cycle|Market|Commit|Uncommit|Stun|Discard|Draw|Gain|Lose|Pay|Play|Purchase|Reveal|Shuffle|Search|Look|Choose|Create|Put)\b/gi, '<strong>$1</strong>');
@@ -39,20 +38,29 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
 
     // ---------------------------
     // LACKEY 214x308 TEMPLATE
-    // Matches your screenshot layout:
-    // - Title top-left
-    // - Cost in a small top-right box
-    // - D/M on left under title
-    // - Type bar across (purple)
-    // - Text box at bottom (auto-fit will shrink font)
+    // Changes in this version:
+    // - Cost box moved BELOW title (so long titles never get clipped)
+    // - Type-bar colors matched to your examples
     // ---------------------------
     if (isLackeySize) {
         const typeBarColor = getCardColor(card.card_type);
         const costDisplay = (card.cost !== null && card.cost !== undefined) ? card.cost : '';
         const damageDisplay = (card.damage !== null && card.damage !== undefined) ? card.damage : '0';
         const momentumDisplay = (card.momentum !== null && card.momentum !== undefined) ? card.momentum : '0';
-
         const gameText = card.text_box?.raw_text ? formatTextPlainish(card.text_box.raw_text) : '';
+
+        // Layout constants for clarity
+        const titleTop = 6;
+        const titleLeft = 6;
+        const titleRight = 6;
+
+        // Reserve a fixed title “band” so stats + cost start below it
+        // This prevents overlap even if the title wraps to 2 lines.
+        const titleBandHeight = 46;
+
+        const statsTop = titleTop + titleBandHeight;   // below title
+        const costTop = titleTop + titleBandHeight;    // same row as stats
+        const costRight = 6;
 
         return `
             <div class="aew-lackey-card" style="
@@ -66,65 +74,64 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                 font-family: Arial, sans-serif;
                 box-sizing: border-box;
             ">
-                <!-- Title (top-left) -->
+                <!-- Title (top, can wrap to 2 lines) -->
                 <div class="aew-lackey-title" style="
                     position: absolute;
-                    left: 6px;
-                    top: 6px;
-                    right: 44px;
+                    left: ${titleLeft}px;
+                    right: ${titleRight}px;
+                    top: ${titleTop}px;
                     font-weight: 900;
-                    font-size: 18px;
-                    line-height: 1.05;
-                    white-space: nowrap;
+                    font-size: 20px;
+                    line-height: 1.0;
+                    max-height: ${titleBandHeight}px;
                     overflow: hidden;
-                    text-overflow: ellipsis;
+                    white-space: normal;
                 ">${card.title || ''}</div>
 
-                <!-- Cost box (top-right) -->
+                <!-- Stats left: D / M (starts below title band) -->
+                <div class="aew-lackey-stats" style="
+                    position: absolute;
+                    left: 8px;
+                    top: ${statsTop}px;
+                    font-weight: 900;
+                    font-size: 42px;
+                    line-height: 0.95;
+                ">
+                    <div style="font-size: 42px;">D: ${damageDisplay}</div>
+                    <div style="font-size: 42px; margin-top: 6px;">M: ${momentumDisplay}</div>
+                </div>
+
+                <!-- Cost box (moved below title band so it can't cut off title) -->
                 <div class="aew-lackey-costbox" style="
                     position: absolute;
-                    top: 6px;
-                    right: 6px;
-                    width: 34px;
-                    height: 28px;
+                    top: ${costTop}px;
+                    right: ${costRight}px;
+                    width: 56px;
+                    height: 56px;
                     border: 2px solid #000;
                     background: #fff;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     font-weight: 900;
-                    font-size: 18px;
+                    font-size: 46px;
                     box-sizing: border-box;
                 ">${costDisplay}</div>
-
-                <!-- Stats left: D / M -->
-                <div class="aew-lackey-stats" style="
-                    position: absolute;
-                    left: 8px;
-                    top: 34px;
-                    font-weight: 900;
-                    font-size: 22px;
-                    line-height: 1.05;
-                ">
-                    <div>D: ${damageDisplay}</div>
-                    <div>M: ${momentumDisplay}</div>
-                </div>
 
                 <!-- Type bar -->
                 <div class="aew-lackey-typebar" style="
                     position: absolute;
-                    left: 0;
-                    right: 0;
-                    top: 124px;
-                    height: 36px;
+                    left: 10px;
+                    right: 10px;
+                    top: 150px;
+                    height: 40px;
                     background: ${typeBarColor};
-                    border-top: 2px solid #000;
-                    border-bottom: 2px solid #000;
+                    border: 2px solid #000;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     font-weight: 900;
-                    font-size: 16px;
+                    font-size: 24px;
                     letter-spacing: 1px;
                     color: #fff;
                     text-transform: uppercase;
@@ -136,16 +143,17 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                     position: absolute;
                     left: 10px;
                     right: 10px;
-                    top: 172px;
+                    top: 204px;
                     bottom: 10px;
                     background: #fff;
-                    border: 2px solid #000;
+                    border: 2px solid #DDD;
                     box-sizing: border-box;
-                    padding: 8px;
-                    font-weight: 700;
-                    font-size: 14px; /* auto-fit will reduce this if needed */
-                    line-height: 1.15;
-                    overflow: hidden; /* IMPORTANT: no scrolling, we shrink instead */
+                    padding: 10px;
+                    font-weight: 800;
+                    font-size: 20px; /* auto-fit will reduce if needed */
+                    line-height: 1.05;
+                    overflow: hidden; /* no scroll, shrink instead */
+                    text-align: center;
                 ">
                     ${gameText}
                 </div>
@@ -177,11 +185,29 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
         return formatted;
     };
 
+    const getCardColorStandard = (type) => {
+        // keep existing standard mapping behavior as before
+        switch (type) {
+            case 'Action': return '#7D4AA6';
+            case 'Strike': return '#FF6B6B';
+            case 'Grapple': return '#4ECDC4';
+            case 'Submission': return '#A8E6CF';
+            case 'Response': return '#FFD3B6';
+            case 'Manager': return '#DDA0DD';
+            case 'Wrestler': return '#87CEEB';
+            case 'Call Name': return '#98FB98';
+            case 'Faction': return '#D2B48C';
+            case 'Boon': return '#E6E6FA';
+            case 'Injury': return '#A9A9A9';
+            default: return '#FFFFFF';
+        }
+    };
+
     const html = `
         <div class="card" style="
             width: ${options.width || 400}px;
             height: ${options.height || 600}px;
-            background: ${getCardColor(card.card_type)};
+            background: ${getCardColorStandard(card.card_type)};
             border: 5px solid #000;
             border-radius: 15px;
             position: relative;
