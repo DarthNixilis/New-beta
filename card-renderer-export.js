@@ -5,13 +5,22 @@ import * as state from './config.js';
 export function generateCardVisualHTMLForExport(card, options = {}) {
     const isLackeySize = options.size === 'lackey' || options.width === 214;
     
-    // Scale factors for Lackey size vs standard size
+    // SCALE FACTORS - EVEN BIGGER FOR LACKEY!
     const titleScale = isLackeySize ? 1.8 : 1.0;
-    const costScale = isLackeySize ? 2.5 : 1.0;
-    const momentumScale = isLackeySize ? 2.5 : 1.0;
-    const damageScale = isLackeySize ? 1.5 : 1.0;
-    const textScale = isLackeySize ? 1.4 : 1.0;
-    const typeScale = isLackeySize ? 1.3 : 1.0;
+    const costScale = isLackeySize ? 3.0 : 1.0; // INCREASED from 2.5 to 3.0
+    const momentumScale = isLackeySize ? 3.0 : 1.0; // INCREASED from 2.5 to 3.0
+    const damageScale = isLackeySize ? 1.8 : 1.0; // INCREASED from 1.5 to 1.8
+    const textScale = isLackeySize ? 1.6 : 1.0; // INCREASED from 1.4 to 1.6
+    const typeScale = isLackeySize ? 1.4 : 1.0; // INCREASED from 1.3 to 1.4
+    
+    // Calculate actual font sizes
+    const titleFontSize = isLackeySize ? Math.round(16 * titleScale) : 20;
+    const costLabelFontSize = isLackeySize ? Math.round(12 * costScale) : 14;
+    const costNumberFontSize = isLackeySize ? Math.round(40 * costScale) : 36; // HUGE: 40 * 3.0 = 120px!
+    const momentumLabelFontSize = isLackeySize ? Math.round(12 * momentumScale) : 14;
+    const momentumNumberFontSize = isLackeySize ? Math.round(40 * momentumScale) : 36; // HUGE: 120px!
+    const damageNumberFontSize = isLackeySize ? Math.round(28 * damageScale) : 28; // 28 * 1.8 = ~50px
+    const textFontSize = isLackeySize ? Math.round(12 * textScale) : 14; // 12 * 1.6 = ~19px
     
     const getCardColor = (type) => {
         switch(type) {
@@ -49,63 +58,69 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
             width: ${options.width || 400}px;
             height: ${options.height || 600}px;
             background: ${getCardColor(card.card_type)};
-            border: ${isLackeySize ? '3px' : '5px'} solid #000;
-            border-radius: ${isLackeySize ? '8px' : '15px'};
+            border: ${isLackeySize ? '4px' : '5px'} solid #000;
+            border-radius: ${isLackeySize ? '10px' : '15px'};
             position: relative;
-            box-shadow: 0 ${isLackeySize ? '2px' : '4px'} ${isLackeySize ? '4px' : '8px'} rgba(0,0,0,0.3);
-            font-family: Arial, sans-serif;
+            box-shadow: 0 ${isLackeySize ? '3px' : '4px'} ${isLackeySize ? '6px' : '8px'} rgba(0,0,0,0.3);
+            font-family: 'Arial Black', Arial, sans-serif;
             overflow: hidden;
         ">
             <!-- Title Bar -->
             <div style="
                 background: #2c3e50;
                 color: white;
-                padding: ${isLackeySize ? '6px' : '10px'};
+                padding: ${isLackeySize ? '8px' : '10px'};
                 text-align: center;
-                border-bottom: 2px solid #000;
+                border-bottom: 3px solid #000;
             ">
                 <div style="
-                    font-size: ${isLackeySize ? Math.round(16 * titleScale) : 20}px;
-                    font-weight: bold;
-                    line-height: 1.2;
+                    font-size: ${titleFontSize}px;
+                    font-weight: 900;
+                    line-height: 1.1;
                     text-transform: uppercase;
-                    letter-spacing: ${isLackeySize ? '0.5px' : '1px'};
+                    letter-spacing: ${isLackeySize ? '1px' : '1px'};
+                    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
                 ">${card.title}</div>
                 <div style="
                     font-size: ${isLackeySize ? Math.round(12 * typeScale) : 14}px;
+                    font-weight: bold;
                     opacity: 0.9;
-                    margin-top: ${isLackeySize ? '2px' : '4px'};
+                    margin-top: ${isLackeySize ? '3px' : '4px'};
                 ">${card.card_type}</div>
             </div>
             
-            <!-- Cost and Momentum (HUGE for Lackey) -->
+            <!-- Cost and Momentum (MASSIVE for Lackey) -->
             <div style="
                 position: absolute;
-                top: ${isLackeySize ? '50px' : '80px'};
+                top: ${isLackeySize ? '60px' : '80px'};
                 left: 0;
                 right: 0;
                 display: flex;
                 justify-content: space-around;
                 align-items: center;
-                padding: ${isLackeySize ? '5px' : '10px'};
-                background: rgba(255, 255, 255, 0.9);
-                border: ${isLackeySize ? '2px' : '3px'} solid #000;
-                margin: ${isLackeySize ? '0 10px' : '0 20px'};
-                border-radius: ${isLackeySize ? '8px' : '12px'};
+                padding: ${isLackeySize ? '8px' : '10px'};
+                background: rgba(255, 255, 255, 0.95);
+                border: ${isLackeySize ? '3px' : '3px'} solid #000;
+                margin: ${isLackeySize ? '0 8px' : '0 20px'};
+                border-radius: ${isLackeySize ? '10px' : '12px'};
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             ">
-                <!-- Cost -->
+                <!-- Cost - HUGE -->
                 <div style="text-align: center;">
                     <div style="
-                        font-size: ${isLackeySize ? Math.round(10 * costScale) : 14}px;
-                        font-weight: bold;
-                        color: #666;
-                        margin-bottom: ${isLackeySize ? '2px' : '4px'};
+                        font-size: ${costLabelFontSize}px;
+                        font-weight: 900;
+                        color: #2c3e50;
+                        margin-bottom: ${isLackeySize ? '4px' : '4px'};
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
                     ">COST</div>
                     <div style="
-                        font-size: ${isLackeySize ? Math.round(32 * costScale) : 36}px;
-                        font-weight: bold;
+                        font-size: ${costNumberFontSize}px;
+                        font-weight: 900;
                         color: #2c3e50;
-                        line-height: 1;
+                        line-height: 0.8;
+                        text-shadow: 2px 2px 3px rgba(0,0,0,0.3);
                     ">${card.cost !== null ? card.cost : 'N/A'}</div>
                 </div>
                 
@@ -113,33 +128,39 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                 ${card.damage !== null ? `
                     <div style="text-align: center;">
                         <div style="
-                            font-size: ${isLackeySize ? Math.round(10 * damageScale) : 14}px;
-                            font-weight: bold;
-                            color: #666;
-                            margin-bottom: ${isLackeySize ? '2px' : '4px'};
+                            font-size: ${isLackeySize ? Math.round(12 * damageScale) : 14}px;
+                            font-weight: 900;
+                            color: #2c3e50;
+                            margin-bottom: ${isLackeySize ? '4px' : '4px'};
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
                         ">DAMAGE</div>
                         <div style="
-                            font-size: ${isLackeySize ? Math.round(24 * damageScale) : 28}px;
-                            font-weight: bold;
+                            font-size: ${damageNumberFontSize}px;
+                            font-weight: 900;
                             color: #e74c3c;
-                            line-height: 1;
+                            line-height: 0.8;
+                            text-shadow: 2px 2px 3px rgba(0,0,0,0.3);
                         ">${card.damage}</div>
                     </div>
                 ` : ''}
                 
-                <!-- Momentum (HUGE - most important!) -->
+                <!-- Momentum - SUPER HUGE (most important!) -->
                 <div style="text-align: center;">
                     <div style="
-                        font-size: ${isLackeySize ? Math.round(10 * momentumScale) : 14}px;
-                        font-weight: bold;
-                        color: #666;
-                        margin-bottom: ${isLackeySize ? '2px' : '4px'};
+                        font-size: ${momentumLabelFontSize}px;
+                        font-weight: 900;
+                        color: #2c3e50;
+                        margin-bottom: ${isLackeySize ? '4px' : '4px'};
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
                     ">MOMENTUM</div>
                     <div style="
-                        font-size: ${isLackeySize ? Math.round(32 * momentumScale) : 36}px;
-                        font-weight: bold;
+                        font-size: ${momentumNumberFontSize}px;
+                        font-weight: 900;
                         color: #27ae60;
-                        line-height: 1;
+                        line-height: 0.8;
+                        text-shadow: 2px 2px 3px rgba(0,0,0,0.3);
                     ">${card.momentum !== null ? card.momentum : '0'}</div>
                 </div>
             </div>
@@ -147,27 +168,28 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
             <!-- Game Text Box -->
             <div style="
                 position: absolute;
-                top: ${isLackeySize ? '110px' : '180px'};
+                top: ${isLackeySize ? '130px' : '180px'};
                 bottom: ${isLackeySize ? '30px' : '50px'};
                 left: ${isLackeySize ? '10px' : '20px'};
                 right: ${isLackeySize ? '10px' : '20px'};
                 background: white;
                 border: ${isLackeySize ? '2px' : '3px'} solid #000;
-                border-radius: ${isLackeySize ? '6px' : '10px'};
-                padding: ${isLackeySize ? '8px' : '15px'};
+                border-radius: ${isLackeySize ? '8px' : '10px'};
+                padding: ${isLackeySize ? '10px' : '15px'};
                 overflow-y: auto;
-                font-size: ${isLackeySize ? Math.round(11 * textScale) : 14}px;
-                line-height: 1.4;
+                font-size: ${textFontSize}px;
+                line-height: 1.5;
+                font-weight: bold;
             ">
                 ${card.text_box.raw_text ? formatText(card.text_box.raw_text) : 'No text'}
                 
                 <!-- Traits -->
                 ${card.text_box.traits && card.text_box.traits.length > 0 ? `
-                    <div style="margin-top: ${isLackeySize ? '8px' : '12px'}; padding-top: ${isLackeySize ? '4px' : '8px'}; border-top: 1px solid #ddd;">
-                        <div style="font-weight: bold; font-size: ${isLackeySize ? Math.round(10 * textScale) : 12}px; color: #666; margin-bottom: ${isLackeySize ? '2px' : '4px'};">Traits:</div>
-                        <div style="font-size: ${isLackeySize ? Math.round(10 * textScale) : 12}px;">
+                    <div style="margin-top: ${isLackeySize ? '10px' : '12px'}; padding-top: ${isLackeySize ? '6px' : '8px'}; border-top: 2px solid #ddd;">
+                        <div style="font-weight: 900; font-size: ${isLackeySize ? Math.round(11 * textScale) : 12}px; color: #2c3e50; margin-bottom: ${isLackeySize ? '4px' : '4px'}; text-transform: uppercase;">Traits:</div>
+                        <div style="font-size: ${isLackeySize ? Math.round(11 * textScale) : 12}px; font-weight: bold;">
                             ${card.text_box.traits.map(t => 
-                                `<span style="background: #e0e0e0; padding: ${isLackeySize ? '1px 4px' : '2px 6px'}; margin: 0 ${isLackeySize ? '2px' : '4px'} ${isLackeySize ? '2px' : '4px'} 0; border-radius: 3px; display: inline-block;">
+                                `<span style="background: #e0e0e0; padding: ${isLackeySize ? '2px 6px' : '2px 6px'}; margin: 0 ${isLackeySize ? '3px' : '4px'} ${isLackeySize ? '3px' : '4px'} 0; border-radius: 4px; display: inline-block; border: 1px solid #aaa;">
                                     ${t.name}${t.value ? ': ' + t.value : ''}
                                 </span>`
                             ).join('')}
@@ -177,11 +199,11 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                 
                 <!-- Keywords -->
                 ${card.text_box.keywords && card.text_box.keywords.length > 0 ? `
-                    <div style="margin-top: ${isLackeySize ? '8px' : '12px'}; padding-top: ${isLackeySize ? '4px' : '8px'}; border-top: 1px solid #ddd;">
-                        <div style="font-weight: bold; font-size: ${isLackeySize ? Math.round(10 * textScale) : 12}px; color: #666; margin-bottom: ${isLackeySize ? '2px' : '4px'};">Keywords:</div>
-                        <div style="font-size: ${isLackeySize ? Math.round(10 * textScale) : 12}px;">
+                    <div style="margin-top: ${isLackeySize ? '10px' : '12px'}; padding-top: ${isLackeySize ? '6px' : '8px'}; border-top: 2px solid #ddd;">
+                        <div style="font-weight: 900; font-size: ${isLackeySize ? Math.round(11 * textScale) : 12}px; color: #2c3e50; margin-bottom: ${isLackeySize ? '4px' : '4px'}; text-transform: uppercase;">Keywords:</div>
+                        <div style="font-size: ${isLackeySize ? Math.round(11 * textScale) : 12}px; font-weight: bold;">
                             ${card.text_box.keywords.map(k => 
-                                `<span style="background: #d4edda; padding: ${isLackeySize ? '1px 4px' : '2px 6px'}; margin: 0 ${isLackeySize ? '2px' : '4px'} ${isLackeySize ? '2px' : '4px'} 0; border-radius: 3px; display: inline-block;">
+                                `<span style="background: #d4edda; padding: ${isLackeySize ? '2px 6px' : '2px 6px'}; margin: 0 ${isLackeySize ? '3px' : '4px'} ${isLackeySize ? '3px' : '4px'} 0; border-radius: 4px; display: inline-block; border: 1px solid #28a745;">
                                     ${k.name}
                                 </span>`
                             ).join('')}
@@ -194,18 +216,19 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
             ${card.Target && card.Target !== '-' && card.Target !== 'null' ? `
                 <div style="
                     position: absolute;
-                    bottom: ${isLackeySize ? '8px' : '15px'};
-                    right: ${isLackeySize ? '8px' : '15px'};
-                    width: ${isLackeySize ? '24px' : '40px'};
-                    height: ${isLackeySize ? '24px' : '40px'};
+                    bottom: ${isLackeySize ? '10px' : '15px'};
+                    right: ${isLackeySize ? '10px' : '15px'};
+                    width: ${isLackeySize ? '30px' : '40px'};
+                    height: ${isLackeySize ? '30px' : '40px'};
                     background: #f0f0f0;
                     border: 2px solid #000;
                     border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-weight: bold;
-                    font-size: ${isLackeySize ? '14px' : '20px'};
+                    font-weight: 900;
+                    font-size: ${isLackeySize ? '16px' : '20px'};
+                    box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
                 ">
                     ${card.Target}
                 </div>
@@ -214,11 +237,13 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
             <!-- Set Indicator -->
             <div style="
                 position: absolute;
-                bottom: ${isLackeySize ? '8px' : '15px'};
-                left: ${isLackeySize ? '8px' : '15px'};
-                font-size: ${isLackeySize ? '8px' : '12px'};
-                color: #666;
-                font-weight: bold;
+                bottom: ${isLackeySize ? '10px' : '15px'};
+                left: ${isLackeySize ? '10px' : '15px'};
+                font-size: ${isLackeySize ? '10px' : '12px'};
+                color: #2c3e50;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 1px;
             ">
                 ${card.set || 'AEW'}
             </div>
@@ -227,14 +252,18 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
             ${state.isKitCard(card) ? `
                 <div style="
                     position: absolute;
-                    top: ${isLackeySize ? '4px' : '8px'};
-                    right: ${isLackeySize ? '4px' : '8px'};
+                    top: ${isLackeySize ? '6px' : '8px'};
+                    right: ${isLackeySize ? '6px' : '8px'};
                     background: #e74c3c;
                     color: white;
-                    padding: ${isLackeySize ? '2px 6px' : '4px 8px'};
-                    border-radius: ${isLackeySize ? '4px' : '6px'};
-                    font-size: ${isLackeySize ? '8px' : '10px'};
-                    font-weight: bold;
+                    padding: ${isLackeySize ? '3px 8px' : '4px 8px'};
+                    border-radius: ${isLackeySize ? '6px' : '6px'};
+                    font-size: ${isLackeySize ? '10px' : '10px'};
+                    font-weight: 900;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    border: 2px solid #000;
+                    box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
                 ">
                     KIT
                 </div>
