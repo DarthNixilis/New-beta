@@ -316,29 +316,76 @@ export async function exportAllCardsAsImagesFallback() {
     });
 }
 
-// TSV Database Export
+// TSV Database Export for LackeyCCG format
 export async function exportAllCardsAsTSV() {
     try {
-        console.log("Starting TSV export...");
+        console.log("Starting TSV export for LackeyCCG...");
         
-        // Create TSV content
-        const headers = ['Name', 'Type', 'Set', 'Cost', 'Damage', 'Momentum', 'Target', 'Traits', 'Starting', 'Game Text'];
+        // Create TSV content with exact LackeyCCG headers
+        const headers = ['Name', 'Sets', 'ImageFile', 'Cost', 'Damage', 'Momentum', 'Type', 'Target', 'Traits', 'Wrestler Logo', 'Game Text'];
         let tsvContent = headers.join('\t') + '\n';
+        
+        // Helper to clean text for TSV
+        const cleanForTSV = (text) => {
+            if (!text) return '';
+            // Replace tabs with spaces, newlines with spaces, and remove any extra whitespace
+            return text.replace(/\t/g, ' ').replace(/\n/g, ' ').replace(/\r/g, ' ').trim();
+        };
         
         // Add all cards
         state.cardDatabase.forEach(card => {
+            // Generate PascalCase image filename
+            const imageFile = state.toPascalCase(card.title) + '.png';
+            
+            // Handle special cost values for personas
+            let costValue = card.cost;
+            let damageValue = card.damage;
+            let momentumValue = card.momentum;
+            
+            // For persona cards (Wrestler, Manager, Call Name, Faction), use N/a for cost/damage
+            if (['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type)) {
+                costValue = 'N/a';
+                damageValue = 'N/a';
+                // For Call Names, check if momentum is null/undefined
+                if (card.card_type === 'Call Name' && (momentumValue === null || momentumValue === undefined)) {
+                    momentumValue = '';
+                }
+            }
+            
+            // Get wrestler logo from Starting column (kit cards)
+            let wrestlerLogo = '';
+            if (card['Starting'] && card['Starting'].trim() !== '') {
+                wrestlerLogo = card['Starting'].trim();
+            }
+            
+            // Get traits from text_box.traits or Traits column
+            let traits = '';
+            if (card.text_box?.traits && card.text_box.traits.length > 0) {
+                traits = card.text_box.traits.map(t => 
+                    t.value ? `${t.name}:${t.value}` : t.name
+                ).join(',');
+            } else if (card['Traits']) {
+                traits = card['Traits'];
+            }
+            
+            // Clean game text
+            const gameText = cleanForTSV(card.text_box?.raw_text || '');
+            
+            // Build the row exactly like your example
             const row = [
-                card.title || '',
-                card.card_type || '',
-                card.set || '',
-                card.cost !== null ? card.cost : '',
-                card.damage !== null ? card.damage : '',
-                card.momentum !== null ? card.momentum : '',
-                card.Target || '',
-                card['Traits'] || '',
-                card['Starting'] || '',
-                card.text_box?.raw_text?.replace(/\n/g, ' ') || '' // Replace newlines with spaces
+                card.title || '',                          // Name
+                'AEW',                                     // Sets (always AEW)
+                imageFile,                                 // ImageFile (PascalCase.png)
+                costValue !== null ? costValue : '',       // Cost
+                damageValue !== null ? damageValue : '',   // Damage
+                momentumValue !== null ? momentumValue : '', // Momentum
+                card.card_type || '',                      // Type
+                card.Target || '',                         // Target
+                traits,                                    // Traits
+                wrestlerLogo,                              // Wrestler Logo
+                gameText                                   // Game Text
             ];
+            
             tsvContent += row.join('\t') + '\n';
         });
         
@@ -346,13 +393,14 @@ export async function exportAllCardsAsTSV() {
         const blob = new Blob([tsvContent], { type: 'text/tab-separated-values' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `AEW_Card_Database_${new Date().toISOString().slice(0,10)}.tsv`;
+        a.download = `AEW_Card_Database_Lackey_${new Date().toISOString().slice(0,10)}.tsv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
         
         console.log("TSV export completed successfully");
+        alert('TSV database exported successfully! Ready for LackeyCCG import.');
         return true;
         
     } catch (error) {
