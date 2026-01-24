@@ -1,67 +1,191 @@
-// card-renderer-export.js
 import * as state from './config.js';
 
-// Special renderer for exported cards with larger text
+// Special renderer for exported cards (includes Lackey 214x308 template + auto-fit hooks)
 export function generateCardVisualHTMLForExport(card, options = {}) {
     const isLackeySize = options.size === 'lackey' || options.width === 214;
-    
-    // SCALE FACTORS - EVEN BIGGER FOR LACKEY!
-    const titleScale = isLackeySize ? 1.8 : 1.0;
-    const costScale = isLackeySize ? 3.0 : 1.0; // INCREASED from 2.5 to 3.0
-    const momentumScale = isLackeySize ? 3.0 : 1.0; // INCREASED from 2.5 to 3.0
-    const damageScale = isLackeySize ? 1.8 : 1.0; // INCREASED from 1.5 to 1.8
-    const textScale = isLackeySize ? 1.6 : 1.0; // INCREASED from 1.4 to 1.6
-    const typeScale = isLackeySize ? 1.4 : 1.0; // INCREASED from 1.3 to 1.4
-    
-    // Calculate actual font sizes
-    const titleFontSize = isLackeySize ? Math.round(16 * titleScale) : 20;
-    const costLabelFontSize = isLackeySize ? Math.round(12 * costScale) : 14;
-    const costNumberFontSize = isLackeySize ? Math.round(40 * costScale) : 36; // HUGE: 40 * 3.0 = 120px!
-    const momentumLabelFontSize = isLackeySize ? Math.round(12 * momentumScale) : 14;
-    const momentumNumberFontSize = isLackeySize ? Math.round(40 * momentumScale) : 36; // HUGE: 120px!
-    const damageNumberFontSize = isLackeySize ? Math.round(28 * damageScale) : 28; // 28 * 1.8 = ~50px
-    const textFontSize = isLackeySize ? Math.round(12 * textScale) : 14; // 12 * 1.6 = ~19px
-    
+
     const getCardColor = (type) => {
         switch(type) {
-            case 'Action': return '#FFD700'; // Gold
-            case 'Strike': return '#FF6B6B'; // Red
-            case 'Grapple': return '#4ECDC4'; // Teal
-            case 'Submission': return '#A8E6CF'; // Mint
-            case 'Response': return '#FFD3B6'; // Peach
-            case 'Manager': return '#DDA0DD'; // Plum
-            case 'Wrestler': return '#87CEEB'; // Sky Blue
-            case 'Call Name': return '#98FB98'; // Pale Green
-            case 'Faction': return '#D2B48C'; // Tan
-            case 'Boon': return '#E6E6FA'; // Lavender
-            case 'Injury': return '#A9A9A9'; // Dark Gray
-            default: return '#FFFFFF'; // White
+            case 'Action': return '#7D4AA6'; // purple-ish like your sample
+            case 'Strike': return '#FF6B6B';
+            case 'Grapple': return '#4ECDC4';
+            case 'Submission': return '#A8E6CF';
+            case 'Response': return '#FFD3B6';
+            case 'Manager': return '#DDA0DD';
+            case 'Wrestler': return '#87CEEB';
+            case 'Call Name': return '#98FB98';
+            case 'Faction': return '#D2B48C';
+            case 'Boon': return '#E6E6FA';
+            case 'Injury': return '#A9A9A9';
+            default: return '#FFFFFF';
         }
     };
-    
+
+    const formatTextPlainish = (text) => {
+        if (!text) return '';
+        // Keep it simple for tiny Lackey size: preserve periods into line breaks.
+        let formatted = String(text).trim();
+
+        // Bold keywords (kept, but not too aggressive)
+        formatted = formatted
+            .replace(/\b(Enters|Ongoing|Trigger|Follow-Up|Finisher|Sudden|Permanent|Resilient|Relentless|Power Attack|Focus Attack|Cunning Attack|Combo Attack|Hidden|Set-up|Stealth Attack|High Risk|Sturdy|Aggressive|Risky|Illegal|Retaliate|Tie-Up|Ready|Recovery|Response|Reverse|Special|Cycling|Rope Break|Capitalize|Turned|Knockout|Pin|Submit|Passout)\b/gi, '<strong>$1</strong>')
+            .replace(/\b(Scout|Attempt|Tuck|Cycle|Market|Commit|Uncommit|Stun|Discard|Draw|Gain|Lose|Pay|Play|Purchase|Reveal|Shuffle|Search|Look|Choose|Create|Put)\b/gi, '<strong>$1</strong>');
+
+        // sentence breaks
+        formatted = formatted.replace(/\.\s+/g, '.<br>');
+
+        return formatted;
+    };
+
+    // ---------------------------
+    // LACKEY 214x308 TEMPLATE
+    // Matches your screenshot layout:
+    // - Title top-left
+    // - Cost in a small top-right box
+    // - D/M on left under title
+    // - Type bar across (purple)
+    // - Text box at bottom (auto-fit will shrink font)
+    // ---------------------------
+    if (isLackeySize) {
+        const typeBarColor = getCardColor(card.card_type);
+        const costDisplay = (card.cost !== null && card.cost !== undefined) ? card.cost : '';
+        const damageDisplay = (card.damage !== null && card.damage !== undefined) ? card.damage : '0';
+        const momentumDisplay = (card.momentum !== null && card.momentum !== undefined) ? card.momentum : '0';
+
+        const gameText = card.text_box?.raw_text ? formatTextPlainish(card.text_box.raw_text) : '';
+
+        return `
+            <div class="aew-lackey-card" style="
+                width: ${options.width || 214}px;
+                height: ${options.height || 308}px;
+                background: #ffffff;
+                border: 2px solid #000;
+                border-radius: 0px;
+                position: relative;
+                overflow: hidden;
+                font-family: Arial, sans-serif;
+                box-sizing: border-box;
+            ">
+                <!-- Title (top-left) -->
+                <div class="aew-lackey-title" style="
+                    position: absolute;
+                    left: 6px;
+                    top: 6px;
+                    right: 44px;
+                    font-weight: 900;
+                    font-size: 18px;
+                    line-height: 1.05;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                ">${card.title || ''}</div>
+
+                <!-- Cost box (top-right) -->
+                <div class="aew-lackey-costbox" style="
+                    position: absolute;
+                    top: 6px;
+                    right: 6px;
+                    width: 34px;
+                    height: 28px;
+                    border: 2px solid #000;
+                    background: #fff;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 900;
+                    font-size: 18px;
+                    box-sizing: border-box;
+                ">${costDisplay}</div>
+
+                <!-- Stats left: D / M -->
+                <div class="aew-lackey-stats" style="
+                    position: absolute;
+                    left: 8px;
+                    top: 34px;
+                    font-weight: 900;
+                    font-size: 22px;
+                    line-height: 1.05;
+                ">
+                    <div>D: ${damageDisplay}</div>
+                    <div>M: ${momentumDisplay}</div>
+                </div>
+
+                <!-- Type bar -->
+                <div class="aew-lackey-typebar" style="
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    top: 124px;
+                    height: 36px;
+                    background: ${typeBarColor};
+                    border-top: 2px solid #000;
+                    border-bottom: 2px solid #000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 900;
+                    font-size: 16px;
+                    letter-spacing: 1px;
+                    color: #fff;
+                    text-transform: uppercase;
+                    box-sizing: border-box;
+                ">${card.card_type || ''}</div>
+
+                <!-- Text box -->
+                <div class="aew-lackey-textbox aew-export-textbox" style="
+                    position: absolute;
+                    left: 10px;
+                    right: 10px;
+                    top: 172px;
+                    bottom: 10px;
+                    background: #fff;
+                    border: 2px solid #000;
+                    box-sizing: border-box;
+                    padding: 8px;
+                    font-weight: 700;
+                    font-size: 14px; /* auto-fit will reduce this if needed */
+                    line-height: 1.15;
+                    overflow: hidden; /* IMPORTANT: no scrolling, we shrink instead */
+                ">
+                    ${gameText}
+                </div>
+            </div>
+        `;
+    }
+
+    // ---------------------------
+    // ORIGINAL (STANDARD) EXPORT TEMPLATE (kept)
+    // ---------------------------
+
+    const titleFontSize = 20;
+    const costLabelFontSize = 14;
+    const costNumberFontSize = 36;
+    const momentumLabelFontSize = 14;
+    const momentumNumberFontSize = 36;
+    const damageNumberFontSize = 28;
+    const textFontSize = 14;
+
     const formatText = (text) => {
         if (!text) return '';
-        
-        // Replace keywords with bold formatting
+
         let formatted = text
             .replace(/\b(Enters|Ongoing|Trigger|Follow-Up|Finisher|Sudden|Permanent|Resilient|Relentless|Power Attack|Focus Attack|Cunning Attack|Combo Attack|Hidden|Set-up|Stealth Attack|High Risk|Sturdy|Agressive|Risky|Illegal|Retaliate|Tie-Up|Ready|Recovery|Response|Reverse|Special|Cycling|Rope Break|Capitalize|Turned|Knockout|Pin|Submit|Passout)\b/gi, '<strong>$1</strong>')
             .replace(/\b(Scout|Attempt|Tuck|Cycle|Market|Commit|Uncommit|Stun|Discard|Draw|Gain|Lose|Pay|Play|Purchase|Reveal|Shuffle|Search|Look|Choose|Create|Put)\b/gi, '<strong>$1</strong>');
-        
-        // Add line breaks for bullet points
+
         formatted = formatted.replace(/\.\s+(\w)/g, '.<br>$1');
-        
+
         return formatted;
     };
-    
+
     const html = `
         <div class="card" style="
             width: ${options.width || 400}px;
             height: ${options.height || 600}px;
             background: ${getCardColor(card.card_type)};
-            border: ${isLackeySize ? '4px' : '5px'} solid #000;
-            border-radius: ${isLackeySize ? '10px' : '15px'};
+            border: 5px solid #000;
+            border-radius: 15px;
             position: relative;
-            box-shadow: 0 ${isLackeySize ? '3px' : '4px'} ${isLackeySize ? '6px' : '8px'} rgba(0,0,0,0.3);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             font-family: 'Arial Black', Arial, sans-serif;
             overflow: hidden;
         ">
@@ -69,7 +193,7 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
             <div style="
                 background: #2c3e50;
                 color: white;
-                padding: ${isLackeySize ? '8px' : '10px'};
+                padding: 10px;
                 text-align: center;
                 border-bottom: 3px solid #000;
             ">
@@ -78,40 +202,40 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                     font-weight: 900;
                     line-height: 1.1;
                     text-transform: uppercase;
-                    letter-spacing: ${isLackeySize ? '1px' : '1px'};
+                    letter-spacing: 1px;
                     text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
                 ">${card.title}</div>
                 <div style="
-                    font-size: ${isLackeySize ? Math.round(12 * typeScale) : 14}px;
+                    font-size: 14px;
                     font-weight: bold;
                     opacity: 0.9;
-                    margin-top: ${isLackeySize ? '3px' : '4px'};
+                    margin-top: 4px;
                 ">${card.card_type}</div>
             </div>
-            
-            <!-- Cost and Momentum (MASSIVE for Lackey) -->
+
+            <!-- Cost and Momentum -->
             <div style="
                 position: absolute;
-                top: ${isLackeySize ? '60px' : '80px'};
+                top: 80px;
                 left: 0;
                 right: 0;
                 display: flex;
                 justify-content: space-around;
                 align-items: center;
-                padding: ${isLackeySize ? '8px' : '10px'};
+                padding: 10px;
                 background: rgba(255, 255, 255, 0.95);
-                border: ${isLackeySize ? '3px' : '3px'} solid #000;
-                margin: ${isLackeySize ? '0 8px' : '0 20px'};
-                border-radius: ${isLackeySize ? '10px' : '12px'};
+                border: 3px solid #000;
+                margin: 0 20px;
+                border-radius: 12px;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             ">
-                <!-- Cost - HUGE -->
+                <!-- Cost -->
                 <div style="text-align: center;">
                     <div style="
                         font-size: ${costLabelFontSize}px;
                         font-weight: 900;
                         color: #2c3e50;
-                        margin-bottom: ${isLackeySize ? '4px' : '4px'};
+                        margin-bottom: 4px;
                         text-transform: uppercase;
                         letter-spacing: 1px;
                     ">COST</div>
@@ -123,15 +247,15 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                         text-shadow: 2px 2px 3px rgba(0,0,0,0.3);
                     ">${card.cost !== null ? card.cost : 'N/A'}</div>
                 </div>
-                
+
                 <!-- Damage (if applicable) -->
                 ${card.damage !== null ? `
                     <div style="text-align: center;">
                         <div style="
-                            font-size: ${isLackeySize ? Math.round(12 * damageScale) : 14}px;
+                            font-size: 14px;
                             font-weight: 900;
                             color: #2c3e50;
-                            margin-bottom: ${isLackeySize ? '4px' : '4px'};
+                            margin-bottom: 4px;
                             text-transform: uppercase;
                             letter-spacing: 1px;
                         ">DAMAGE</div>
@@ -144,14 +268,14 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                         ">${card.damage}</div>
                     </div>
                 ` : ''}
-                
-                <!-- Momentum - SUPER HUGE (most important!) -->
+
+                <!-- Momentum -->
                 <div style="text-align: center;">
                     <div style="
                         font-size: ${momentumLabelFontSize}px;
                         font-weight: 900;
                         color: #2c3e50;
-                        margin-bottom: ${isLackeySize ? '4px' : '4px'};
+                        margin-bottom: 4px;
                         text-transform: uppercase;
                         letter-spacing: 1px;
                     ">MOMENTUM</div>
@@ -164,82 +288,32 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                     ">${card.momentum !== null ? card.momentum : '0'}</div>
                 </div>
             </div>
-            
+
             <!-- Game Text Box -->
-            <div style="
+            <div class="aew-export-textbox" style="
                 position: absolute;
-                top: ${isLackeySize ? '130px' : '180px'};
-                bottom: ${isLackeySize ? '30px' : '50px'};
-                left: ${isLackeySize ? '10px' : '20px'};
-                right: ${isLackeySize ? '10px' : '20px'};
+                top: 180px;
+                bottom: 50px;
+                left: 20px;
+                right: 20px;
                 background: white;
-                border: ${isLackeySize ? '2px' : '3px'} solid #000;
-                border-radius: ${isLackeySize ? '8px' : '10px'};
-                padding: ${isLackeySize ? '10px' : '15px'};
+                border: 3px solid #000;
+                border-radius: 10px;
+                padding: 15px;
                 overflow-y: auto;
                 font-size: ${textFontSize}px;
                 line-height: 1.5;
                 font-weight: bold;
             ">
                 ${card.text_box.raw_text ? formatText(card.text_box.raw_text) : 'No text'}
-                
-                <!-- Traits -->
-                ${card.text_box.traits && card.text_box.traits.length > 0 ? `
-                    <div style="margin-top: ${isLackeySize ? '10px' : '12px'}; padding-top: ${isLackeySize ? '6px' : '8px'}; border-top: 2px solid #ddd;">
-                        <div style="font-weight: 900; font-size: ${isLackeySize ? Math.round(11 * textScale) : 12}px; color: #2c3e50; margin-bottom: ${isLackeySize ? '4px' : '4px'}; text-transform: uppercase;">Traits:</div>
-                        <div style="font-size: ${isLackeySize ? Math.round(11 * textScale) : 12}px; font-weight: bold;">
-                            ${card.text_box.traits.map(t => 
-                                `<span style="background: #e0e0e0; padding: ${isLackeySize ? '2px 6px' : '2px 6px'}; margin: 0 ${isLackeySize ? '3px' : '4px'} ${isLackeySize ? '3px' : '4px'} 0; border-radius: 4px; display: inline-block; border: 1px solid #aaa;">
-                                    ${t.name}${t.value ? ': ' + t.value : ''}
-                                </span>`
-                            ).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-                
-                <!-- Keywords -->
-                ${card.text_box.keywords && card.text_box.keywords.length > 0 ? `
-                    <div style="margin-top: ${isLackeySize ? '10px' : '12px'}; padding-top: ${isLackeySize ? '6px' : '8px'}; border-top: 2px solid #ddd;">
-                        <div style="font-weight: 900; font-size: ${isLackeySize ? Math.round(11 * textScale) : 12}px; color: #2c3e50; margin-bottom: ${isLackeySize ? '4px' : '4px'}; text-transform: uppercase;">Keywords:</div>
-                        <div style="font-size: ${isLackeySize ? Math.round(11 * textScale) : 12}px; font-weight: bold;">
-                            ${card.text_box.keywords.map(k => 
-                                `<span style="background: #d4edda; padding: ${isLackeySize ? '2px 6px' : '2px 6px'}; margin: 0 ${isLackeySize ? '3px' : '4px'} ${isLackeySize ? '3px' : '4px'} 0; border-radius: 4px; display: inline-block; border: 1px solid #28a745;">
-                                    ${k.name}
-                                </span>`
-                            ).join('')}
-                        </div>
-                    </div>
-                ` : ''}
             </div>
-            
-            <!-- Target Icon (if applicable) -->
-            ${card.Target && card.Target !== '-' && card.Target !== 'null' ? `
-                <div style="
-                    position: absolute;
-                    bottom: ${isLackeySize ? '10px' : '15px'};
-                    right: ${isLackeySize ? '10px' : '15px'};
-                    width: ${isLackeySize ? '30px' : '40px'};
-                    height: ${isLackeySize ? '30px' : '40px'};
-                    background: #f0f0f0;
-                    border: 2px solid #000;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-weight: 900;
-                    font-size: ${isLackeySize ? '16px' : '20px'};
-                    box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-                ">
-                    ${card.Target}
-                </div>
-            ` : ''}
-            
+
             <!-- Set Indicator -->
             <div style="
                 position: absolute;
-                bottom: ${isLackeySize ? '10px' : '15px'};
-                left: ${isLackeySize ? '10px' : '15px'};
-                font-size: ${isLackeySize ? '10px' : '12px'};
+                bottom: 15px;
+                left: 15px;
+                font-size: 12px;
                 color: #2c3e50;
                 font-weight: 900;
                 text-transform: uppercase;
@@ -247,18 +321,18 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
             ">
                 ${card.set || 'AEW'}
             </div>
-            
+
             <!-- Kit Card Indicator -->
             ${state.isKitCard(card) ? `
                 <div style="
                     position: absolute;
-                    top: ${isLackeySize ? '6px' : '8px'};
-                    right: ${isLackeySize ? '6px' : '8px'};
+                    top: 8px;
+                    right: 8px;
                     background: #e74c3c;
                     color: white;
-                    padding: ${isLackeySize ? '3px 8px' : '4px 8px'};
-                    border-radius: ${isLackeySize ? '6px' : '6px'};
-                    font-size: ${isLackeySize ? '10px' : '10px'};
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    font-size: 10px;
                     font-weight: 900;
                     text-transform: uppercase;
                     letter-spacing: 1px;
@@ -270,6 +344,6 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
             ` : ''}
         </div>
     `;
-    
+
     return html;
 }
