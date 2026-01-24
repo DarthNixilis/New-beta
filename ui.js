@@ -1,7 +1,7 @@
 // ui.js
 
 import * as state from './config.js';
-import { generateCardVisualHTML } from './card-renderer.js'; // UPDATED IMPORT
+import { generateCardVisualHTML } from './card-renderer.js';
 
 // --- DOM REFERENCES ---
 const searchResults = document.getElementById('searchResults');
@@ -28,27 +28,110 @@ export function renderCardPool(cards) {
         searchResults.innerHTML = '<p>No cards match the current filters.</p>';
         return;
     }
+    
     cards.forEach(card => {
         const cardElement = document.createElement('div');
         cardElement.className = state.currentViewMode === 'list' ? 'card-item' : 'grid-card-item';
         if (state.isSignatureFor(card)) cardElement.classList.add('signature-highlight');
         cardElement.dataset.title = card.title;
+        
+        // Get target for maneuvers
+        const target = state.getCardTarget(card);
+        const isManeuver = ['Strike', 'Grapple', 'Submission'].includes(card.card_type);
+        
+        // Get kit persona name
+        const kitPersona = state.getKitPersona(card);
+        
+        // Only show kit info for non-persona cards that go in decks
+        const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
+        const showKitInfo = kitPersona && !isPersonaCard;
+        
         if (state.currentViewMode === 'list') {
-            cardElement.innerHTML = `<span data-title="${card.title}">${card.title} (C:${card.cost ?? 'N/A'}, D:${card.damage ?? 'N/A'}, M:${card.momentum ?? 'N/A'})</span>`;
+            // Build the display string with target if applicable
+            let displayText = `${card.title} (C:${card.cost ?? 'N/A'}`;
+            
+            if (isManeuver && card.damage !== null) {
+                displayText += `, D:${card.damage}`;
+                if (target) displayText += ` [T:${target}]`;
+            } else if (card.damage !== null) {
+                displayText += `, D:${card.damage}`;
+            }
+            
+            displayText += `, M:${card.momentum ?? 'N/A'})`;
+            
+            cardElement.innerHTML = `<span data-title="${card.title}">${displayText}</span>`;
+            
             const buttonsDiv = document.createElement('div');
             buttonsDiv.className = 'card-buttons';
-            if (card.cost === 0) buttonsDiv.innerHTML = `<button data-title="${card.title}" data-deck-target="starting">Starting</button><button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>`;
-            else buttonsDiv.innerHTML = `<button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>`;
+            
+            // Add kit info if applicable
+            if (showKitInfo) {
+                const kitSpan = document.createElement('span');
+                kitSpan.className = 'kit-persona';
+                kitSpan.textContent = kitPersona;
+                kitSpan.title = `${kitPersona}'s Kit`;
+                kitSpan.style.cssText = `
+                    font-size: 11px;
+                    color: #666;
+                    display: block;
+                    margin-top: 2px;
+                `;
+                cardElement.appendChild(kitSpan);
+            }
+            
+            if (card.cost === 0) {
+                buttonsDiv.innerHTML = `
+                    <button data-title="${card.title}" data-deck-target="starting">Starting</button>
+                    <button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>
+                `;
+            } else {
+                buttonsDiv.innerHTML = `<button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>`;
+            }
             cardElement.appendChild(buttonsDiv);
         } else {
+            // Grid view
             const visualHTML = generateCardVisualHTML(card);
             cardElement.innerHTML = `<div class="card-visual" data-title="${card.title}">${visualHTML}</div>`;
+            
+            // Add kit info below the visual in grid view (stacked)
+            if (showKitInfo) {
+                const kitDiv = document.createElement('div');
+                kitDiv.className = 'grid-kit-info';
+                kitDiv.style.cssText = `
+                    font-size: 11px;
+                    color: #666;
+                    text-align: center;
+                    margin-top: 5px;
+                    line-height: 1.2;
+                `;
+                
+                // Stack persona names (one word per line if multiple)
+                const personaWords = kitPersona.split(' ');
+                personaWords.forEach(word => {
+                    const wordDiv = document.createElement('div');
+                    wordDiv.textContent = word;
+                    kitDiv.appendChild(wordDiv);
+                });
+                
+                kitDiv.title = `${kitPersona}'s Kit`;
+                cardElement.appendChild(kitDiv);
+            }
+            
             const buttonsDiv = document.createElement('div');
             buttonsDiv.className = 'card-buttons';
-            if (card.cost === 0) buttonsDiv.innerHTML = `<button data-title="${card.title}" data-deck-target="starting">Starting</button><button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>`;
-            else buttonsDiv.innerHTML = `<button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>`;
+            buttonsDiv.style.marginTop = '8px';
+            
+            if (card.cost === 0) {
+                buttonsDiv.innerHTML = `
+                    <button data-title="${card.title}" data-deck-target="starting" style="margin-bottom: 4px;">Starting</button>
+                    <button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>
+                `;
+            } else {
+                buttonsDiv.innerHTML = `<button class="btn-purchase" data-title="${card.title}" data-deck-target="purchase">Purchase</button>`;
+            }
             cardElement.appendChild(buttonsDiv);
         }
+        
         searchResults.appendChild(cardElement);
     });
 }
@@ -85,7 +168,39 @@ export function showCardModal(cardTitle) {
     state.setLastFocusedElement(document.activeElement);
     const card = state.cardDatabase.find(c => c.title === cardTitle);
     if (!card) return;
-    modalCardContent.innerHTML = generateCardVisualHTML(card);
+    
+    // Get target and kit info for the modal
+    const target = state.getCardTarget(card);
+    const kitPersona = state.getKitPersona(card);
+    const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
+    const showKitInfo = kitPersona && !isPersonaCard;
+    
+    // Generate custom placeholder with kit info
+    const typeClass = `type-${card.card_type.toLowerCase()}`;
+    const placeholderHTML = `
+        <div class="placeholder-card">
+            <div class="placeholder-header">
+                <span>${card.title}</span>
+            </div>
+            <div class="placeholder-stats-line">
+                <div class="stats-left">
+                    ${card.damage !== null ? `<span>D:${card.damage}</span>` : ''}
+                    <span>M:${card.momentum ?? 'N/A'}</span>
+                    ${target ? `<span class="target-display">T:${target}</span>` : ''}
+                </div>
+                <div class="cost-right">
+                    <span>C:${card.cost ?? 'N/A'}</span>
+                    ${showKitInfo ? `<div class="kit-persona-display">${kitPersona}</div>` : ''}
+                </div>
+            </div>
+            <div class="placeholder-art-area"><span>Art Missing</span></div>
+            <div class="placeholder-type-line ${typeClass}"><span>${card.card_type}</span></div>
+            <div class="placeholder-text-box">
+                <p>${card.text_box?.raw_text || ''}</p>
+            </div>
+        </div>`;
+    
+    modalCardContent.innerHTML = placeholderHTML;
     cardModal.style.display = 'flex';
     cardModal.setAttribute('role', 'dialog');
     cardModal.setAttribute('aria-modal', 'true');
@@ -105,10 +220,25 @@ function renderDeckList(element, deck) {
     Object.entries(cardCounts).forEach(([cardTitle, count]) => {
         const card = state.cardDatabase.find(c => c.title === cardTitle);
         if (!card) return;
+        
         const cardElement = document.createElement('div');
         cardElement.className = 'card-item';
         const deckName = element === startingDeckList ? 'starting' : 'purchase';
-        cardElement.innerHTML = `<span data-title="${card.title}">${count}x ${card.title}</span><button data-title="${card.title}" data-deck="${deckName}">Remove</button>`;
+        
+        // Get kit info for deck list
+        const kitPersona = state.getKitPersona(card);
+        const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
+        const showKitInfo = kitPersona && !isPersonaCard;
+        
+        let cardHTML = `<span data-title="${card.title}">${count}x ${card.title}</span>`;
+        
+        if (showKitInfo) {
+            cardHTML += `<span class="kit-persona" style="font-size: 10px; color: #888; display: block; margin-top: 2px;">${kitPersona}</span>`;
+        }
+        
+        cardHTML += `<button data-title="${card.title}" data-deck="${deckName}">Remove</button>`;
+        
+        cardElement.innerHTML = cardHTML;
         element.appendChild(cardElement);
     });
 }
@@ -129,4 +259,3 @@ export function filterDeckList(deckListElement, query) {
         item.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
     });
 }
-

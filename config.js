@@ -72,12 +72,10 @@ export function buildCardTitleCache() {
 }
 
 export function isKitCard(card) {
-    // NEW: Check if Starting column has a value (persona name)
     return card && card['Starting'] && card['Starting'].trim() !== '';
 }
 
 export function isSignatureFor(card) {
-    // NEW: Check against Starting column instead of Signature For
     if (!card || !card['Starting']) return false;
     const personaName = card['Starting'].trim();
     if (!personaName) return false;
@@ -89,4 +87,20 @@ export function isSignatureFor(card) {
     if (selectedFaction) activePersonaTitles.push(selectedFaction.title);
     
     return activePersonaTitles.includes(personaName);
+}
+
+// NEW: Get card target for maneuvers
+export function getCardTarget(card) {
+    if (!card.text_box || !card.text_box.traits) return null;
+    const targetTrait = card.text_box.traits.find(t => t.name.trim() === 'Target');
+    return targetTrait ? targetTrait.value : null;
+}
+
+// NEW: Get kit persona name (without "Wrestler")
+export function getKitPersona(card) {
+    if (!card || !card['Starting']) return null;
+    const personaName = card['Starting'].trim();
+    if (!personaName) return null;
+    // Remove "Wrestler" suffix if present
+    return personaName.replace(/\s*Wrestler$/, '');
 }

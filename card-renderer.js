@@ -6,19 +6,33 @@ export function generateCardVisualHTML(card) {
     const imageName = toPascalCase(card.title);
     const imagePath = `./card-images/${imageName}.png`;
     const typeClass = `type-${card.card_type.toLowerCase()}`;
+    
+    // Get target from traits
     const targetTrait = card.text_box?.traits?.find(t => t.name.trim() === 'Target');
     const targetValue = targetTrait ? targetTrait.value : null;
-
+    
+    // Get kit persona name
+    const kitPersona = state.getKitPersona(card);
+    
+    // Only show kit info for non-persona cards that go in decks
+    const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
+    const showKitInfo = kitPersona && !isPersonaCard;
+    
     const placeholderHTML = `
         <div class="placeholder-card">
-            <div class="placeholder-header"><span>${card.title}</span></div>
+            <div class="placeholder-header">
+                <span>${card.title}</span>
+            </div>
             <div class="placeholder-stats-line">
                 <div class="stats-left">
-                    <span>D: ${card.damage ?? 'N/A'}</span>
-                    <span>M: ${card.momentum ?? 'N/A'}</span>
-                    ${targetValue ? `<span>T: ${targetValue}</span>` : ''}
+                    ${card.damage !== null ? `<span>D:${card.damage}</span>` : ''}
+                    <span>M:${card.momentum ?? 'N/A'}</span>
+                    ${targetValue ? `<span class="target-display">T:${targetValue}</span>` : ''}
                 </div>
-                <div class="cost-right"><span>C: ${card.cost ?? 'N/A'}</span></div>
+                <div class="cost-right">
+                    <span>C:${card.cost ?? 'N/A'}</span>
+                    ${showKitInfo ? `<div class="kit-persona-display">${kitPersona}</div>` : ''}
+                </div>
             </div>
             <div class="placeholder-art-area"><span>Art Missing</span></div>
             <div class="placeholder-type-line ${typeClass}"><span>${card.card_type}</span></div>
@@ -26,6 +40,7 @@ export function generateCardVisualHTML(card) {
                 <p>${card.text_box?.raw_text || ''}</p>
             </div>
         </div>`;
+    
     return `<img src="${imagePath}" alt="${card.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><div style="display: none;">${placeholderHTML}</div>`;
 }
 

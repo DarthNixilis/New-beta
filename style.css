@@ -81,20 +81,19 @@ button.btn-purchase { background-color: var(--purchase-color); color: white; bor
 .modal-close-button { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; font-weight: bold; cursor: pointer; }
 
 /* --- THIS IS THE GLOBAL FIX FOR ALL CARD IMAGES --- */
-/* This targets any image that is inside a container that also holds our placeholder logic */
 #modalCardContent img,
 .card-visual img {
     width: 100%;
     height: auto;
     display: block;
-    max-width: 100%; /* Redundant but safe */
+    max-width: 100%;
 }
 /* -------------------------------------------------- */
 
 .placeholder-card { border: 1px solid #ccc; border-radius: 10px; width: 100%; aspect-ratio: 63 / 88; padding: 15px; background-color: #fdfdfd; display: flex; flex-direction: column; box-sizing: border-box; color: #333; }
-.placeholder-header { font-weight: bold; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px; text-align: center; }
+.placeholder-header { font-weight: bold; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px; text-align: center; display: flex; flex-direction: column; align-items: center; }
 .placeholder-stats-line { display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; font-weight: bold; padding: 0 5px 5px 5px; margin-bottom: 10px; border-bottom: 1px solid #eee; }
-.placeholder-stats-line .stats-left { display: flex; gap: 8px; }
+.placeholder-stats-line .stats-left { display: flex; gap: 8px; align-items: center; }
 .placeholder-art-area { flex-grow: 1; background-color: #e9ecef; border-radius: 5px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; color: #6c757d; font-style: italic; }
 .placeholder-type-line { font-style: italic; border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 5px 0; text-align: center; margin-bottom: 10px; }
 .placeholder-text-box { font-size: 0.9em; flex-grow: 2; overflow-y: auto; padding: 5px; background-color: #f8f9fa; border-radius: 4px; white-space: pre-wrap; margin-bottom: 10px; }
@@ -115,6 +114,84 @@ button.btn-purchase { background-color: var(--purchase-color); color: white; bor
 .import-controls textarea { width: 95%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; resize: vertical; font-family: inherit; }
 .import-controls button { padding: 10px 15px; background-color: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer; align-self: flex-end; }
 .import-status { margin-top: 15px; font-size: 0.9em; }
+
+/* NEW STYLES FOR TARGET AND KIT INFO */
+/* Target display in placeholder cards */
+.target-display {
+    color: #e74c3c;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+/* Kit persona display */
+.kit-persona {
+    font-size: 11px;
+    color: #666;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Kit persona display in grid view (stacked) */
+.grid-kit-info {
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+    margin-top: 5px;
+    line-height: 1.2;
+}
+
+.grid-kit-info div {
+    margin-bottom: 2px;
+}
+
+/* Kit persona display below cost in placeholder cards */
+.kit-persona-display {
+    font-size: 10px;
+    color: #666;
+    margin-top: 2px;
+    line-height: 1.2;
+    text-align: center;
+}
+
+/* Update cost-right to handle kit display */
+.cost-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+/* Enhance stats-left for target display */
+.stats-left {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Modal view enhancements */
+#modalCardContent .kit-persona-display {
+    background: #f8f9fa;
+    padding: 3px 6px;
+    border-radius: 3px;
+    border: 1px solid #dee2e6;
+    margin-top: 4px;
+}
+
+/* Deck list items - add kit info */
+.deck-list-small .kit-persona {
+    font-size: 10px;
+    color: #888;
+    font-style: italic;
+}
+
+/* Signature card highlight for kit cards */
+.signature-highlight .kit-persona,
+.signature-highlight .grid-kit-info,
+.signature-highlight .kit-persona-display {
+    color: #d4af37;
+    font-weight: bold;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) { 
     .container { flex-direction: column; padding: 10px; } 
     .search-panel, .deck-panel { min-width: 100%; width: 100%; } 
@@ -122,7 +199,15 @@ button.btn-purchase { background-color: var(--purchase-color); color: white; bor
     .card-list.grid-view { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; } 
     .deck-actions { flex-direction: column; align-items: stretch; }
     .deck-actions button { margin-left: 0; margin-bottom: 10px; }
-    /* Export Options Styling */
+    .kit-persona-display {
+        font-size: 9px;
+    }
+    .grid-kit-info {
+        font-size: 10px;
+    }
+}
+
+/* Export Options Styling */
 .export-options-container {
     max-height: 70vh;
     overflow-y: auto;
@@ -235,5 +320,4 @@ input[type="number"] {
     width: 80px;
     display: inline-block;
     margin: 0 5px;
-}
 }
