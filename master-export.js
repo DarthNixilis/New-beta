@@ -1,6 +1,7 @@
 // master-export.js
 import * as state from './config.js';
 import { generateCardVisualHTML } from './card-renderer.js';
+import { generateCardVisualHTMLForExport } from './card-renderer-export.js'; // NEW IMPORT
 
 // Main export function with options
 export async function exportCardsWithOptions(options = {}) {
@@ -73,9 +74,9 @@ export async function exportCardsWithOptions(options = {}) {
         updateProgressUI(0, cardsToExport.length, 'Preparing export...');
         
         if (format === 'zip') {
-            await exportAsZip(cardsToExport, imageWidth, imageHeight, scale, naming);
+            await exportAsZip(cardsToExport, imageWidth, imageHeight, scale, naming, imageSize);
         } else {
-            await exportAsIndividual(cardsToExport, imageWidth, imageHeight, scale, naming);
+            await exportAsIndividual(cardsToExport, imageWidth, imageHeight, scale, naming, imageSize);
         }
         
         return true;
@@ -88,7 +89,7 @@ export async function exportCardsWithOptions(options = {}) {
 }
 
 // Export as ZIP file
-async function exportAsZip(cards, width, height, scale, naming) {
+async function exportAsZip(cards, width, height, scale, naming, imageSize) {
     if (typeof JSZip === 'undefined') {
         throw new Error('JSZip library not loaded. Please refresh the page.');
     }
@@ -107,7 +108,7 @@ async function exportAsZip(cards, width, height, scale, naming) {
         
         const batchPromises = batch.map(async (card) => {
             try {
-                const blob = await generateCardImage(card, width, height, scale);
+                const blob = await generateCardImage(card, width, height, scale, imageSize);
                 
                 // Generate filename based on naming convention
                 const fileName = generateFileName(card.title, naming);
@@ -144,7 +145,7 @@ async function exportAsZip(cards, width, height, scale, naming) {
 }
 
 // Export as individual files
-async function exportAsIndividual(cards, width, height, scale, naming) {
+async function exportAsIndividual(cards, width, height, scale, naming, imageSize) {
     let exportedCount = 0;
     const totalCards = cards.length;
     
@@ -152,7 +153,7 @@ async function exportAsIndividual(cards, width, height, scale, naming) {
         try {
             updateProgressUI(exportedCount, totalCards, `Exporting: ${card.title}`);
             
-            const blob = await generateCardImage(card, width, height, scale);
+            const blob = await generateCardImage(card, width, height, scale, imageSize);
             
             // Generate filename
             const fileName = generateFileName(card.title, naming);
@@ -183,7 +184,7 @@ async function exportAsIndividual(cards, width, height, scale, naming) {
 }
 
 // Generate card image
-async function generateCardImage(card, width, height, scale) {
+async function generateCardImage(card, width, height, scale, imageSize) {
     // Create card container
     const cardContainer = document.createElement('div');
     cardContainer.className = 'card-modal-view';
@@ -197,7 +198,13 @@ async function generateCardImage(card, width, height, scale) {
         transform: scale(${scale});
         transform-origin: top left;
     `;
-    cardContainer.innerHTML = generateCardVisualHTML(card);
+    
+    // Use special renderer for export with larger text
+    cardContainer.innerHTML = generateCardVisualHTMLForExport(card, {
+        width: width,
+        height: height,
+        size: imageSize
+    });
     
     document.body.appendChild(cardContainer);
     
@@ -231,7 +238,7 @@ function generateFileName(cardTitle, naming) {
         case 'pascal':
             return `${state.toPascalCase(cardTitle)}.png`;
         case 'lackey':
-            // Remove special characters and spaces
+            // Remove special characters and spaces for LackeyCCG format
             return `${cardTitle.replace(/[^\w\s]/g, '').replace(/\s+/g, '')}.png`;
         case 'original':
         default:
