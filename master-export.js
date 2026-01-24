@@ -314,4 +314,51 @@ export async function exportAllCardsAsImagesFallback() {
         format: 'individual',
         naming: 'pascal'
     });
+
+    // Add this function to master-export.js (at the bottom, before the closing brace)
+export async function exportAllCardsAsTSV() {
+    try {
+        console.log("Starting TSV export...");
+        
+        // Create TSV content
+        const headers = ['Name', 'Type', 'Set', 'Cost', 'Damage', 'Momentum', 'Target', 'Traits', 'Starting', 'Game Text'];
+        let tsvContent = headers.join('\t') + '\n';
+        
+        // Add all cards
+        state.cardDatabase.forEach(card => {
+            const row = [
+                card.title || '',
+                card.card_type || '',
+                card.set || '',
+                card.cost !== null ? card.cost : '',
+                card.damage !== null ? card.damage : '',
+                card.momentum !== null ? card.momentum : '',
+                card.Target || '',
+                card['Traits'] || '',
+                card['Starting'] || '',
+                card.text_box?.raw_text?.replace(/\n/g, ' ') || '' // Replace newlines with spaces
+            ];
+            tsvContent += row.join('\t') + '\n';
+        });
+        
+        // Create and download file
+        const blob = new Blob([tsvContent], { type: 'text/tab-separated-values' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `AEW_Card_Database_${new Date().toISOString().slice(0,10)}.tsv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+        
+        console.log("TSV export completed successfully");
+        return true;
+        
+    } catch (error) {
+        console.error("TSV export failed:", error);
+        alert(`TSV export failed: ${error.message}`);
+        throw error;
+    }
 }
+}
+
