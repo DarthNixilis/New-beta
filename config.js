@@ -72,6 +72,7 @@ export function buildCardTitleCache() {
 }
 
 export function isKitCard(card) {
+    // Check if Starting column has a value (persona name)
     return card && card['Starting'] && card['Starting'].trim() !== '';
 }
 
@@ -89,18 +90,39 @@ export function isSignatureFor(card) {
     return activePersonaTitles.includes(personaName);
 }
 
-// NEW: Get card target for maneuvers
+// Get card target for maneuvers - SAFE VERSION
 export function getCardTarget(card) {
-    if (!card.text_box || !card.text_box.traits) return null;
-    const targetTrait = card.text_box.traits.find(t => t.name.trim() === 'Target');
-    return targetTrait ? targetTrait.value : null;
+    try {
+        if (!card || !card.text_box || !card.text_box.traits) return null;
+        const targetTrait = card.text_box.traits.find(t => t && t.name && t.name.trim() === 'Target');
+        return targetTrait && targetTrait.value ? targetTrait.value : null;
+    } catch (e) {
+        console.error("Error getting card target:", e, card);
+        return null;
+    }
 }
 
-// NEW: Get kit persona name (without "Wrestler")
+// Get kit persona name (without "Wrestler") - SAFE VERSION
 export function getKitPersona(card) {
-    if (!card || !card['Starting']) return null;
-    const personaName = card['Starting'].trim();
-    if (!personaName) return null;
-    // Remove "Wrestler" suffix if present
-    return personaName.replace(/\s*Wrestler$/, '');
+    try {
+        if (!card) return null;
+        
+        // First try Starting column
+        if (card['Starting'] && card['Starting'].trim() !== '') {
+            const personaName = card['Starting'].trim();
+            // Remove "Wrestler" suffix if present
+            return personaName.replace(/\s*Wrestler$/, '');
+        }
+        
+        // Fallback to Signature For if Starting doesn't exist
+        if (card['Signature For'] && card['Signature For'].trim() !== '') {
+            const personaName = card['Signature For'].trim();
+            return personaName.replace(/\s*Wrestler$/, '');
+        }
+        
+        return null;
+    } catch (e) {
+        console.error("Error getting kit persona:", e, card);
+        return null;
+    }
 }
