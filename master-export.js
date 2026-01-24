@@ -314,8 +314,9 @@ export async function exportAllCardsAsImagesFallback() {
         format: 'individual',
         naming: 'pascal'
     });
+}
 
-    // Add this function to master-export.js (at the bottom, before the closing brace)
+// TSV Database Export
 export async function exportAllCardsAsTSV() {
     try {
         console.log("Starting TSV export...");
@@ -360,5 +361,3 @@ export async function exportAllCardsAsTSV() {
         throw error;
     }
 }
-}
-
