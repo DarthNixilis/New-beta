@@ -1,7 +1,7 @@
 // master-export.js
 import * as state from './config.js';
 import { generateCardVisualHTML } from './card-renderer.js';
-import { generateCardVisualHTMLForExport } from './card-renderer-export.js'; // NEW IMPORT
+import { generateCardVisualHTMLForExport } from './card-renderer-export.js';
 
 // Main export function with options
 export async function exportCardsWithOptions(options = {}) {
@@ -130,7 +130,11 @@ async function exportAsZip(cards, width, height, scale, naming, imageSize) {
     
     // Generate zip file
     updateProgressUI(totalCards, totalCards, 'Creating ZIP file...');
-    const content = await zip.generateAsync({ type: 'blob' });
+    const content = await zip.generateAsync({ 
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 }
+    });
     
     // Download
     const a = document.createElement('a');
@@ -141,7 +145,21 @@ async function exportAsZip(cards, width, height, scale, naming, imageSize) {
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
     
-    updateProgressUI(totalCards, totalCards, `Export complete! ${exportedCount} cards exported.`, true);
+    updateProgressUI(totalCards, totalCards, `Export complete! ${exportedCount} cards exported. Download started.`, true);
+    
+    // Auto-close modal after 3 seconds
+    setTimeout(() => {
+        const exportModal = document.getElementById('exportModal');
+        if (exportModal) {
+            exportModal.style.display = 'none';
+        }
+        // Reset progress bar
+        const progressBar = document.getElementById('exportProgressBar');
+        if (progressBar) {
+            progressBar.style.width = '0%';
+            progressBar.style.background = '#4CAF50';
+        }
+    }, 3000);
 }
 
 // Export as individual files
@@ -149,9 +167,12 @@ async function exportAsIndividual(cards, width, height, scale, naming, imageSize
     let exportedCount = 0;
     const totalCards = cards.length;
     
+    // Create a temporary array to hold all download promises
+    const downloadPromises = [];
+    
     for (const card of cards) {
         try {
-            updateProgressUI(exportedCount, totalCards, `Exporting: ${card.title}`);
+            updateProgressUI(exportedCount, totalCards, `Processing: ${card.title}`);
             
             const blob = await generateCardImage(card, width, height, scale, imageSize);
             
@@ -163,16 +184,18 @@ async function exportAsIndividual(cards, width, height, scale, naming, imageSize
             const a = document.createElement('a');
             a.href = url;
             a.download = fileName;
+            a.style.display = 'none';
             document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            
+            // Add to download queue
+            downloadPromises.push({
+                element: a,
+                url: url,
+                fileName: fileName
+            });
             
             exportedCount++;
-            updateProgressUI(exportedCount, totalCards, `Exported: ${card.title}`);
-            
-            // Small delay to prevent browser issues
-            await new Promise(resolve => setTimeout(resolve, 100));
+            updateProgressUI(exportedCount, totalCards, `Processed: ${card.title}`);
             
         } catch (error) {
             console.error(`Failed to export card: ${card.title}`, error);
@@ -180,7 +203,43 @@ async function exportAsIndividual(cards, width, height, scale, naming, imageSize
         }
     }
     
-    updateProgressUI(totalCards, totalCards, `Export complete! ${exportedCount}/${totalCards} cards exported.`, true);
+    // Trigger downloads one by one with delay
+    updateProgressUI(totalCards, totalCards, 'Starting downloads...', false);
+    
+    for (let i = 0; i < downloadPromises.length; i++) {
+        const item = downloadPromises[i];
+        updateProgressUI(i, downloadPromises.length, `Downloading: ${item.fileName}`);
+        
+        // Trigger download
+        item.element.click();
+        
+        // Clean up
+        setTimeout(() => {
+            document.body.removeChild(item.element);
+            URL.revokeObjectURL(item.url);
+        }, 100);
+        
+        // Small delay between downloads to prevent browser issues
+        if (i < downloadPromises.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+    }
+    
+    updateProgressUI(downloadPromises.length, downloadPromises.length, `Export complete! ${exportedCount}/${totalCards} cards exported.`, true);
+    
+    // Auto-close modal after 3 seconds
+    setTimeout(() => {
+        const exportModal = document.getElementById('exportModal');
+        if (exportModal) {
+            exportModal.style.display = 'none';
+        }
+        // Reset progress bar
+        const progressBar = document.getElementById('exportProgressBar');
+        if (progressBar) {
+            progressBar.style.width = '0%';
+            progressBar.style.background = '#4CAF50';
+        }
+    }, 3000);
 }
 
 // Generate card image
@@ -218,12 +277,19 @@ async function generateCardImage(card, width, height, scale, imageSize) {
         height: height * scale,
         backgroundColor: null,
         logging: false,
-        useCORS: true
+        useCORS: true,
+        allowTaint: true
     });
     
     // Convert to blob
-    const blob = await new Promise(resolve => {
-        canvas.toBlob(resolve, 'image/png', 1.0);
+    const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (blob) {
+                resolve(blob);
+            } else {
+                reject(new Error('Failed to create blob from canvas'));
+            }
+        }, 'image/png', 1.0);
     });
     
     // Clean up
@@ -242,13 +308,15 @@ function generateFileName(cardTitle, naming) {
             return `${cardTitle.replace(/[^\w\s]/g, '').replace(/\s+/g, '')}.png`;
         case 'original':
         default:
-            return `${cardTitle}.png`;
+            // Remove invalid characters for filenames
+            const cleanName = cardTitle.replace(/[<>:"/\\|?*]/g, '');
+            return `${cleanName}.png`;
     }
 }
 
 // Helper function to wait for images to load
 function waitForImages(container) {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
         const images = container.getElementsByTagName('img');
         let loadedCount = 0;
         const totalImages = images.length;
@@ -273,6 +341,9 @@ function waitForImages(container) {
                 };
             }
         }
+        
+        // Fallback timeout
+        setTimeout(resolve, 2000);
     });
 }
 
@@ -293,6 +364,11 @@ function updateProgressUI(current, total, status, isComplete = false) {
         
         if (isComplete) {
             progressBar.style.background = '#2ecc71';
+            // Re-enable buttons
+            const startExportBtn = document.getElementById('startExport');
+            const cancelExportBtn = document.getElementById('cancelExport');
+            if (startExportBtn) startExportBtn.disabled = false;
+            if (cancelExportBtn) cancelExportBtn.disabled = false;
         }
     }
 }
@@ -368,6 +444,15 @@ export async function exportAllCardsAsTSV() {
                 traits = card['Traits'];
             }
             
+            // Get target
+            let target = '';
+            if (card.text_box?.traits) {
+                const targetTrait = card.text_box.traits.find(t => t.name.trim() === 'Target');
+                if (targetTrait && targetTrait.value) {
+                    target = targetTrait.value;
+                }
+            }
+            
             // Clean game text
             const gameText = cleanForTSV(card.text_box?.raw_text || '');
             
@@ -380,7 +465,7 @@ export async function exportAllCardsAsTSV() {
                 damageValue !== null ? damageValue : '',   // Damage
                 momentumValue !== null ? momentumValue : '', // Momentum
                 card.card_type || '',                      // Type
-                card.Target || '',                         // Target
+                target,                                    // Target
                 traits,                                    // Traits
                 wrestlerLogo,                              // Wrestler Logo
                 gameText                                   // Game Text
