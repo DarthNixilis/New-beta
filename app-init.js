@@ -2,7 +2,7 @@
 import * as state from './config.js';
 import * as ui from './ui.js';
 import * as filters from './filters.js';
-import { initializeAllEventListeners } from './listeners.js';
+import { initializeAllEventListeners } from './listeners.js'; // Corrected path
 
 export function initializeApp() {
     populatePersonaSelectors();
@@ -19,26 +19,12 @@ export function initializeApp() {
 function populatePersonaSelectors() {
     const wrestlerSelect = document.getElementById('wrestlerSelect');
     const managerSelect = document.getElementById('managerSelect');
-    const callNameSelect = document.getElementById('callNameSelect');
-    const factionSelect = document.getElementById('factionSelect');
-    
-    // Clear all selects except first option
     wrestlerSelect.length = 1;
     managerSelect.length = 1;
-    callNameSelect.length = 1;
-    factionSelect.length = 1;
-    
-    // Get all cards
     const wrestlers = state.cardDatabase.filter(c => c && c.card_type === 'Wrestler').sort((a, b) => a.title.localeCompare(b.title));
     const managers = state.cardDatabase.filter(c => c && c.card_type === 'Manager').sort((a, b) => a.title.localeCompare(b.title));
-    const callNames = state.cardDatabase.filter(c => c && c.card_type === 'Call Name').sort((a, b) => a.title.localeCompare(b.title));
-    const factions = state.cardDatabase.filter(c => c && c.card_type === 'Faction').sort((a, b) => a.title.localeCompare(b.title));
-    
-    // Populate selects
     wrestlers.forEach(w => wrestlerSelect.add(new Option(w.title, w.title)));
     managers.forEach(m => managerSelect.add(new Option(m.title, m.title)));
-    callNames.forEach(cn => callNameSelect.add(new Option(cn.title, cn.title)));
-    factions.forEach(f => factionSelect.add(new Option(f.title, f.title)));
 }
 
 function loadStateFromCache() {
@@ -48,7 +34,6 @@ function loadStateFromCache() {
             const parsed = JSON.parse(cachedState);
             state.setStartingDeck(parsed.startingDeck || []);
             state.setPurchaseDeck(parsed.purchaseDeck || []);
-            
             if (parsed.wrestler) {
                 const wrestlerSelect = document.getElementById('wrestlerSelect');
                 wrestlerSelect.value = parsed.wrestler;
@@ -58,16 +43,6 @@ function loadStateFromCache() {
                 const managerSelect = document.getElementById('managerSelect');
                 managerSelect.value = parsed.manager;
                 state.setSelectedManager(state.cardTitleCache[parsed.manager] || null);
-            }
-            if (parsed.callName) {
-                const callNameSelect = document.getElementById('callNameSelect');
-                callNameSelect.value = parsed.callName;
-                state.setSelectedCallName(state.cardTitleCache[parsed.callName] || null);
-            }
-            if (parsed.faction) {
-                const factionSelect = document.getElementById('factionSelect');
-                factionSelect.value = parsed.faction;
-                state.setSelectedFaction(state.cardTitleCache[parsed.faction] || null);
             }
         } catch (e) {
             console.error("Failed to load from cache:", e);
@@ -108,3 +83,4 @@ function refreshCardPool() {
     const finalCards = filters.getFilteredAndSortedCardPool();
     ui.renderCardPool(finalCards);
 }
+

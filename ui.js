@@ -37,7 +37,7 @@ export function renderCardPool(cards) {
             cardElement.className = state.currentViewMode === 'list' ? 'card-item' : 'grid-card-item';
             
             try {
-                if (state.isSignatureFor && state.isSignatureFor(card)) {
+                if (state.isSignatureFor(card)) {
                     cardElement.classList.add('signature-highlight');
                 }
             } catch (e) {
@@ -46,26 +46,12 @@ export function renderCardPool(cards) {
             
             cardElement.dataset.title = card.title;
             
-            // Get target for maneuvers - FIXED
-            let target = '';
-            if (card.text_box && card.text_box.traits) {
-                const targetTrait = card.text_box.traits.find(t => t && t.name && t.name.trim() === 'Target');
-                if (targetTrait && targetTrait.value) {
-                    target = targetTrait.value;
-                }
-            }
-            
+            // Get target for maneuvers
+            const target = state.getCardTarget(card);
             const isManeuver = ['Strike', 'Grapple', 'Submission'].includes(card.card_type);
             
-            // Get kit persona name - FIXED
-            let kitPersona = '';
-            if (card && card['Starting'] && card['Starting'].trim() !== '') {
-                const personaName = card['Starting'].trim();
-                kitPersona = personaName.replace(/\s*Wrestler$/, '');
-            } else if (card && card['Signature For'] && card['Signature For'].trim() !== '') {
-                const personaName = card['Signature For'].trim();
-                kitPersona = personaName.replace(/\s*Wrestler$/, '');
-            }
+            // Get kit persona name
+            const kitPersona = state.getKitPersona(card);
             
             // Only show kit info for non-persona cards that go in decks
             const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
@@ -75,10 +61,10 @@ export function renderCardPool(cards) {
                 // Build the display string with target if applicable
                 let displayText = `${card.title} (C:${card.cost ?? 'N/A'}`;
                 
-                if (isManeuver && card.damage !== null && card.damage !== undefined) {
+                if (isManeuver && card.damage !== null) {
                     displayText += `, D:${card.damage}`;
                     if (target) displayText += ` [T:${target}]`;
-                } else if (card.damage !== null && card.damage !== undefined) {
+                } else if (card.damage !== null) {
                     displayText += `, D:${card.damage}`;
                 }
                 
@@ -183,9 +169,7 @@ export function renderPersonaDisplay() {
         const activePersonaTitles = activePersona.map(p => p.title);
         const kitCards = state.cardDatabase.filter(card => {
             try {
-                if (!card || !card['Starting']) return false;
-                const personaName = card['Starting'].trim();
-                return personaName && activePersonaTitles.includes(personaName);
+                return state.isKitCard(card) && activePersonaTitles.includes(card['Signature For']);
             } catch (e) {
                 return false;
             }
@@ -221,23 +205,8 @@ export function showCardModal(cardTitle) {
         }
         
         // Get target and kit info for the modal
-        let target = '';
-        if (card.text_box && card.text_box.traits) {
-            const targetTrait = card.text_box.traits.find(t => t && t.name && t.name.trim() === 'Target');
-            if (targetTrait && targetTrait.value) {
-                target = targetTrait.value;
-            }
-        }
-        
-        let kitPersona = '';
-        if (card && card['Starting'] && card['Starting'].trim() !== '') {
-            const personaName = card['Starting'].trim();
-            kitPersona = personaName.replace(/\s*Wrestler$/, '');
-        } else if (card && card['Signature For'] && card['Signature For'].trim() !== '') {
-            const personaName = card['Signature For'].trim();
-            kitPersona = personaName.replace(/\s*Wrestler$/, '');
-        }
-        
+        const target = state.getCardTarget(card);
+        const kitPersona = state.getKitPersona(card);
         const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
         const showKitInfo = kitPersona && !isPersonaCard;
         
@@ -308,15 +277,7 @@ function renderDeckList(element, deck) {
             const deckName = element === startingDeckList ? 'starting' : 'purchase';
             
             // Get kit info for deck list
-            let kitPersona = '';
-            if (card && card['Starting'] && card['Starting'].trim() !== '') {
-                const personaName = card['Starting'].trim();
-                kitPersona = personaName.replace(/\s*Wrestler$/, '');
-            } else if (card && card['Signature For'] && card['Signature For'].trim() !== '') {
-                const personaName = card['Signature For'].trim();
-                kitPersona = personaName.replace(/\s*Wrestler$/, '');
-            }
-            
+            const kitPersona = state.getKitPersona(card);
             const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
             const showKitInfo = kitPersona && !isPersonaCard;
             
