@@ -12,11 +12,24 @@ export function generateCardVisualHTML(card) {
         const imagePath = `./card-images/${imageName}.png`;
         const typeClass = card.card_type ? `type-${card.card_type.toLowerCase()}` : 'type-unknown';
         
-        // Get target from traits
-        const target = state.getCardTarget(card);
+        // Get target from traits - FIXED
+        let target = '';
+        if (card.text_box && card.text_box.traits) {
+            const targetTrait = card.text_box.traits.find(t => t && t.name && t.name.trim() === 'Target');
+            if (targetTrait && targetTrait.value) {
+                target = targetTrait.value;
+            }
+        }
         
-        // Get kit persona name
-        const kitPersona = state.getKitPersona(card);
+        // Get kit persona name - FIXED
+        let kitPersona = '';
+        if (card && card['Starting'] && card['Starting'].trim() !== '') {
+            const personaName = card['Starting'].trim();
+            kitPersona = personaName.replace(/\s*Wrestler$/, '');
+        } else if (card && card['Signature For'] && card['Signature For'].trim() !== '') {
+            const personaName = card['Signature For'].trim();
+            kitPersona = personaName.replace(/\s*Wrestler$/, '');
+        }
         
         // Only show kit info for non-persona cards that go in decks
         const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
@@ -87,7 +100,7 @@ export function generatePlaytestCardHTML(card, tempContainer, width = 750, heigh
     }
 
     const reminderBlock = traitsText + keywordsText;
-    const targetTrait = traits.find(t => t.name.trim() === 'Target');
+    const targetTrait = traits.find(t => t && t.name && t.name.trim() === 'Target');
     const targetValue = targetTrait ? targetTrait.value : null;
     const typeColors = { 
         'Action': '#9c5a9c', 
