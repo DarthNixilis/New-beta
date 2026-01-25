@@ -10,9 +10,8 @@ function parseLackeyDekFormat(text) {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(text, 'text/xml');
         
-        // Check for parsing errors
         if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
-            return null; // Not valid XML
+            return null;
         }
         
         const deckZone = xmlDoc.querySelector('superzone[name="Deck"]');
@@ -20,7 +19,7 @@ function parseLackeyDekFormat(text) {
         const startingZone = xmlDoc.querySelector('superzone[name="Starting"]');
         
         if (!deckZone && !purchaseZone && !startingZone) {
-            return null; // Not a Lackey deck file
+            return null;
         }
         
         const result = {
@@ -32,7 +31,6 @@ function parseLackeyDekFormat(text) {
             purchaseDeck: []
         };
         
-        // Parse personas from Starting zone
         if (startingZone) {
             const personaCards = startingZone.querySelectorAll('card name');
             personaCards.forEach(nameElement => {
@@ -49,7 +47,6 @@ function parseLackeyDekFormat(text) {
             });
         }
         
-        // Parse deck cards
         const parseZoneCards = (zone) => {
             const cards = [];
             if (zone) {
@@ -65,20 +62,16 @@ function parseLackeyDekFormat(text) {
             return cards;
         };
         
-        // Starting deck comes from "Deck" zone in Lackey format
         if (deckZone) {
             result.startingDeck = parseZoneCards(deckZone);
         }
         
-        // Purchase deck
         if (purchaseZone) {
             result.purchaseDeck = parseZoneCards(purchaseZone);
         }
         
-        // Also check for starting deck in "Starting" zone (non-persona cards)
         if (startingZone) {
             const startingCards = parseZoneCards(startingZone);
-            // Filter out persona cards
             startingCards.forEach(cardName => {
                 const card = state.cardTitleCache[cardName];
                 if (card && !['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type)) {
@@ -94,165 +87,96 @@ function parseLackeyDekFormat(text) {
     }
 }
 
-// Helper function to parse plain text format - FIXED VERSION
+// Helper function to parse plain text format - SIMPLIFIED AND WORKING
 function parsePlainTextFormat(text) {
     const lines = text.trim().split(/\r?\n/);
     let newWrestler = null, newManager = null, newCallName = null, newFaction = null;
     let newStartingDeck = [], newPurchaseDeck = [], currentSection = '';
     
-    console.log("Parsing import text...");
-    
-    lines.forEach((line, index) => {
+    // First pass: get personas
+    for (const line of lines) {
         const trimmedLine = line.trim();
-        if (!trimmedLine || trimmedLine.toLowerCase().startsWith('kit')) return;
+        if (!trimmedLine) continue;
         
-        console.log(`Line ${index}: "${trimmedLine}"`);
-        
-        // Parse persona headers - SIMPLIFIED
         if (trimmedLine.toLowerCase().startsWith('wrestler:')) {
-            const wrestlerName = trimmedLine.substring(9).trim();
-            console.log(`Found wrestler: "${wrestlerName}"`);
-            if (wrestlerName.toLowerCase() !== 'none' && wrestlerName !== '') {
-                const wrestler = state.cardTitleCache[wrestlerName];
-                if (wrestler) {
-                    console.log(`Wrestler found in cache: ${wrestler.title}`);
-                    newWrestler = wrestler;
-                } else {
-                    console.log(`Wrestler NOT found in cache: "${wrestlerName}"`);
-                }
+            const name = trimmedLine.substring(9).trim();
+            if (name.toLowerCase() !== 'none') {
+                newWrestler = state.cardTitleCache[name];
             }
-        } 
-        else if (trimmedLine.toLowerCase().startsWith('manager:')) {
-            const managerName = trimmedLine.substring(8).trim();
-            console.log(`Found manager: "${managerName}"`);
-            if (managerName.toLowerCase() !== 'none' && managerName !== '') {
-                const manager = state.cardTitleCache[managerName];
-                if (manager) {
-                    console.log(`Manager found in cache: ${manager.title}`);
-                    newManager = manager;
-                }
+        } else if (trimmedLine.toLowerCase().startsWith('manager:')) {
+            const name = trimmedLine.substring(8).trim();
+            if (name.toLowerCase() !== 'none') {
+                newManager = state.cardTitleCache[name];
+            }
+        } else if (trimmedLine.toLowerCase().startsWith('call name:')) {
+            const name = trimmedLine.substring(10).trim();
+            if (name.toLowerCase() !== 'none') {
+                newCallName = state.cardTitleCache[name];
+            }
+        } else if (trimmedLine.toLowerCase().startsWith('faction:')) {
+            const name = trimmedLine.substring(8).trim();
+            if (name.toLowerCase() !== 'none') {
+                newFaction = state.cardTitleCache[name];
             }
         }
-        else if (trimmedLine.toLowerCase().startsWith('call name:') || trimmedLine.toLowerCase().startsWith('callname:')) {
-            const prefix = trimmedLine.toLowerCase().startsWith('call name:') ? 'call name:' : 'callname:';
-            const callNameName = trimmedLine.substring(prefix.length).trim();
-            console.log(`Found call name: "${callNameName}"`);
-            if (callNameName.toLowerCase() !== 'none' && callNameName !== '') {
-                const callName = state.cardTitleCache[callNameName];
-                if (callName) {
-                    console.log(`Call name found in cache: ${callName.title}`);
-                    newCallName = callName;
-                }
-            }
-        }
-        else if (trimmedLine.toLowerCase().startsWith('faction:')) {
-            const factionName = trimmedLine.substring(8).trim();
-            console.log(`Found faction: "${factionName}"`);
-            if (factionName.toLowerCase() !== 'none' && factionName !== '') {
-                const faction = state.cardTitleCache[factionName];
-                if (faction) {
-                    console.log(`Faction found in cache: ${faction.title}`);
-                    newFaction = faction;
-                }
-            }
-        }
-        // Parse deck sections
-        else if (trimmedLine.startsWith('--- Starting Deck') || trimmedLine.toLowerCase().includes('starting deck')) { 
-            currentSection = 'starting'; 
-            console.log(`Switched to ${currentSection} section`);
-        }
-        else if (trimmedLine.startsWith('--- Purchase Deck') || trimmedLine.toLowerCase().includes('purchase deck')) { 
-            currentSection = 'purchase'; 
-            console.log(`Switched to ${currentSection} section`);
-        }
-        // Parse card lines - FIXED: Handle kit persona in brackets
-        else {
-            const match = trimmedLine.match(/^(\d+)x\s+(.+)/);
-            if (match) {
-                const count = parseInt(match[1], 10);
-                const fullCardText = match[2].trim();
-                
-                // Extract card name (remove kit persona in brackets if present)
-                let cardName = fullCardText;
-                const bracketIndex = fullCardText.lastIndexOf('[');
-                if (bracketIndex !== -1) {
-                    // Remove everything from the last '[' including the bracket
-                    cardName = fullCardText.substring(0, bracketIndex).trim();
-                }
-                
-                console.log(`Card line: "${fullCardText}" -> Extracted: "${cardName}"`);
-                
-                // Try to find the card
-                let card = state.cardTitleCache[cardName];
-                
-                // If not found, try without any special characters or additional text
-                if (!card) {
-                    // Remove any parenthetical text or extra descriptors
-                    const cleanName = cardName.replace(/\s*\(.*?\)\s*/g, '').trim();
-                    console.log(`Trying clean name: "${cleanName}"`);
-                    card = state.cardTitleCache[cleanName];
-                }
-                
-                if (card) {
-                    console.log(`✓ Card found: "${card.title}" (${card.card_type})`);
-                    for (let i = 0; i < count; i++) {
-                        if (currentSection === 'starting') newStartingDeck.push(card.title);
-                        else if (currentSection === 'purchase') newPurchaseDeck.push(card.title);
-                    }
-                } else {
-                    console.warn(`✗ Card not found: "${cardName}" (from line: "${fullCardText}")`);
-                }
-            }
-            // Also support format without "x" (just number and card name)
-            else {
-                const simpleMatch = trimmedLine.match(/^(\d+)\s+(.+)/);
-                if (simpleMatch) {
-                    const count = parseInt(simpleMatch[1], 10);
-                    const fullCardText = simpleMatch[2].trim();
-                    
-                    // Extract card name (remove kit persona in brackets if present)
-                    let cardName = fullCardText;
-                    const bracketIndex = fullCardText.lastIndexOf('[');
-                    if (bracketIndex !== -1) {
-                        // Remove everything from the last '[' including the bracket
-                        cardName = fullCardText.substring(0, bracketIndex).trim();
-                    }
-                    
-                    console.log(`Card line (no x): "${fullCardText}" -> Extracted: "${cardName}"`);
-                    
-                    // Try to find the card
-                    let card = state.cardTitleCache[cardName];
-                    
-                    // If not found, try without any special characters or additional text
-                    if (!card) {
-                        // Remove any parenthetical text or extra descriptors
-                        const cleanName = cardName.replace(/\s*\(.*?\)\s*/g, '').trim();
-                        console.log(`Trying clean name: "${cleanName}"`);
-                        card = state.cardTitleCache[cleanName];
-                    }
-                    
-                    if (card) {
-                        console.log(`✓ Card found: "${card.title}" (${card.card_type})`);
-                        for (let i = 0; i < count; i++) {
-                            if (currentSection === 'starting') newStartingDeck.push(card.title);
-                            else if (currentSection === 'purchase') newPurchaseDeck.push(card.title);
-                        }
-                    } else {
-                        console.warn(`✗ Card not found: "${cardName}" (from line: "${fullCardText}")`);
-                    }
-                }
-            }
-        }
-    });
+    }
     
-    console.log("Parsed results:", {
-        wrestler: newWrestler?.title || 'None',
-        manager: newManager?.title || 'None', 
-        callName: newCallName?.title || 'None',
-        faction: newFaction?.title || 'None',
-        startingDeck: newStartingDeck,
-        purchaseDeck: newPurchaseDeck
-    });
+    // Second pass: get deck cards
+    for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) continue;
+        
+        // Skip persona lines
+        if (trimmedLine.toLowerCase().startsWith('wrestler:') ||
+            trimmedLine.toLowerCase().startsWith('manager:') ||
+            trimmedLine.toLowerCase().startsWith('call name:') ||
+            trimmedLine.toLowerCase().startsWith('faction:') ||
+            trimmedLine.toLowerCase().startsWith('kit')) {
+            continue;
+        }
+        
+        // Section headers
+        if (trimmedLine.includes('Starting Deck') || trimmedLine.includes('starting deck')) {
+            currentSection = 'starting';
+            continue;
+        }
+        if (trimmedLine.includes('Purchase Deck') || trimmedLine.includes('purchase deck')) {
+            currentSection = 'purchase';
+            continue;
+        }
+        
+        // Card lines
+        const cardMatch = trimmedLine.match(/^(\d+)x?\s+(.+)/);
+        if (cardMatch) {
+            const count = parseInt(cardMatch[1], 10);
+            let cardName = cardMatch[2].trim();
+            
+            // Remove kit persona in brackets if present
+            const bracketIndex = cardName.lastIndexOf('[');
+            if (bracketIndex !== -1) {
+                cardName = cardName.substring(0, bracketIndex).trim();
+            }
+            
+            // Try to find the card
+            let card = state.cardTitleCache[cardName];
+            
+            // If not found, try cleaning the name
+            if (!card) {
+                const cleanName = cardName.replace(/\s*\(.*?\)\s*/g, '').trim();
+                card = state.cardTitleCache[cleanName];
+            }
+            
+            if (card) {
+                for (let i = 0; i < count; i++) {
+                    if (currentSection === 'starting') {
+                        newStartingDeck.push(card.title);
+                    } else if (currentSection === 'purchase') {
+                        newPurchaseDeck.push(card.title);
+                    }
+                }
+            }
+        }
+    }
     
     return {
         wrestler: newWrestler,
@@ -273,59 +197,46 @@ export function parseAndLoadDeck(text) {
     const factionSelect = document.getElementById('factionSelect');
     
     try {
-        console.log("=== IMPORT STARTING ===");
-        console.log("Input text preview:", text.substring(0, 200) + "...");
-        
-        let parsedDeck;
-        
-        // Try to parse as LackeyCCG .dek format first
-        parsedDeck = parseLackeyDekFormat(text);
-        
-        // If not Lackey format, try plain text format
+        let parsedDeck = parseLackeyDekFormat(text);
         if (!parsedDeck) {
             parsedDeck = parsePlainTextFormat(text);
         }
         
         if (!parsedDeck) {
-            throw new Error('Could not parse deck file. Please check the format.');
+            throw new Error('Could not parse deck file.');
         }
         
-        console.log("=== PARSED DECK DATA ===");
-        console.log("Wrestler:", parsedDeck.wrestler?.title || "None");
-        console.log("Manager:", parsedDeck.manager?.title || "None");
-        console.log("Call Name:", parsedDeck.callName?.title || "None");
-        console.log("Faction:", parsedDeck.faction?.title || "None");
-        console.log("Starting deck cards:", parsedDeck.startingDeck.length);
-        console.log("Purchase deck cards:", parsedDeck.purchaseDeck.length);
+        // IMPORTANT: Set decks BEFORE personas to avoid any race conditions
+        state.setStartingDeck(parsedDeck.startingDeck);
+        state.setPurchaseDeck(parsedDeck.purchaseDeck);
         
-        // Set all personas
+        // Then set personas
         state.setSelectedWrestler(parsedDeck.wrestler);
         state.setSelectedManager(parsedDeck.manager);
         state.setSelectedCallName(parsedDeck.callName);
         state.setSelectedFaction(parsedDeck.faction);
         
-        // Update dropdown values
+        // Update dropdowns
         wrestlerSelect.value = parsedDeck.wrestler ? parsedDeck.wrestler.title : "";
         managerSelect.value = parsedDeck.manager ? parsedDeck.manager.title : "";
         if (callNameSelect) callNameSelect.value = parsedDeck.callName ? parsedDeck.callName.title : "";
         if (factionSelect) factionSelect.value = parsedDeck.faction ? parsedDeck.faction.title : "";
         
-        // Set decks
-        state.setStartingDeck(parsedDeck.startingDeck);
-        state.setPurchaseDeck(parsedDeck.purchaseDeck);
-        
-        console.log("State updated, calling UI render functions...");
-        
         // Update UI
         renderDecks();
         renderPersonaDisplay();
-        document.dispatchEvent(new Event('filtersChanged'));
-        importStatus.textContent = `Deck imported successfully! Starting: ${parsedDeck.startingDeck.length}, Purchase: ${parsedDeck.purchaseDeck.length}`;
-        importStatus.style.color = 'green';
         
-        setTimeout(() => { 
-            importModal.style.display = 'none'; 
-        }, 2000);
+        // IMPORTANT: Use setTimeout to ensure UI updates before refreshing card pool
+        setTimeout(() => {
+            document.dispatchEvent(new Event('filtersChanged'));
+            importStatus.textContent = `Deck imported! Starting: ${parsedDeck.startingDeck.length}, Purchase: ${parsedDeck.purchaseDeck.length}`;
+            importStatus.style.color = 'green';
+            
+            setTimeout(() => {
+                importModal.style.display = 'none';
+            }, 1500);
+        }, 100);
+        
     } catch (error) {
         console.error('Error parsing decklist:', error);
         importStatus.textContent = `Error: ${error.message}`;
