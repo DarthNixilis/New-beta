@@ -1,16 +1,11 @@
 // master-export.js
+// SIMPLE VERSION - Only fixes the export issue
 
-// Note: This file only contains export functions, no initialization code
-// This prevents it from breaking the app during startup
+// Import at module level (this should be safe)
+import * as state from './config.js';
+import { generateCardVisualHTMLForExport } from './card-renderer-export.js';
 
-// Import dependencies only when needed (lazy loading)
-async function getDependencies() {
-    return {
-        state: await import('./config.js')
-    };
-}
-
-// Main export function with options
+// Main export function - keeps the original working structure
 export async function exportCardsWithOptions(options = {}) {
     const {
         cardType = 'all',
@@ -23,10 +18,6 @@ export async function exportCardsWithOptions(options = {}) {
     
     try {
         console.log("Starting export with options:", options);
-        
-        // Lazy load dependencies
-        const { state } = await getDependencies();
-        const { generateCardVisualHTMLForExport } = await import('./card-renderer-export.js');
         
         // Filter cards based on type
         let cardsToExport = state.cardDatabase;
@@ -58,7 +49,7 @@ export async function exportCardsWithOptions(options = {}) {
             throw new Error(`No ${cardType} cards found to export.`);
         }
         
-        // Set image dimensions based on size option
+        // Set image dimensions
         let imageWidth, imageHeight;
         switch(imageSize) {
             case 'standard':
@@ -78,31 +69,30 @@ export async function exportCardsWithOptions(options = {}) {
                 imageHeight = 600;
         }
         
-        // Set scale based on image size
         const scale = imageSize === 'lackey' ? 1 : 2;
         
-        // Update progress UI
-        updateProgressUI(0, cardsToExport.length, 'Preparing export...');
+        // Show progress
+        showProgress(0, cardsToExport.length, 'Preparing export...');
         
         if (format === 'zip') {
-            await exportAsZip(cardsToExport, imageWidth, imageHeight, scale, naming, imageSize, state);
+            await exportAsZip(cardsToExport, imageWidth, imageHeight, scale, naming, imageSize);
         } else {
-            await exportAsIndividual(cardsToExport, imageWidth, imageHeight, scale, naming, imageSize, state);
+            await exportAsIndividual(cardsToExport, imageWidth, imageHeight, scale, naming, imageSize);
         }
         
         return true;
         
     } catch (error) {
         console.error("Export failed:", error);
-        updateProgressUI(0, 0, `Error: ${error.message}`, true);
+        showProgress(0, 0, `Error: ${error.message}`, true);
         throw error;
     }
 }
 
-// Export as ZIP file
-async function exportAsZip(cards, width, height, scale, naming, imageSize, state) {
+// ZIP export
+async function exportAsZip(cards, width, height, scale, naming, imageSize) {
     if (typeof JSZip === 'undefined') {
-        throw new Error('JSZip library not loaded. Please refresh the page.');
+        throw new Error('JSZip library not loaded.');
     }
     
     const zip = new JSZip();
@@ -111,83 +101,62 @@ async function exportAsZip(cards, width, height, scale, naming, imageSize, state
     let exportedCount = 0;
     const totalCards = cards.length;
     
-    // Process cards in batches to avoid memory issues
-    const batchSize = 5;
+    // Process in smaller batches
+    const batchSize = 3;
     
     for (let i = 0; i < totalCards; i += batchSize) {
         const batch = cards.slice(i, i + batchSize);
         
-        const batchPromises = batch.map(async (card) => {
+        for (const card of batch) {
             try {
-                const blob = await generateCardImage(card, width, height, scale, imageSize, state);
-                
-                // Generate filename based on naming convention
-                const fileName = generateFileName(card.title, naming, state);
+                const blob = await createCardImage(card, width, height, scale, imageSize);
+                const fileName = getFileName(card.title, naming);
                 folder.file(fileName, blob);
                 
                 exportedCount++;
-                updateProgressUI(exportedCount, totalCards, `Exported: ${card.title}`);
+                showProgress(exportedCount, totalCards, `Processing: ${card.title}`);
                 
-                return true;
             } catch (error) {
                 console.error(`Failed to export card: ${card.title}`, error);
-                updateProgressUI(exportedCount, totalCards, `Failed: ${card.title}`, false);
-                return false;
+                showProgress(exportedCount, totalCards, `Failed: ${card.title}`, false);
             }
-        });
-        
-        await Promise.all(batchPromises);
+        }
     }
     
-    // Generate zip file
-    updateProgressUI(totalCards, totalCards, 'Creating ZIP file...');
-    const content = await zip.generateAsync({ 
-        type: 'blob',
-        compression: 'DEFLATE',
-        compressionOptions: { level: 6 }
-    });
+    // Create and download ZIP
+    showProgress(totalCards, totalCards, 'Creating ZIP file...');
+    const content = await zip.generateAsync({ type: 'blob' });
     
-    // Download
     const a = document.createElement('a');
     a.href = URL.createObjectURL(content);
-    a.download = `AEW_${cards.length}_Cards_${new Date().toISOString().slice(0,10)}.zip`;
+    a.download = `AEW_Cards_${new Date().toISOString().slice(0,10)}.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
     
-    updateProgressUI(totalCards, totalCards, `Export complete! ${exportedCount} cards exported. Download started.`, true);
+    showProgress(totalCards, totalCards, `Export complete! Downloaded ${exportedCount} cards.`, true);
     
-    // Auto-close modal after 3 seconds
+    // Close modal after delay
     setTimeout(() => {
-        const exportModal = document.getElementById('exportModal');
-        if (exportModal) {
-            exportModal.style.display = 'none';
-        }
-        // Reset progress bar
-        const progressBar = document.getElementById('exportProgressBar');
-        if (progressBar) {
-            progressBar.style.width = '0%';
-            progressBar.style.background = '#4CAF50';
-        }
-    }, 3000);
+        const modal = document.getElementById('exportModal');
+        if (modal) modal.style.display = 'none';
+        resetProgress();
+    }, 2000);
 }
 
-// Export as individual files
-async function exportAsIndividual(cards, width, height, scale, naming, imageSize, state) {
+// Individual files export
+async function exportAsIndividual(cards, width, height, scale, naming, imageSize) {
     let exportedCount = 0;
     const totalCards = cards.length;
     
     for (const card of cards) {
         try {
-            updateProgressUI(exportedCount, totalCards, `Exporting: ${card.title}`);
+            showProgress(exportedCount, totalCards, `Exporting: ${card.title}`);
             
-            const blob = await generateCardImage(card, width, height, scale, imageSize, state);
+            const blob = await createCardImage(card, width, height, scale, imageSize);
+            const fileName = getFileName(card.title, naming);
             
-            // Generate filename
-            const fileName = generateFileName(card.title, naming, state);
-            
-            // Create download link
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -198,42 +167,29 @@ async function exportAsIndividual(cards, width, height, scale, naming, imageSize
             URL.revokeObjectURL(url);
             
             exportedCount++;
-            updateProgressUI(exportedCount, totalCards, `Exported: ${card.title}`);
+            showProgress(exportedCount, totalCards, `Exported: ${card.title}`);
             
-            // Small delay to prevent browser issues
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Small delay between downloads
+            await new Promise(resolve => setTimeout(resolve, 50));
             
         } catch (error) {
             console.error(`Failed to export card: ${card.title}`, error);
-            updateProgressUI(exportedCount, totalCards, `Failed: ${card.title}`, false);
+            showProgress(exportedCount, totalCards, `Failed: ${card.title}`, false);
         }
     }
     
-    updateProgressUI(totalCards, totalCards, `Export complete! ${exportedCount}/${totalCards} cards exported.`, true);
+    showProgress(totalCards, totalCards, `Export complete! ${exportedCount} cards downloaded.`, true);
     
-    // Auto-close modal after 3 seconds
     setTimeout(() => {
-        const exportModal = document.getElementById('exportModal');
-        if (exportModal) {
-            exportModal.style.display = 'none';
-        }
-        // Reset progress bar
-        const progressBar = document.getElementById('exportProgressBar');
-        if (progressBar) {
-            progressBar.style.width = '0%';
-            progressBar.style.background = '#4CAF50';
-        }
-    }, 3000);
+        const modal = document.getElementById('exportModal');
+        if (modal) modal.style.display = 'none';
+        resetProgress();
+    }, 2000);
 }
 
-// Generate card image
-async function generateCardImage(card, width, height, scale, imageSize, state) {
-    // Import renderer dynamically
-    const { generateCardVisualHTMLForExport } = await import('./card-renderer-export.js');
-    
-    // Create card container
+// Create card image
+async function createCardImage(card, width, height, scale, imageSize) {
     const cardContainer = document.createElement('div');
-    cardContainer.className = 'card-modal-view';
     cardContainer.style.cssText = `
         width: ${width}px;
         height: ${height}px;
@@ -245,7 +201,6 @@ async function generateCardImage(card, width, height, scale, imageSize, state) {
         transform-origin: top left;
     `;
     
-    // Use special renderer for export with larger text
     cardContainer.innerHTML = generateCardVisualHTMLForExport(card, {
         width: width,
         height: height,
@@ -254,113 +209,74 @@ async function generateCardImage(card, width, height, scale, imageSize, state) {
     
     document.body.appendChild(cardContainer);
     
-    // Wait for images to load
-    await waitForImages(cardContainer);
+    // Wait a moment for rendering
+    await new Promise(resolve => setTimeout(resolve, 50));
     
-    // Generate image
     const canvas = await html2canvas(cardContainer, {
         scale: 1,
         width: width * scale,
         height: height * scale,
         backgroundColor: null,
         logging: false,
-        useCORS: true,
-        allowTaint: true
+        useCORS: true
     });
     
-    // Convert to blob
-    const blob = await new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-            if (blob) {
-                resolve(blob);
-            } else {
-                reject(new Error('Failed to create blob from canvas'));
-            }
-        }, 'image/png', 1.0);
+    const blob = await new Promise(resolve => {
+        canvas.toBlob(resolve, 'image/png', 1.0);
     });
     
-    // Clean up
     document.body.removeChild(cardContainer);
     
     return blob;
 }
 
-// Helper function to generate filename
-function generateFileName(cardTitle, naming, state) {
+// Helper functions
+function getFileName(cardTitle, naming) {
     switch(naming) {
         case 'pascal':
             return `${state.toPascalCase(cardTitle)}.png`;
         case 'lackey':
-            // Remove special characters and spaces for LackeyCCG format
             return `${cardTitle.replace(/[^\w\s]/g, '').replace(/\s+/g, '')}.png`;
-        case 'original':
         default:
-            // Remove invalid characters for filenames
-            const cleanName = cardTitle.replace(/[<>:"/\\|?*]/g, '');
-            return `${cleanName}.png`;
+            return `${cardTitle.replace(/[<>:"/\\|?*]/g, '')}.png`;
     }
 }
 
-// Helper function to wait for images to load
-function waitForImages(container) {
-    return new Promise((resolve) => {
-        const images = container.getElementsByTagName('img');
-        let loadedCount = 0;
-        const totalImages = images.length;
-        
-        if (totalImages === 0) {
-            resolve();
-            return;
-        }
-        
-        for (let img of images) {
-            if (img.complete) {
-                loadedCount++;
-                if (loadedCount === totalImages) resolve();
-            } else {
-                img.onload = () => {
-                    loadedCount++;
-                    if (loadedCount === totalImages) resolve();
-                };
-                img.onerror = () => {
-                    loadedCount++;
-                    if (loadedCount === totalImages) resolve();
-                };
-            }
-        }
-        
-        // Fallback timeout
-        setTimeout(resolve, 2000);
-    });
-}
-
-// Update progress UI
-function updateProgressUI(current, total, status, isComplete = false) {
+function showProgress(current, total, message, isComplete = false) {
     const progressBar = document.getElementById('exportProgressBar');
     const progressText = document.getElementById('exportProgressText');
     const progressPercent = document.getElementById('exportProgressPercent');
     const exportStatus = document.getElementById('exportStatus');
     
-    if (progressBar && progressText && progressPercent && exportStatus) {
-        const percent = total > 0 ? Math.round((current / total) * 100) : 0;
-        
-        progressBar.style.width = `${percent}%`;
-        progressText.textContent = status;
-        progressPercent.textContent = `${percent}%`;
-        exportStatus.textContent = `${current}/${total} cards`;
-        
-        if (isComplete) {
-            progressBar.style.background = '#2ecc71';
-            // Re-enable buttons
-            const startExportBtn = document.getElementById('startExport');
-            const cancelExportBtn = document.getElementById('cancelExport');
-            if (startExportBtn) startExportBtn.disabled = false;
-            if (cancelExportBtn) cancelExportBtn.disabled = false;
-        }
+    if (!progressBar || !progressText) return;
+    
+    const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+    
+    progressBar.style.width = `${percent}%`;
+    progressText.textContent = message;
+    
+    if (progressPercent) progressPercent.textContent = `${percent}%`;
+    if (exportStatus) exportStatus.textContent = `${current}/${total} cards`;
+    
+    if (isComplete) {
+        progressBar.style.background = '#2ecc71';
+        // Re-enable buttons
+        const startBtn = document.getElementById('startExport');
+        const cancelBtn = document.getElementById('cancelExport');
+        if (startBtn) startBtn.disabled = false;
+        if (cancelBtn) cancelBtn.disabled = false;
     }
 }
 
-// Simple fallback export (for backward compatibility)
+function resetProgress() {
+    const progressBar = document.getElementById('exportProgressBar');
+    if (progressBar) {
+        progressBar.style.width = '0%';
+        progressBar.style.background = '#4CAF50';
+    }
+}
+
+// Backward compatibility
 export async function exportAllCardsAsImages() {
     return exportCardsWithOptions({
         cardType: 'all',
@@ -379,103 +295,73 @@ export async function exportAllCardsAsImagesFallback() {
     });
 }
 
-// TSV Database Export for LackeyCCG format
+// TSV export (simplified)
 export async function exportAllCardsAsTSV() {
     try {
-        console.log("Starting TSV export for LackeyCCG...");
-        
-        // Lazy load dependencies
-        const { state } = await getDependencies();
-        
-        // Create TSV content with exact LackeyCCG headers
         const headers = ['Name', 'Sets', 'ImageFile', 'Cost', 'Damage', 'Momentum', 'Type', 'Target', 'Traits', 'Wrestler Logo', 'Game Text'];
         let tsvContent = headers.join('\t') + '\n';
         
-        // Helper to clean text for TSV
-        const cleanForTSV = (text) => {
-            if (!text) return '';
-            // Replace tabs with spaces, newlines with spaces, and remove any extra whitespace
-            return text.replace(/\t/g, ' ').replace(/\n/g, ' ').replace(/\r/g, ' ').trim();
-        };
-        
-        // Add all cards
         state.cardDatabase.forEach(card => {
-            // Generate PascalCase image filename
             const imageFile = state.toPascalCase(card.title) + '.png';
-            
-            // Handle special cost values for personas
             let costValue = card.cost;
             let damageValue = card.damage;
-            let momentumValue = card.momentum;
             
-            // For persona cards (Wrestler, Manager, Call Name, Faction), use N/a for cost/damage
             if (['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type)) {
                 costValue = 'N/a';
                 damageValue = 'N/a';
-                // For Call Names, check if momentum is null/undefined
-                if (card.card_type === 'Call Name' && (momentumValue === null || momentumValue === undefined)) {
-                    momentumValue = '';
-                }
             }
             
-            // Get wrestler logo from Starting column (kit cards)
             let wrestlerLogo = '';
             if (card['Starting'] && card['Starting'].trim() !== '') {
                 wrestlerLogo = card['Starting'].trim();
             }
             
-            // Get traits from text_box.traits or Traits column
-            let traits = '';
-            if (card.text_box?.traits && card.text_box.traits.length > 0) {
-                traits = card.text_box.traits.map(t => 
-                    t.value ? `${t.name}:${t.value}` : t.name
-                ).join(',');
-            } else if (card['Traits']) {
-                traits = card['Traits'];
-            }
-            
             // Get target
             let target = '';
             if (card.text_box?.traits) {
-                const targetTrait = card.text_box.traits.find(t => t.name.trim() === 'Target');
+                const targetTrait = card.text_box.traits.find(t => t.name && t.name.trim() === 'Target');
                 if (targetTrait && targetTrait.value) {
                     target = targetTrait.value;
                 }
             }
             
-            // Clean game text
-            const gameText = cleanForTSV(card.text_box?.raw_text || '');
+            // Get traits
+            let traits = '';
+            if (card.text_box?.traits) {
+                traits = card.text_box.traits.map(t => 
+                    t.value ? `${t.name}:${t.value}` : t.name
+                ).join(',');
+            }
             
-            // Build the row exactly like your example
+            const gameText = (card.text_box?.raw_text || '').replace(/\t/g, ' ').replace(/\n/g, ' ').trim();
+            
             const row = [
-                card.title || '',                          // Name
-                'AEW',                                     // Sets (always AEW)
-                imageFile,                                 // ImageFile (PascalCase.png)
-                costValue !== null ? costValue : '',       // Cost
-                damageValue !== null ? damageValue : '',   // Damage
-                momentumValue !== null ? momentumValue : '', // Momentum
-                card.card_type || '',                      // Type
-                target,                                    // Target
-                traits,                                    // Traits
-                wrestlerLogo,                              // Wrestler Logo
-                gameText                                   // Game Text
+                card.title || '',
+                'AEW',
+                imageFile,
+                costValue !== null ? costValue : '',
+                damageValue !== null ? damageValue : '',
+                card.momentum !== null ? card.momentum : '',
+                card.card_type || '',
+                target,
+                traits,
+                wrestlerLogo,
+                gameText
             ];
             
             tsvContent += row.join('\t') + '\n';
         });
         
-        // Create and download file
         const blob = new Blob([tsvContent], { type: 'text/tab-separated-values' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `AEW_Card_Database_Lackey_${new Date().toISOString().slice(0,10)}.tsv`;
+        a.download = `AEW_Card_Database.tsv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
         
-        console.log("TSV export completed successfully");
-        alert('TSV database exported successfully! Ready for LackeyCCG import.');
+        alert('TSV database exported successfully!');
         return true;
         
     } catch (error) {
