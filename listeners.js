@@ -76,20 +76,24 @@ export function initializeAllEventListeners(refreshCardPool) {
         refreshCardPool();
         state.saveStateToCache();
     });
-    callNameSelect.addEventListener('change', (e) => {
-        const newCallName = state.cardTitleCache[e.target.value] || null;
-        state.setSelectedCallName(newCallName);
-        ui.renderPersonaDisplay();
-        refreshCardPool();
-        state.saveStateToCache();
-    });
-    factionSelect.addEventListener('change', (e) => {
-        const newFaction = state.cardTitleCache[e.target.value] || null;
-        state.setSelectedFaction(newFaction);
-        ui.renderPersonaDisplay();
-        refreshCardPool();
-        state.saveStateToCache();
-    });
+    if (callNameSelect) {
+        callNameSelect.addEventListener('change', (e) => {
+            const newCallName = state.cardTitleCache[e.target.value] || null;
+            state.setSelectedCallName(newCallName);
+            ui.renderPersonaDisplay();
+            refreshCardPool();
+            state.saveStateToCache();
+        });
+    }
+    if (factionSelect) {
+        factionSelect.addEventListener('change', (e) => {
+            const newFaction = state.cardTitleCache[e.target.value] || null;
+            state.setSelectedFaction(newFaction);
+            ui.renderPersonaDisplay();
+            refreshCardPool();
+            state.saveStateToCache();
+        });
+    }
     [startingDeckList, purchaseDeckList, personaDisplay].forEach(container => {
         container.addEventListener('click', (e) => {
             const target = e.target;
@@ -111,8 +115,8 @@ export function initializeAllEventListeners(refreshCardPool) {
             // Reset dropdowns
             wrestlerSelect.value = "";
             managerSelect.value = "";
-            callNameSelect.value = "";
-            factionSelect.value = "";
+            if (callNameSelect) callNameSelect.value = "";
+            if (factionSelect) factionSelect.value = "";
             
             ui.renderDecks();
             ui.renderPersonaDisplay();

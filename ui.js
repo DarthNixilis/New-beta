@@ -153,7 +153,7 @@ export function renderCardPool(cards) {
 
 export function renderPersonaDisplay() {
     try {
-        if (!state.selectedWrestler) { 
+        if (!state.selectedWrestler && !state.selectedManager && !state.selectedCallName && !state.selectedFaction) { 
             personaDisplay.style.display = 'none'; 
             return; 
         }
@@ -165,6 +165,9 @@ export function renderPersonaDisplay() {
         const activePersona = [];
         if (state.selectedWrestler) activePersona.push(state.selectedWrestler);
         if (state.selectedManager) activePersona.push(state.selectedManager);
+        if (state.selectedCallName) activePersona.push(state.selectedCallName);
+        if (state.selectedFaction) activePersona.push(state.selectedFaction);
+        
         activePersona.forEach(p => cardsToShow.add(p));
         const activePersonaTitles = activePersona.map(p => p.title);
         const kitCards = state.cardDatabase.filter(card => {
@@ -176,10 +179,14 @@ export function renderPersonaDisplay() {
         });
         kitCards.forEach(card => cardsToShow.add(card));
         const sortedCards = Array.from(cardsToShow).sort((a, b) => {
-            if (a.card_type === 'Wrestler') return -1; 
-            if (b.card_type === 'Wrestler') return 1;
-            if (a.card_type === 'Manager') return -1; 
-            if (b.card_type === 'Manager') return 1;
+            const typeOrder = ['Wrestler', 'Manager', 'Call Name', 'Faction', 'Action', 'Response', 'Strike', 'Grapple', 'Submission'];
+            const aIndex = typeOrder.indexOf(a.card_type);
+            const bIndex = typeOrder.indexOf(b.card_type);
+            
+            if (aIndex !== -1 && bIndex !== -1) {
+                return aIndex - bIndex;
+            }
+            
             return a.title.localeCompare(b.title);
         });
         sortedCards.forEach(card => {

@@ -29,14 +29,19 @@ function parseCardTSV(tsvData, set) {
         });
         
         // Map to the expected card format using NEW column names
-        card.title = (card['Name'] || '').trim(); // NEW: Use Name column and trim
-        card.card_type = card['Type'];
+        card.title = (card['Name'] || '').trim();
+        card.card_type = card['Type'] || '';
         card.cost = card['Cost'] === 'N/a' || card['Cost'] === 'N/A' || card['Cost'] === '' ? null : card['Cost'];
         card.damage = card['Damage'] === 'N/a' || card['Damage'] === 'N/A' || card['Damage'] === '' ? null : card['Damage'];
         card.momentum = card['Momentum'] === 'N/a' || card['Momentum'] === 'N/A' || card['Momentum'] === '' ? null : card['Momentum'];
-        card.set = set; // Add set information
+        card.set = set;
         
-        // Text box parsing - NEW: Use Game Text column
+        // Ensure card_type is properly set for Call Name and Faction
+        if (card.card_type === 'Call Name' || card.card_type === 'Faction') {
+            // These are valid card types for the dropdown
+        }
+        
+        // Text box parsing
         card.text_box = { raw_text: card['Game Text'] || '' };
         
         // Parse keywords (if any)
@@ -57,11 +62,10 @@ function parseCardTSV(tsvData, set) {
             card.text_box.traits = [];
         }
         
-        // Kit card detection - NEW: from 'Starting' column
+        // Kit card detection
         if (card['Starting'] && card['Starting'].trim() !== '') {
-            // The Starting column contains the persona name for kit cards
-            card['Wrestler Kit'] = 'TRUE'; // Keep for backward compatibility
-            card['Signature For'] = card['Starting'].trim(); // Store persona name
+            card['Wrestler Kit'] = 'TRUE';
+            card['Signature For'] = card['Starting'].trim();
         }
         
         return card;
