@@ -1,64 +1,5 @@
 import * as state from './config.js';
 
-// Auto-size text function
-function autoSizeText(textBoxElement) {
-    if (!textBoxElement) return;
-    
-    const textContent = textBoxElement.querySelector('.text-content > div');
-    if (!textContent) return;
-    
-    let fontSize = 20;
-    let lineHeight = 1.05;
-    const maxHeight = textBoxElement.offsetHeight;
-    const maxWidth = textBoxElement.offsetWidth;
-    
-    // Try to fit text by reducing font size
-    while (fontSize > 8 && (textContent.scrollHeight > maxHeight || textContent.scrollWidth > maxWidth)) {
-        fontSize -= 0.5;
-        lineHeight = Math.max(0.9, lineHeight - 0.02);
-        textContent.style.fontSize = fontSize + 'px';
-        textContent.style.lineHeight = lineHeight;
-    }
-    
-    // If still too big, add scroll
-    if (textContent.scrollHeight > maxHeight || textContent.scrollWidth > maxWidth) {
-        textBoxElement.style.overflowY = 'auto';
-        textBoxElement.style.alignItems = 'flex-start';
-        textBoxElement.style.justifyContent = 'flex-start';
-    }
-    
-    return { fontSize, lineHeight };
-}
-
-// Calculate optimal font size for fitting text
-function calculateOptimalFontSize(text, maxWidth, maxHeight) {
-    // Create a test element to measure text
-    const testElement = document.createElement('div');
-    testElement.style.cssText = `
-        position: absolute;
-        visibility: hidden;
-        white-space: nowrap;
-        font-family: Arial, sans-serif;
-        font-weight: 800;
-        line-height: 1.05;
-    `;
-    
-    let fontSize = 20;
-    testElement.style.fontSize = fontSize + 'px';
-    testElement.innerHTML = text.replace(/<br>/g, ' ');
-    
-    document.body.appendChild(testElement);
-    
-    // Reduce font size until it fits
-    while ((testElement.offsetWidth > maxWidth * 0.9 || testElement.offsetHeight > maxHeight * 0.9) && fontSize > 8) {
-        fontSize -= 0.5;
-        testElement.style.fontSize = fontSize + 'px';
-    }
-    
-    document.body.removeChild(testElement);
-    return fontSize;
-}
-
 // Special renderer for exported cards (includes Lackey 214x308 template + auto-fit hooks)
 export function generateCardVisualHTMLForExport(card, options = {}) {
     const isLackeySize = options.size === 'lackey' || options.width === 214;
@@ -148,25 +89,35 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
         const costTop = titleTop + titleBandHeight;    // same row as stats
         const costRight = 6;
 
-        // Pre-calculate font size based on text length
+        // Calculate text box dimensions
+        const textBoxWidth = (options.width || 214) - 20; // 10px left + 10px right
+        const textBoxHeight = (options.height || 308) - 214; // 204px top + 10px bottom
+        
+        // Pre-calculate font size based on text length - MORE AGGRESSIVE SIZING
         let estimatedFontSize = 20;
         let estimatedLineHeight = 1.05;
         
         if (gameText) {
-            const textLength = gameText.replace(/<[^>]*>/g, '').length; // Text without HTML tags
+            const textOnly = gameText.replace(/<[^>]*>/g, ''); // Remove HTML tags
+            const textLength = textOnly.length;
             const lineCount = (gameText.match(/<br>/g) || []).length + 1;
             
-            // Adjust font size based on text length and line count
-            if (textLength > 500 || lineCount > 6) {
+            // MUCH MORE AGGRESSIVE SIZING for Lackey cards
+            if (textLength > 400 || lineCount > 8) {
+                estimatedFontSize = 10;
+                estimatedLineHeight = 0.9;
+            } else if (textLength > 300 || lineCount > 6) {
+                estimatedFontSize = 12;
+                estimatedLineHeight = 0.95;
+            } else if (textLength > 200 || lineCount > 4) {
                 estimatedFontSize = 14;
                 estimatedLineHeight = 1.0;
-            } else if (textLength > 300 || lineCount > 4) {
+            } else if (textLength > 100 || lineCount > 3) {
                 estimatedFontSize = 16;
                 estimatedLineHeight = 1.0;
-            } else if (textLength > 200 || lineCount > 3) {
-                estimatedFontSize = 18;
-                estimatedLineHeight = 1.05;
             }
+            
+            console.log(`Card "${card.title}": ${textLength} chars, ${lineCount} lines -> font-size: ${estimatedFontSize}px`);
         }
 
         return `
@@ -279,6 +230,9 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                             overflow: hidden;
                             font-size: inherit;
                             line-height: inherit;
+                            word-wrap: break-word;
+                            word-break: break-word;
+                            hyphens: auto;
                         ">${gameText}</div>
                     </div>
                 </div>
@@ -526,5 +480,63 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
     return html;
 }
 
-// Export the auto-size functions for use in master-export.js
-export { autoSizeText, calculateOptimalFontSize };
+// Add this function to handle auto-sizing in master-export.js
+export function applyLackeyTextAutoSizing(cardContainer) {
+    if (!cardContainer) return;
+    
+    const textBox = cardContainer.querySelector('.aew-lackey-textbox');
+    const textContent = textBox?.querySelector('.text-content > div');
+    
+    if (!textBox || !textContent) return;
+    
+    // Get the actual text without HTML tags
+    const textOnly = textContent.textContent || textContent.innerText;
+    const textLength = textOnly.length;
+    
+    // Get text box dimensions
+    const textBoxWidth = textBox.offsetWidth - 20; // Account for padding
+    const textBoxHeight = textBox.offsetHeight - 20;
+    
+    // More aggressive auto-sizing for Lackey cards
+    let fontSize = 20;
+    let lineHeight = 1.05;
+    
+    // Start with a much smaller font size for long text
+    if (textLength > 400) {
+        fontSize = 10;
+        lineHeight = 0.9;
+    } else if (textLength > 300) {
+        fontSize = 12;
+        lineHeight = 0.95;
+    } else if (textLength > 200) {
+        fontSize = 14;
+        lineHeight = 1.0;
+    } else if (textLength > 100) {
+        fontSize = 16;
+        lineHeight = 1.0;
+    }
+    
+    // Apply initial sizing
+    textContent.style.fontSize = fontSize + 'px';
+    textContent.style.lineHeight = lineHeight;
+    
+    // Check if it fits
+    let attempts = 0;
+    while ((textContent.scrollHeight > textBoxHeight || textContent.scrollWidth > textBoxWidth) && 
+           fontSize > 8 && attempts < 20) {
+        fontSize -= 0.5;
+        lineHeight = Math.max(0.8, lineHeight - 0.01);
+        textContent.style.fontSize = fontSize + 'px';
+        textContent.style.lineHeight = lineHeight;
+        attempts++;
+    }
+    
+    // If still doesn't fit, allow scrolling
+    if (textContent.scrollHeight > textBoxHeight || textContent.scrollWidth > textBoxWidth) {
+        textBox.style.overflowY = 'auto';
+        textBox.style.alignItems = 'flex-start';
+        textBox.style.justifyContent = 'flex-start';
+    }
+    
+    console.log(`Auto-sized "${textOnly.substring(0, 30)}...": ${fontSize}px font, ${lineHeight} line-height`);
+}
