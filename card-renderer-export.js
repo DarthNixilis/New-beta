@@ -16,7 +16,7 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
             case 'Strike':      return '#4D82C6'; // blue
             case 'Boon':        return '#18A7B5'; // teal
             case 'Faction':     return '#28C2A1'; // mint/teal-green
-            case 'Injury':      return '#FF7900'; // gray
+            case 'Injury':      return '#FF7900'; // caution orange
             case 'Call Name':   return '#2E86C1'; // fallback (not in your shots)
             default:            return '#777777'; // safe fallback
         }
