@@ -92,21 +92,36 @@ function parseLackeyDekFormat(text) {
     }
 }
 
-// Helper function to parse plain text format
+// Helper function to parse plain text format (including LackeyCCG .txt format)
 function parsePlainTextFormat(text) {
     const lines = text.trim().split(/\r?\n/);
     let newWrestler = null, newManager = null, newCallName = null, newFaction = null;
-    let newStartingDeck = [], newPurchaseDeck = [], currentSection = '';
+    let newStartingDeck = [], newPurchaseDeck = [], currentSection = 'starting'; // Default to starting deck
     
     lines.forEach(line => {
         const trimmedLine = line.trim();
-        if (!trimmedLine || trimmedLine.toLowerCase().startsWith('kit')) return;
+        if (!trimmedLine) return;
         
-        // Parse persona headers
+        // Check for section headers (LackeyCCG format)
+        if (trimmedLine.toLowerCase() === 'purchase_deck:') {
+            currentSection = 'purchase';
+            return;
+        }
+        else if (trimmedLine.toLowerCase() === 'starting:') {
+            currentSection = 'startingPersonas'; // Special section for personas
+            return;
+        }
+        else if (trimmedLine.toLowerCase() === 'tokens:' || trimmedLine.toLowerCase().startsWith('tokens:')) {
+            currentSection = 'tokens'; // Skip tokens section
+            return;
+        }
+        
+        // Parse persona headers (alternative format)
         if (trimmedLine.toLowerCase().startsWith('wrestler:')) {
             const wrestlerName = trimmedLine.substring(9).trim();
             const wrestler = state.cardTitleCache[wrestlerName];
             if (wrestler && wrestler.card_type === 'Wrestler') newWrestler = wrestler;
+            return;
         } 
         else if (trimmedLine.toLowerCase().startsWith('manager:')) {
             const managerName = trimmedLine.substring(8).trim();
@@ -114,6 +129,7 @@ function parsePlainTextFormat(text) {
                 const manager = state.cardTitleCache[managerName];
                 if (manager && manager.card_type === 'Manager') newManager = manager;
             }
+            return;
         }
         else if (trimmedLine.toLowerCase().startsWith('call name:') || trimmedLine.toLowerCase().startsWith('callname:')) {
             const callNameStr = trimmedLine.toLowerCase();
@@ -123,6 +139,7 @@ function parsePlainTextFormat(text) {
                 const callName = state.cardTitleCache[callNameName];
                 if (callName && callName.card_type === 'Call Name') newCallName = callName;
             }
+            return;
         }
         else if (trimmedLine.toLowerCase().startsWith('faction:')) {
             const factionName = trimmedLine.substring(8).trim();
@@ -130,41 +147,95 @@ function parsePlainTextFormat(text) {
                 const faction = state.cardTitleCache[factionName];
                 if (faction && faction.card_type === 'Faction') newFaction = faction;
             }
+            return;
         }
-        // Parse deck sections
+        // Parse deck sections (alternative format)
         else if (trimmedLine.startsWith('--- Starting Deck') || trimmedLine.toLowerCase().includes('starting deck')) { 
             currentSection = 'starting'; 
+            return;
         }
         else if (trimmedLine.startsWith('--- Purchase Deck') || trimmedLine.toLowerCase().includes('purchase deck')) { 
             currentSection = 'purchase'; 
+            return;
         }
-        // Parse card lines
+        
+        // Parse card lines in various formats
+        let match;
+        
+        // Try tab-separated format first (most common in Lackey): "1\tDevoted"
+        const tabParts = trimmedLine.split('\t');
+        if (tabParts.length >= 2) {
+            const countStr = tabParts[0].trim();
+            const cardName = tabParts.slice(1).join('\t').trim(); // Join in case there are tabs in the name
+            match = { count: parseInt(countStr, 10), name: cardName };
+        }
+        // Try space-separated format: "1 Devoted"
         else {
-            const match = trimmedLine.match(/^(\d+)x\s+(.+)/);
-            if (match) {
-                const count = parseInt(match[1], 10);
-                const cardName = match[2].trim();
-                if (state.cardTitleCache[cardName]) {
-                    for (let i = 0; i < count; i++) {
-                        if (currentSection === 'starting') newStartingDeck.push(cardName);
-                        else if (currentSection === 'purchase') newPurchaseDeck.push(cardName);
-                    }
+            const spaceMatch = trimmedLine.match(/^(\d+)\s+(.+)/);
+            if (spaceMatch) {
+                match = { count: parseInt(spaceMatch[1], 10), name: spaceMatch[2].trim() };
+            }
+            // Try "x" format: "1x Devoted" (for compatibility)
+            else {
+                const xMatch = trimmedLine.match(/^(\d+)x\s+(.+)/);
+                if (xMatch) {
+                    match = { count: parseInt(xMatch[1], 10), name: xMatch[2].trim() };
                 }
             }
-            // Also support format without "x" (just number and card name)
-            else {
-                const simpleMatch = trimmedLine.match(/^(\d+)\s+(.+)/);
-                if (simpleMatch) {
-                    const count = parseInt(simpleMatch[1], 10);
-                    const cardName = simpleMatch[2].trim();
-                    if (state.cardTitleCache[cardName]) {
-                        for (let i = 0; i < count; i++) {
-                            if (currentSection === 'starting') newStartingDeck.push(cardName);
-                            else if (currentSection === 'purchase') newPurchaseDeck.push(cardName);
+        }
+        
+        if (match) {
+            const count = match.count;
+            const cardName = match.name;
+            const card = state.cardTitleCache[cardName];
+            
+            if (!card) {
+                console.warn(`Card not found: "${cardName}"`);
+                return;
+            }
+            
+            // Determine what to do with this card based on current section and card type
+            if (currentSection === 'startingPersonas') {
+                // In the Starting: section, cards could be personas or starting deck cards
+                if (['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type)) {
+                    // This is a persona card
+                    for (let i = 0; i < count; i++) {
+                        switch(card.card_type) {
+                            case 'Wrestler': newWrestler = card; break;
+                            case 'Manager': newManager = card; break;
+                            case 'Call Name': newCallName = card; break;
+                            case 'Faction': newFaction = card; break;
                         }
                     }
+                } else {
+                    // This is a non-persona card in the Starting section
+                    for (let i = 0; i < count; i++) {
+                        newStartingDeck.push(cardName);
+                    }
                 }
             }
+            else if (currentSection === 'purchase') {
+                // Add to purchase deck
+                for (let i = 0; i < count; i++) {
+                    newPurchaseDeck.push(cardName);
+                }
+            }
+            else if (currentSection === 'starting') {
+                // Default section (before any headers) - assume starting deck
+                for (let i = 0; i < count; i++) {
+                    newStartingDeck.push(cardName);
+                }
+            }
+            // tokens section is ignored
+        }
+    });
+    
+    // Remove any persona cards that might have accidentally ended up in starting deck
+    const filteredStartingDeck = [];
+    newStartingDeck.forEach(cardName => {
+        const card = state.cardTitleCache[cardName];
+        if (card && !['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type)) {
+            filteredStartingDeck.push(cardName);
         }
     });
     
@@ -173,7 +244,7 @@ function parsePlainTextFormat(text) {
         manager: newManager,
         callName: newCallName,
         faction: newFaction,
-        startingDeck: newStartingDeck,
+        startingDeck: filteredStartingDeck,
         purchaseDeck: newPurchaseDeck
     };
 }
@@ -189,15 +260,17 @@ export function parseAndLoadDeck(text) {
     try {
         let parsedDeck;
         
-        // Try to parse as LackeyCCG .dek format first
-        parsedDeck = parseLackeyDekFormat(text);
+        // Check if it's likely XML/Lackey .dek format
+        if (text.trim().startsWith('<?xml') || text.includes('<superzone')) {
+            parsedDeck = parseLackeyDekFormat(text);
+        }
         
-        // If not Lackey format, try plain text format
+        // If not XML, try plain text formats
         if (!parsedDeck) {
             parsedDeck = parsePlainTextFormat(text);
         }
         
-        if (!parsedDeck) {
+        if (!parsedDeck || (!parsedDeck.wrestler && parsedDeck.startingDeck.length === 0 && parsedDeck.purchaseDeck.length === 0)) {
             throw new Error('Could not parse deck file. Please check the format.');
         }
         
