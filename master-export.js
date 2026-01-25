@@ -1,7 +1,14 @@
 // master-export.js
-import * as state from './config.js';
-import { generateCardVisualHTML } from './card-renderer.js';
-import { generateCardVisualHTMLForExport } from './card-renderer-export.js';
+
+// Note: This file only contains export functions, no initialization code
+// This prevents it from breaking the app during startup
+
+// Import dependencies only when needed (lazy loading)
+async function getDependencies() {
+    return {
+        state: await import('./config.js')
+    };
+}
 
 // Main export function with options
 export async function exportCardsWithOptions(options = {}) {
@@ -16,6 +23,10 @@ export async function exportCardsWithOptions(options = {}) {
     
     try {
         console.log("Starting export with options:", options);
+        
+        // Lazy load dependencies
+        const { state } = await getDependencies();
+        const { generateCardVisualHTMLForExport } = await import('./card-renderer-export.js');
         
         // Filter cards based on type
         let cardsToExport = state.cardDatabase;
@@ -74,9 +85,9 @@ export async function exportCardsWithOptions(options = {}) {
         updateProgressUI(0, cardsToExport.length, 'Preparing export...');
         
         if (format === 'zip') {
-            await exportAsZip(cardsToExport, imageWidth, imageHeight, scale, naming, imageSize);
+            await exportAsZip(cardsToExport, imageWidth, imageHeight, scale, naming, imageSize, state);
         } else {
-            await exportAsIndividual(cardsToExport, imageWidth, imageHeight, scale, naming, imageSize);
+            await exportAsIndividual(cardsToExport, imageWidth, imageHeight, scale, naming, imageSize, state);
         }
         
         return true;
@@ -89,7 +100,7 @@ export async function exportCardsWithOptions(options = {}) {
 }
 
 // Export as ZIP file
-async function exportAsZip(cards, width, height, scale, naming, imageSize) {
+async function exportAsZip(cards, width, height, scale, naming, imageSize, state) {
     if (typeof JSZip === 'undefined') {
         throw new Error('JSZip library not loaded. Please refresh the page.');
     }
@@ -108,10 +119,10 @@ async function exportAsZip(cards, width, height, scale, naming, imageSize) {
         
         const batchPromises = batch.map(async (card) => {
             try {
-                const blob = await generateCardImage(card, width, height, scale, imageSize);
+                const blob = await generateCardImage(card, width, height, scale, imageSize, state);
                 
                 // Generate filename based on naming convention
-                const fileName = generateFileName(card.title, naming);
+                const fileName = generateFileName(card.title, naming, state);
                 folder.file(fileName, blob);
                 
                 exportedCount++;
@@ -163,39 +174,34 @@ async function exportAsZip(cards, width, height, scale, naming, imageSize) {
 }
 
 // Export as individual files
-async function exportAsIndividual(cards, width, height, scale, naming, imageSize) {
+async function exportAsIndividual(cards, width, height, scale, naming, imageSize, state) {
     let exportedCount = 0;
     const totalCards = cards.length;
     
-    // Create a temporary array to hold all download promises
-    const downloadPromises = [];
-    
     for (const card of cards) {
         try {
-            updateProgressUI(exportedCount, totalCards, `Processing: ${card.title}`);
+            updateProgressUI(exportedCount, totalCards, `Exporting: ${card.title}`);
             
-            const blob = await generateCardImage(card, width, height, scale, imageSize);
+            const blob = await generateCardImage(card, width, height, scale, imageSize, state);
             
             // Generate filename
-            const fileName = generateFileName(card.title, naming);
+            const fileName = generateFileName(card.title, naming, state);
             
             // Create download link
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = fileName;
-            a.style.display = 'none';
             document.body.appendChild(a);
-            
-            // Add to download queue
-            downloadPromises.push({
-                element: a,
-                url: url,
-                fileName: fileName
-            });
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
             
             exportedCount++;
-            updateProgressUI(exportedCount, totalCards, `Processed: ${card.title}`);
+            updateProgressUI(exportedCount, totalCards, `Exported: ${card.title}`);
+            
+            // Small delay to prevent browser issues
+            await new Promise(resolve => setTimeout(resolve, 100));
             
         } catch (error) {
             console.error(`Failed to export card: ${card.title}`, error);
@@ -203,29 +209,7 @@ async function exportAsIndividual(cards, width, height, scale, naming, imageSize
         }
     }
     
-    // Trigger downloads one by one with delay
-    updateProgressUI(totalCards, totalCards, 'Starting downloads...', false);
-    
-    for (let i = 0; i < downloadPromises.length; i++) {
-        const item = downloadPromises[i];
-        updateProgressUI(i, downloadPromises.length, `Downloading: ${item.fileName}`);
-        
-        // Trigger download
-        item.element.click();
-        
-        // Clean up
-        setTimeout(() => {
-            document.body.removeChild(item.element);
-            URL.revokeObjectURL(item.url);
-        }, 100);
-        
-        // Small delay between downloads to prevent browser issues
-        if (i < downloadPromises.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-    }
-    
-    updateProgressUI(downloadPromises.length, downloadPromises.length, `Export complete! ${exportedCount}/${totalCards} cards exported.`, true);
+    updateProgressUI(totalCards, totalCards, `Export complete! ${exportedCount}/${totalCards} cards exported.`, true);
     
     // Auto-close modal after 3 seconds
     setTimeout(() => {
@@ -243,7 +227,10 @@ async function exportAsIndividual(cards, width, height, scale, naming, imageSize
 }
 
 // Generate card image
-async function generateCardImage(card, width, height, scale, imageSize) {
+async function generateCardImage(card, width, height, scale, imageSize, state) {
+    // Import renderer dynamically
+    const { generateCardVisualHTMLForExport } = await import('./card-renderer-export.js');
+    
     // Create card container
     const cardContainer = document.createElement('div');
     cardContainer.className = 'card-modal-view';
@@ -299,7 +286,7 @@ async function generateCardImage(card, width, height, scale, imageSize) {
 }
 
 // Helper function to generate filename
-function generateFileName(cardTitle, naming) {
+function generateFileName(cardTitle, naming, state) {
     switch(naming) {
         case 'pascal':
             return `${state.toPascalCase(cardTitle)}.png`;
@@ -396,6 +383,9 @@ export async function exportAllCardsAsImagesFallback() {
 export async function exportAllCardsAsTSV() {
     try {
         console.log("Starting TSV export for LackeyCCG...");
+        
+        // Lazy load dependencies
+        const { state } = await getDependencies();
         
         // Create TSV content with exact LackeyCCG headers
         const headers = ['Name', 'Sets', 'ImageFile', 'Cost', 'Damage', 'Momentum', 'Type', 'Target', 'Traits', 'Wrestler Logo', 'Game Text'];
