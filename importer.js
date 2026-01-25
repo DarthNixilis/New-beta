@@ -1,3 +1,5 @@
+[file name]: importer.js
+[file content begin]
 // importer.js
 import * as state from './config.js';
 import { renderDecks, renderPersonaDisplay } from './ui.js';
@@ -92,7 +94,7 @@ function parseLackeyDekFormat(text) {
     }
 }
 
-// Helper function to parse plain text format
+// Helper function to parse plain text format - FIXED VERSION
 function parsePlainTextFormat(text) {
     const lines = text.trim().split(/\r?\n/);
     let newWrestler = null, newManager = null, newCallName = null, newFaction = null;
@@ -102,11 +104,13 @@ function parsePlainTextFormat(text) {
         const trimmedLine = line.trim();
         if (!trimmedLine || trimmedLine.toLowerCase().startsWith('kit')) return;
         
-        // Parse persona headers
+        // Parse persona headers - FIXED: Match both with and without spaces
         if (trimmedLine.toLowerCase().startsWith('wrestler:')) {
             const wrestlerName = trimmedLine.substring(9).trim();
-            const wrestler = state.cardTitleCache[wrestlerName];
-            if (wrestler && wrestler.card_type === 'Wrestler') newWrestler = wrestler;
+            if (wrestlerName.toLowerCase() !== 'none') {
+                const wrestler = state.cardTitleCache[wrestlerName];
+                if (wrestler && wrestler.card_type === 'Wrestler') newWrestler = wrestler;
+            }
         } 
         else if (trimmedLine.toLowerCase().startsWith('manager:')) {
             const managerName = trimmedLine.substring(8).trim();
@@ -115,10 +119,15 @@ function parsePlainTextFormat(text) {
                 if (manager && manager.card_type === 'Manager') newManager = manager;
             }
         }
-        else if (trimmedLine.toLowerCase().startsWith('call name:') || trimmedLine.toLowerCase().startsWith('callname:')) {
-            const callNameStr = trimmedLine.toLowerCase();
-            const callNameStart = callNameStr.includes('call name:') ? 'call name:' : 'callname:';
-            const callNameName = trimmedLine.substring(callNameStart.length).trim();
+        else if (trimmedLine.toLowerCase().startsWith('call name:')) {
+            const callNameName = trimmedLine.substring(10).trim();
+            if (callNameName.toLowerCase() !== 'none') {
+                const callName = state.cardTitleCache[callNameName];
+                if (callName && callName.card_type === 'Call Name') newCallName = callName;
+            }
+        }
+        else if (trimmedLine.toLowerCase().startsWith('callname:')) {
+            const callNameName = trimmedLine.substring(9).trim();
             if (callNameName.toLowerCase() !== 'none') {
                 const callName = state.cardTitleCache[callNameName];
                 if (callName && callName.card_type === 'Call Name') newCallName = callName;
@@ -138,17 +147,38 @@ function parsePlainTextFormat(text) {
         else if (trimmedLine.startsWith('--- Purchase Deck') || trimmedLine.toLowerCase().includes('purchase deck')) { 
             currentSection = 'purchase'; 
         }
-        // Parse card lines
+        // Parse card lines - FIXED: Handle kit persona in brackets
         else {
             const match = trimmedLine.match(/^(\d+)x\s+(.+)/);
             if (match) {
                 const count = parseInt(match[1], 10);
-                const cardName = match[2].trim();
-                if (state.cardTitleCache[cardName]) {
+                const fullCardText = match[2].trim();
+                
+                // Extract card name (remove kit persona in brackets if present)
+                let cardName = fullCardText;
+                const bracketIndex = fullCardText.lastIndexOf('[');
+                if (bracketIndex !== -1) {
+                    // Remove everything from the last '[' including the bracket
+                    cardName = fullCardText.substring(0, bracketIndex).trim();
+                }
+                
+                // Try to find the card
+                let card = state.cardTitleCache[cardName];
+                
+                // If not found, try without any special characters or additional text
+                if (!card) {
+                    // Remove any parenthetical text or extra descriptors
+                    const cleanName = cardName.replace(/\s*\(.*?\)\s*/g, '').trim();
+                    card = state.cardTitleCache[cleanName];
+                }
+                
+                if (card) {
                     for (let i = 0; i < count; i++) {
-                        if (currentSection === 'starting') newStartingDeck.push(cardName);
-                        else if (currentSection === 'purchase') newPurchaseDeck.push(cardName);
+                        if (currentSection === 'starting') newStartingDeck.push(card.title);
+                        else if (currentSection === 'purchase') newPurchaseDeck.push(card.title);
                     }
+                } else {
+                    console.warn(`Card not found: "${cardName}" (from line: "${fullCardText}")`);
                 }
             }
             // Also support format without "x" (just number and card name)
@@ -156,12 +186,33 @@ function parsePlainTextFormat(text) {
                 const simpleMatch = trimmedLine.match(/^(\d+)\s+(.+)/);
                 if (simpleMatch) {
                     const count = parseInt(simpleMatch[1], 10);
-                    const cardName = simpleMatch[2].trim();
-                    if (state.cardTitleCache[cardName]) {
+                    const fullCardText = simpleMatch[2].trim();
+                    
+                    // Extract card name (remove kit persona in brackets if present)
+                    let cardName = fullCardText;
+                    const bracketIndex = fullCardText.lastIndexOf('[');
+                    if (bracketIndex !== -1) {
+                        // Remove everything from the last '[' including the bracket
+                        cardName = fullCardText.substring(0, bracketIndex).trim();
+                    }
+                    
+                    // Try to find the card
+                    let card = state.cardTitleCache[cardName];
+                    
+                    // If not found, try without any special characters or additional text
+                    if (!card) {
+                        // Remove any parenthetical text or extra descriptors
+                        const cleanName = cardName.replace(/\s*\(.*?\)\s*/g, '').trim();
+                        card = state.cardTitleCache[cleanName];
+                    }
+                    
+                    if (card) {
                         for (let i = 0; i < count; i++) {
-                            if (currentSection === 'starting') newStartingDeck.push(cardName);
-                            else if (currentSection === 'purchase') newPurchaseDeck.push(cardName);
+                            if (currentSection === 'starting') newStartingDeck.push(card.title);
+                            else if (currentSection === 'purchase') newPurchaseDeck.push(card.title);
                         }
+                    } else {
+                        console.warn(`Card not found: "${cardName}" (from line: "${fullCardText}")`);
                     }
                 }
             }
@@ -201,6 +252,8 @@ export function parseAndLoadDeck(text) {
             throw new Error('Could not parse deck file. Please check the format.');
         }
         
+        console.log("Parsed deck:", parsedDeck);
+        
         // Set all personas
         state.setSelectedWrestler(parsedDeck.wrestler);
         state.setSelectedManager(parsedDeck.manager);
@@ -221,12 +274,20 @@ export function parseAndLoadDeck(text) {
         renderDecks();
         renderPersonaDisplay();
         document.dispatchEvent(new Event('filtersChanged'));
-        importStatus.textContent = 'Deck imported successfully!';
+        importStatus.textContent = `Deck imported successfully! Starting: ${parsedDeck.startingDeck.length}, Purchase: ${parsedDeck.purchaseDeck.length}`;
         importStatus.style.color = 'green';
-        setTimeout(() => { importModal.style.display = 'none'; }, 1500);
+        
+        // Show debug info
+        console.log("Starting deck imported:", parsedDeck.startingDeck);
+        console.log("Purchase deck imported:", parsedDeck.purchaseDeck);
+        
+        setTimeout(() => { 
+            importModal.style.display = 'none'; 
+        }, 2000);
     } catch (error) {
         console.error('Error parsing decklist:', error);
         importStatus.textContent = `Error: ${error.message}`;
         importStatus.style.color = 'red';
     }
 }
+[file content end]
