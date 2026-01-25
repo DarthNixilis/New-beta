@@ -1,5 +1,64 @@
 import * as state from './config.js';
 
+// Auto-size text function
+function autoSizeText(textBoxElement) {
+    if (!textBoxElement) return;
+    
+    const textContent = textBoxElement.querySelector('.text-content > div');
+    if (!textContent) return;
+    
+    let fontSize = 20;
+    let lineHeight = 1.05;
+    const maxHeight = textBoxElement.offsetHeight;
+    const maxWidth = textBoxElement.offsetWidth;
+    
+    // Try to fit text by reducing font size
+    while (fontSize > 8 && (textContent.scrollHeight > maxHeight || textContent.scrollWidth > maxWidth)) {
+        fontSize -= 0.5;
+        lineHeight = Math.max(0.9, lineHeight - 0.02);
+        textContent.style.fontSize = fontSize + 'px';
+        textContent.style.lineHeight = lineHeight;
+    }
+    
+    // If still too big, add scroll
+    if (textContent.scrollHeight > maxHeight || textContent.scrollWidth > maxWidth) {
+        textBoxElement.style.overflowY = 'auto';
+        textBoxElement.style.alignItems = 'flex-start';
+        textBoxElement.style.justifyContent = 'flex-start';
+    }
+    
+    return { fontSize, lineHeight };
+}
+
+// Calculate optimal font size for fitting text
+function calculateOptimalFontSize(text, maxWidth, maxHeight) {
+    // Create a test element to measure text
+    const testElement = document.createElement('div');
+    testElement.style.cssText = `
+        position: absolute;
+        visibility: hidden;
+        white-space: nowrap;
+        font-family: Arial, sans-serif;
+        font-weight: 800;
+        line-height: 1.05;
+    `;
+    
+    let fontSize = 20;
+    testElement.style.fontSize = fontSize + 'px';
+    testElement.innerHTML = text.replace(/<br>/g, ' ');
+    
+    document.body.appendChild(testElement);
+    
+    // Reduce font size until it fits
+    while ((testElement.offsetWidth > maxWidth * 0.9 || testElement.offsetHeight > maxHeight * 0.9) && fontSize > 8) {
+        fontSize -= 0.5;
+        testElement.style.fontSize = fontSize + 'px';
+    }
+    
+    document.body.removeChild(testElement);
+    return fontSize;
+}
+
 // Special renderer for exported cards (includes Lackey 214x308 template + auto-fit hooks)
 export function generateCardVisualHTMLForExport(card, options = {}) {
     const isLackeySize = options.size === 'lackey' || options.width === 214;
@@ -39,28 +98,76 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
     // ---------------------------
     // LACKEY 214x308 TEMPLATE
     // Changes in this version:
-    // - Cost box moved BELOW title (so long titles never get clipped)
-    // - Type-bar colors matched to your examples
+    // - Auto-size text to fit
     // ---------------------------
     if (isLackeySize) {
         const typeBarColor = getCardColor(card.card_type);
         const costDisplay = (card.cost !== null && card.cost !== undefined) ? card.cost : '';
         const damageDisplay = (card.damage !== null && card.damage !== undefined) ? card.damage : '0';
         const momentumDisplay = (card.momentum !== null && card.momentum !== undefined) ? card.momentum : '0';
-        const gameText = card.text_box?.raw_text ? formatTextPlainish(card.text_box.raw_text) : '';
+        let gameText = card.text_box?.raw_text ? formatTextPlainish(card.text_box.raw_text) : '';
+        
+        // Get target and kit info
+        let target = '';
+        if (card.text_box && card.text_box.traits) {
+            const targetTrait = card.text_box.traits.find(t => t && t.name && t.name.trim() === 'Target');
+            if (targetTrait && targetTrait.value) {
+                target = targetTrait.value;
+            }
+        }
+        
+        let kitPersona = '';
+        if (card && card['Starting'] && card['Starting'].trim() !== '') {
+            const personaName = card['Starting'].trim();
+            kitPersona = personaName.replace(/\s*Wrestler$/, '');
+        } else if (card && card['Signature For'] && card['Signature For'].trim() !== '') {
+            const personaName = card['Signature For'].trim();
+            kitPersona = personaName.replace(/\s*Wrestler$/, '');
+        }
+        
+        // Add target to damage display for maneuvers
+        const isManeuver = ['Strike', 'Grapple', 'Submission'].includes(card.card_type);
+        const finalDamageDisplay = isManeuver && target ? `${damageDisplay} [T:${target}]` : damageDisplay;
+        
+        // Add kit info to game text if applicable
+        const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
+        const showKitInfo = kitPersona && !isPersonaCard;
+        if (showKitInfo) {
+            gameText = `<div style="font-size: 14px; color: #666; margin-bottom: 8px; border-bottom: 1px dashed #ddd; padding-bottom: 5px;">${kitPersona}</div>${gameText}`;
+        }
 
         // Layout constants for clarity
         const titleTop = 6;
         const titleLeft = 6;
         const titleRight = 6;
 
-        // Reserve a fixed title “band” so stats + cost start below it
-        // This prevents overlap even if the title wraps to 2 lines.
+        // Reserve a fixed title "band" so stats + cost start below it
         const titleBandHeight = 46;
 
         const statsTop = titleTop + titleBandHeight;   // below title
         const costTop = titleTop + titleBandHeight;    // same row as stats
         const costRight = 6;
+
+        // Pre-calculate font size based on text length
+        let estimatedFontSize = 20;
+        let estimatedLineHeight = 1.05;
+        
+        if (gameText) {
+            const textLength = gameText.replace(/<[^>]*>/g, '').length; // Text without HTML tags
+            const lineCount = (gameText.match(/<br>/g) || []).length + 1;
+            
+            // Adjust font size based on text length and line count
+            if (textLength > 500 || lineCount > 6) {
+                estimatedFontSize = 14;
+                estimatedLineHeight = 1.0;
+            } else if (textLength > 300 || lineCount > 4) {
+                estimatedFontSize = 16;
+                estimatedLineHeight = 1.0;
+            } else if (textLength > 200 || lineCount > 3) {
+                estimatedFontSize = 18;
+                estimatedLineHeight = 1.05;
+            }
+        }
 
         return `
             <div class="aew-lackey-card" style="
@@ -97,7 +204,7 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                     font-size: 42px;
                     line-height: 0.95;
                 ">
-                    <div style="font-size: 42px;">D: ${damageDisplay}</div>
+                    <div style="font-size: 42px;">D: ${finalDamageDisplay}</div>
                     <div style="font-size: 42px; margin-top: 6px;">M: ${momentumDisplay}</div>
                 </div>
 
@@ -138,7 +245,7 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                     box-sizing: border-box;
                 ">${card.card_type || ''}</div>
 
-                <!-- Text box -->
+                <!-- Text box with auto-sizing -->
                 <div class="aew-lackey-textbox aew-export-textbox" style="
                     position: absolute;
                     left: 10px;
@@ -150,19 +257,37 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                     box-sizing: border-box;
                     padding: 10px;
                     font-weight: 800;
-                    font-size: 20px; /* auto-fit will reduce if needed */
-                    line-height: 1.05;
-                    overflow: hidden; /* no scroll, shrink instead */
+                    font-size: ${estimatedFontSize}px; /* Dynamic starting size */
+                    line-height: ${estimatedLineHeight};
+                    overflow: hidden;
                     text-align: center;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 ">
-                    ${gameText}
+                    <div class="text-content" style="
+                        width: 100%;
+                        height: 100%;
+                        overflow: hidden;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
+                        <div style="
+                            max-width: 100%;
+                            max-height: 100%;
+                            overflow: hidden;
+                            font-size: inherit;
+                            line-height: inherit;
+                        ">${gameText}</div>
+                    </div>
                 </div>
             </div>
         `;
     }
 
     // ---------------------------
-    // ORIGINAL (STANDARD) EXPORT TEMPLATE (kept)
+    // ORIGINAL (STANDARD) EXPORT TEMPLATE
     // ---------------------------
 
     const titleFontSize = 20;
@@ -202,6 +327,33 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
             default: return '#FFFFFF';
         }
     };
+
+    // Get target and kit info
+    let target = '';
+    if (card.text_box && card.text_box.traits) {
+        const targetTrait = card.text_box.traits.find(t => t && t.name && t.name.trim() === 'Target');
+        if (targetTrait && targetTrait.value) {
+            target = targetTrait.value;
+        }
+    }
+    
+    let kitPersona = '';
+    if (card && card['Starting'] && card['Starting'].trim() !== '') {
+        const personaName = card['Starting'].trim();
+        kitPersona = personaName.replace(/\s*Wrestler$/, '');
+    }
+    
+    // Add target to damage display
+    const isManeuver = ['Strike', 'Grapple', 'Submission'].includes(card.card_type);
+    const finalDamageDisplay = isManeuver && target ? `${card.damage ?? '0'} [T:${target}]` : (card.damage ?? '0');
+    
+    // Add kit info to game text if applicable
+    const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
+    const showKitInfo = kitPersona && !isPersonaCard;
+    let gameText = card.text_box?.raw_text ? formatText(card.text_box.raw_text) : 'No text';
+    if (showKitInfo) {
+        gameText = `<div style="font-size: 12px; color: #666; margin-bottom: 8px; border-bottom: 1px dashed #ddd; padding-bottom: 5px;">${kitPersona}</div>${gameText}`;
+    }
 
     const html = `
         <div class="card" style="
@@ -291,7 +443,7 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                             color: #e74c3c;
                             line-height: 0.8;
                             text-shadow: 2px 2px 3px rgba(0,0,0,0.3);
-                        ">${card.damage}</div>
+                        ">${finalDamageDisplay}</div>
                     </div>
                 ` : ''}
 
@@ -331,7 +483,7 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                 line-height: 1.5;
                 font-weight: bold;
             ">
-                ${card.text_box.raw_text ? formatText(card.text_box.raw_text) : 'No text'}
+                ${gameText}
             </div>
 
             <!-- Set Indicator -->
@@ -349,7 +501,7 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
             </div>
 
             <!-- Kit Card Indicator -->
-            ${state.isKitCard(card) ? `
+            ${state.isKitCard && state.isKitCard(card) ? `
                 <div style="
                     position: absolute;
                     top: 8px;
@@ -373,3 +525,6 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
 
     return html;
 }
+
+// Export the auto-size functions for use in master-export.js
+export { autoSizeText, calculateOptimalFontSize };
