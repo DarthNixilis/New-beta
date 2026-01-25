@@ -39,7 +39,9 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
     // ---------------------------
     // LACKEY 214x308 TEMPLATE
     // Changes in this version:
-    // - Auto-size text to fit
+    // - More room for game text by shrinking and lifting the Type band
+    // - Text box pulled upward accordingly
+    // - Auto-size text to fit (existing behavior retained)
     // ---------------------------
     if (isLackeySize) {
         const typeBarColor = getCardColor(card.card_type);
@@ -89,10 +91,6 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
         const costTop = titleTop + titleBandHeight;    // same row as stats
         const costRight = 6;
 
-        // Calculate text box dimensions
-        const textBoxWidth = (options.width || 214) - 20; // 10px left + 10px right
-        const textBoxHeight = (options.height || 308) - 214; // 204px top + 10px bottom
-        
         // Pre-calculate font size based on text length - MORE AGGRESSIVE SIZING
         let estimatedFontSize = 20;
         let estimatedLineHeight = 1.05;
@@ -176,32 +174,32 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                     box-sizing: border-box;
                 ">${costDisplay}</div>
 
-                <!-- Type bar -->
+                <!-- Type bar (reduced height + font, tighter, gives more text space) -->
                 <div class="aew-lackey-typebar" style="
                     position: absolute;
                     left: 10px;
                     right: 10px;
-                    top: 150px;
-                    height: 40px;
+                    top: 132px;
+                    height: 24px;
                     background: ${typeBarColor};
                     border: 2px solid #000;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     font-weight: 900;
-                    font-size: 24px;
-                    letter-spacing: 1px;
+                    font-size: 18px;
+                    letter-spacing: 0.8px;
                     color: #fff;
                     text-transform: uppercase;
                     box-sizing: border-box;
                 ">${card.card_type || ''}</div>
 
-                <!-- Text box with auto-sizing -->
+                <!-- Text box with auto-sizing (pulled up for more room) -->
                 <div class="aew-lackey-textbox aew-export-textbox" style="
                     position: absolute;
                     left: 10px;
                     right: 10px;
-                    top: 204px;
+                    top: 164px;
                     bottom: 10px;
                     background: #fff;
                     border: 2px solid #DDD;
