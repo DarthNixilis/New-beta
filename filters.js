@@ -79,7 +79,7 @@ export function getFilteredAndSortedCardPool() {
     
     let cards = state.cardDatabase.filter(card => {
         if (!card || !card.title) return false; 
-        if (card.card_type === 'Wrestler' || card.card_type === 'Manager' || isKitCard(card)) return false;
+        if (card.card_type === 'Wrestler' || card.card_type === 'Manager' || state.isKitCard(card)) return false;
         if (!state.showZeroCost && card.cost === 0) return false;
         if (!state.showNonZeroCost && card.cost > 0) return false;
         const rawText = card.text_box?.raw_text || '';
@@ -88,9 +88,4 @@ export function getFilteredAndSortedCardPool() {
 
     const filtered = applyAllFilters(cards);
     return applySort(filtered);
-}
-
-// Helper needed by this module
-function isKitCard(card) {
-    return card && typeof card['Wrestler Kit'] === 'string' && card['Wrestler Kit'].toUpperCase() === 'TRUE';
 }
