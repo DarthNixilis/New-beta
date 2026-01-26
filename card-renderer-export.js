@@ -38,11 +38,12 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
 
     // ---------------------------
     // LACKEY 214x308 TEMPLATE
-    // Changes in this version (per your screenshot):
+    // Changes in this version:
     // 1) Title is one line only (no wrap)
     // 2) Cost + D/M block moved up directly under title (reduced dead space)
     // 3) If card has Starting, show persona name (minus Wrestler/Manager) under Cost box,
     //    aligned to the M row (and do NOT waste text-box space for the kit header)
+    // 4) Text wrapping: avoid mid-word breaks (wrap at spaces; only break long tokens if unavoidable)
     // ---------------------------
     if (isLackeySize) {
         const typeBarColor = getCardColor(card.card_type);
@@ -93,20 +94,18 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
         const titleLeft = 6;
         const titleRight = 6;
 
-        // Title is one line only, so we can shrink the band hard
+        // Title is one line only
         const titleBandHeight = 24;
 
-        // Move stats + cost up into the space saved
-        const statsTop = titleTop + titleBandHeight + 2; // was 46px lower, now tight
-        const costTop = statsTop;                          // align to the D line row
+        // Move stats + cost up
+        const statsTop = titleTop + titleBandHeight + 2;
+        const costTop = statsTop;
         const costRight = 6;
 
         // Persona label under cost aligned with the M row
-        // D line: statsTop
-        // M line: statsTop + (font-size 42) + 6
         const personaLabelTop = statsTop + 42 + 6;
 
-        // Aggressive text sizing (existing logic retained)
+        // Aggressive text sizing
         let estimatedFontSize = 20;
         let estimatedLineHeight = 1.05;
 
@@ -227,7 +226,7 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                     box-sizing: border-box;
                 ">${card.card_type || ''}</div>
 
-                <!-- Text box (pulled up for more room) -->
+                <!-- Text box with auto-sizing (no mid-word breaks) -->
                 <div class="aew-lackey-textbox aew-export-textbox" style="
                     position: absolute;
                     left: 10px;
@@ -259,11 +258,17 @@ export function generateCardVisualHTMLForExport(card, options = {}) {
                             max-width: 100%;
                             max-height: 100%;
                             overflow: hidden;
+
+                            /* IMPORTANT: avoid mid-word breaks */
+                            white-space: normal;
+                            word-break: normal;
+                            overflow-wrap: break-word;
+
+                            /* Optional: avoid weird auto hyphens */
+                            hyphens: none;
+
                             font-size: inherit;
                             line-height: inherit;
-                            word-wrap: break-word;
-                            word-break: break-word;
-                            hyphens: auto;
                         ">${gameText}</div>
                     </div>
                 </div>
