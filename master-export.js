@@ -432,7 +432,7 @@ export async function exportAllCardsAsTSV() {
         
         console.log("Found sets:", Array.from(allSets));
         
-        // Export each set as a separate TSV file
+        // Export each set as a separate TSV file (with .txt extension)
         for (const set of allSets) {
             await exportSetAsTSV(set, state);
         }
@@ -448,7 +448,7 @@ export async function exportAllCardsAsTSV() {
     }
 }
 
-// Helper function to export a single set as TSV
+// Helper function to export a single set as TSV (with .txt extension)
 async function exportSetAsTSV(setName, state) {
     console.log(`Exporting TSV for set: ${setName}`);
     
@@ -527,9 +527,10 @@ async function exportSetAsTSV(setName, state) {
         const gameText = cleanForTSV(card.text_box?.raw_text || '');
         
         // Build the row exactly like your example
+        // IMPORTANT: The "Sets" column should contain the actual set name (Core/Advanced) not just "AEW"
         const row = [
             card.title || '',                          // Name
-            'AEW',                                     // Sets (always AEW)
+            card.set || 'AEW',                         // Sets - FIXED: Use actual set name
             imageFile,                                 // ImageFile (PascalCase.png)
             costValue !== null ? costValue : '',       // Cost
             damageValue !== null ? damageValue : '',   // Damage
@@ -549,19 +550,19 @@ async function exportSetAsTSV(setName, state) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     
-    // Use the set name for the filename (e.g., "Core.tsv", "Advanced.tsv")
+    // Use the set name for the filename with .txt extension (e.g., "Core.txt", "Advanced.txt")
     const safeSetName = sanitizeFolderName(setName);
-    a.download = `${safeSetName}.tsv`;
+    a.download = `${safeSetName}.txt`;  // CHANGED: .txt instead of .tsv
     
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
     
-    console.log(`Exported ${setCards.length} cards for set: ${setName}`);
+    console.log(`Exported ${setCards.length} cards for set: ${setName} as ${safeSetName}.txt`);
 }
 
-// Alternative: Export all sets as a ZIP file containing separate TSV files
+// Alternative: Export all sets as a ZIP file containing separate TSV files (as .txt)
 export async function exportAllCardsAsTSVZip() {
     try {
         console.log("Starting TSV ZIP export for LackeyCCG...");
@@ -585,7 +586,7 @@ export async function exportAllCardsAsTSVZip() {
         
         const zip = new JSZip();
         
-        // Add each set as a separate TSV file to the ZIP
+        // Add each set as a separate TSV file to the ZIP (with .txt extension)
         for (const set of allSets) {
             const setCards = state.cardDatabase.filter(card => card.set === set);
             
@@ -594,11 +595,11 @@ export async function exportAllCardsAsTSVZip() {
             // Create TSV content for this set
             const tsvContent = generateTSVContentForSet(setCards, state);
             
-            // Use the set name for the filename (e.g., "Core.tsv", "Advanced.tsv")
+            // Use the set name for the filename with .txt extension (e.g., "Core.txt", "Advanced.txt")
             const safeSetName = sanitizeFolderName(set);
-            zip.file(`${safeSetName}.tsv`, tsvContent);
+            zip.file(`${safeSetName}.txt`, tsvContent);  // CHANGED: .txt instead of .tsv
             
-            console.log(`Added ${setCards.length} cards for set: ${set} to ZIP`);
+            console.log(`Added ${setCards.length} cards for set: ${set} to ZIP as ${safeSetName}.txt`);
         }
         
         // Generate zip file
@@ -697,9 +698,10 @@ function generateTSVContentForSet(setCards, state) {
         const gameText = cleanForTSV(card.text_box?.raw_text || '');
         
         // Build the row exactly like your example
+        // IMPORTANT: The "Sets" column should contain the actual set name (Core/Advanced) not just "AEW"
         const row = [
             card.title || '',                          // Name
-            'AEW',                                     // Sets (always AEW)
+            card.set || 'AEW',                         // Sets - FIXED: Use actual set name
             imageFile,                                 // ImageFile (PascalCase.png)
             costValue !== null ? costValue : '',       // Cost
             damageValue !== null ? damageValue : '',   // Damage
