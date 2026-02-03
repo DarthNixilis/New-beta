@@ -99,44 +99,68 @@ export async function exportCardsWithOptions(options = {}) {
     }
 }
 
-// Export as ZIP file
+// Export as ZIP file with set-based folder structure
 async function exportAsZip(cards, width, height, scale, naming, imageSize, state, generateCardVisualHTMLForExport, applyLackeyTextAutoSizing) {
     if (typeof JSZip === 'undefined') {
         throw new Error('JSZip library not loaded. Please refresh the page.');
     }
     
     const zip = new JSZip();
-    const folder = zip.folder("AEW_Cards");
+    const rootFolder = zip.folder("setimages");
+    
+    // Group cards by set
+    const cardsBySet = {};
+    cards.forEach(card => {
+        const set = card.set || 'Unknown';
+        if (!cardsBySet[set]) {
+            cardsBySet[set] = [];
+        }
+        cardsBySet[set].push(card);
+    });
     
     let exportedCount = 0;
     const totalCards = cards.length;
     
-    // Process cards in batches to avoid memory issues
-    const batchSize = 5;
+    // Process each set separately
+    const setNames = Object.keys(cardsBySet);
+    console.log(`Organizing ${totalCards} cards into ${setNames.length} sets:`, setNames);
     
-    for (let i = 0; i < totalCards; i += batchSize) {
-        const batch = cards.slice(i, i + batchSize);
+    for (const setName of setNames) {
+        const setCards = cardsBySet[setName];
+        const safeSetName = sanitizeFolderName(setName);
         
-        const batchPromises = batch.map(async (card) => {
-            try {
-                const blob = await generateCardImage(card, width, height, scale, imageSize, state, generateCardVisualHTMLForExport, applyLackeyTextAutoSizing);
-                
-                // Generate filename based on naming convention
-                const fileName = generateFileName(card.title, naming, state);
-                folder.file(fileName, blob);
-                
-                exportedCount++;
-                updateProgressUI(exportedCount, totalCards, `Exported: ${card.title}`);
-                
-                return true;
-            } catch (error) {
-                console.error(`Failed to export card: ${card.title}`, error);
-                updateProgressUI(exportedCount, totalCards, `Failed: ${card.title}`, false);
-                return false;
-            }
-        });
+        // Create folder for this set
+        const setFolder = rootFolder.folder(safeSetName);
         
-        await Promise.all(batchPromises);
+        console.log(`Processing set "${setName}" (${setCards.length} cards) into folder "${safeSetName}"`);
+        
+        // Process cards in batches to avoid memory issues
+        const batchSize = 5;
+        
+        for (let i = 0; i < setCards.length; i += batchSize) {
+            const batch = setCards.slice(i, i + batchSize);
+            
+            const batchPromises = batch.map(async (card) => {
+                try {
+                    const blob = await generateCardImage(card, width, height, scale, imageSize, state, generateCardVisualHTMLForExport, applyLackeyTextAutoSizing);
+                    
+                    // Generate filename based on naming convention
+                    const fileName = generateFileName(card.title, naming, state);
+                    setFolder.file(fileName, blob);
+                    
+                    exportedCount++;
+                    updateProgressUI(exportedCount, totalCards, `Exported: ${card.title} (${setName})`);
+                    
+                    return true;
+                } catch (error) {
+                    console.error(`Failed to export card: ${card.title}`, error);
+                    updateProgressUI(exportedCount, totalCards, `Failed: ${card.title}`, false);
+                    return false;
+                }
+            });
+            
+            await Promise.all(batchPromises);
+        }
     }
     
     // Generate zip file
@@ -150,13 +174,13 @@ async function exportAsZip(cards, width, height, scale, naming, imageSize, state
     // Download
     const a = document.createElement('a');
     a.href = URL.createObjectURL(content);
-    a.download = `AEW_${cards.length}_Cards_${new Date().toISOString().slice(0,10)}.zip`;
+    a.download = `AEW_Cards_by_Set_${new Date().toISOString().slice(0,10)}.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
     
-    updateProgressUI(totalCards, totalCards, `Export complete! ${exportedCount} cards exported. Download started.`, true);
+    updateProgressUI(totalCards, totalCards, `Export complete! ${exportedCount} cards exported into ${setNames.length} set folders. Download started.`, true);
     
     // Auto-close modal after 3 seconds
     setTimeout(() => {
@@ -303,6 +327,13 @@ function generateFileName(cardTitle, naming, state) {
             const cleanName = cardTitle.replace(/[<>:"/\\|?*]/g, '');
             return `${cleanName}.png`;
     }
+}
+
+// Helper function to sanitize folder names
+function sanitizeFolderName(name) {
+    if (!name) return 'Unknown';
+    // Remove invalid characters for folder names
+    return name.replace(/[<>:"/\\|?*]/g, '_').trim();
 }
 
 // Helper function to wait for images to load
@@ -519,7 +550,7 @@ async function exportSetAsTSV(setName, state) {
     a.href = URL.createObjectURL(blob);
     
     // Use the set name for the filename (e.g., "Core.tsv", "Advanced.tsv")
-    const safeSetName = setName.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
+    const safeSetName = sanitizeFolderName(setName);
     a.download = `${safeSetName}.tsv`;
     
     document.body.appendChild(a);
@@ -564,7 +595,7 @@ export async function exportAllCardsAsTSVZip() {
             const tsvContent = generateTSVContentForSet(setCards, state);
             
             // Use the set name for the filename (e.g., "Core.tsv", "Advanced.tsv")
-            const safeSetName = set.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
+            const safeSetName = sanitizeFolderName(set);
             zip.file(`${safeSetName}.tsv`, tsvContent);
             
             console.log(`Added ${setCards.length} cards for set: ${set} to ZIP`);
