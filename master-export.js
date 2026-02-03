@@ -383,7 +383,7 @@ export async function exportAllCardsAsImagesFallback() {
     });
 }
 
-// TSV Database Export for LackeyCCG format
+// TSV Database Export for LackeyCCG format - EXPORT SEPARATE FILES FOR EACH SET
 export async function exportAllCardsAsTSV() {
     try {
         console.log("Starting TSV export for LackeyCCG...");
@@ -391,102 +391,23 @@ export async function exportAllCardsAsTSV() {
         // Lazy load dependencies
         const { state } = await getDependencies();
         
-        // Create TSV content with exact LackeyCCG headers
-        const headers = ['Name', 'Sets', 'ImageFile', 'Cost', 'Damage', 'Momentum', 'Type', 'Target', 'Traits', 'Wrestler Logo', 'Game Text'];
-        let tsvContent = headers.join('\t') + '\n';
-        
-        // Helper to clean text for TSV
-        const cleanForTSV = (text) => {
-            if (!text) return '';
-            // Replace tabs with spaces, newlines with spaces, and remove any extra whitespace
-            return text.replace(/\t/g, ' ').replace(/\n/g, ' ').replace(/\r/g, ' ').trim();
-        };
-        
-        // Add all cards
+        // Get all unique sets from the card database
+        const allSets = new Set();
         state.cardDatabase.forEach(card => {
-            // Generate PascalCase image filename
-            const imageFile = state.toPascalCase(card.title) + '.png';
-            
-            // Handle special cost values for personas
-            let costValue = card.cost;
-            let damageValue = card.damage;
-            let momentumValue = card.momentum;
-            
-            // For persona cards (Wrestler, Manager, Call Name, Faction), use N/a for cost/damage
-            if (['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type)) {
-                costValue = 'N/a';
-                damageValue = 'N/a';
-                // For Call Names, check if momentum is null/undefined
-                if (card.card_type === 'Call Name' && (momentumValue === null || momentumValue === undefined)) {
-                    momentumValue = '';
-                }
+            if (card.set) {
+                allSets.add(card.set);
             }
-            
-            // Get wrestler logo from Starting column (kit cards)
-            let wrestlerLogo = '';
-            if (card['Starting'] && card['Starting'].trim() !== '') {
-                wrestlerLogo = card['Starting'].trim();
-            }
-            
-            // Get traits from text_box.traits or Traits column
-            let traits = '';
-            if (card.text_box?.traits && card.text_box.traits.length > 0) {
-                traits = card.text_box.traits.map(t => 
-                    t.value ? `${t.name}:${t.value}` : t.name
-                ).join(',');
-            } else if (card['Traits']) {
-                traits = card['Traits'];
-            }
-            
-            // Get target - FIXED: Check both text_box.traits AND the Target field from TSV
-            let target = '';
-            
-            // First check text_box.traits
-            if (card.text_box?.traits) {
-                const targetTrait = card.text_box.traits.find(t => t.name && t.name.trim() === 'Target');
-                if (targetTrait && targetTrait.value) {
-                    target = targetTrait.value;
-                }
-            }
-            
-            // If not found in traits, check the card's Target field (from TSV column)
-            if (!target && card['Target'] && card['Target'].trim() !== '') {
-                target = card['Target'].trim();
-            }
-            
-            // Clean game text
-            const gameText = cleanForTSV(card.text_box?.raw_text || '');
-            
-            // Build the row exactly like your example
-            const row = [
-                card.title || '',                          // Name
-                'AEW',                                     // Sets (always AEW)
-                imageFile,                                 // ImageFile (PascalCase.png)
-                costValue !== null ? costValue : '',       // Cost
-                damageValue !== null ? damageValue : '',   // Damage
-                momentumValue !== null ? momentumValue : '', // Momentum
-                card.card_type || '',                      // Type
-                target,                                    // Target - FIXED
-                traits,                                    // Traits
-                wrestlerLogo,                              // Wrestler Logo
-                gameText                                   // Game Text
-            ];
-            
-            tsvContent += row.join('\t') + '\n';
         });
         
-        // Create and download file
-        const blob = new Blob([tsvContent], { type: 'text/tab-separated-values' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `AEW_Card_Database_Lackey_${new Date().toISOString().slice(0,10)}.tsv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
+        console.log("Found sets:", Array.from(allSets));
         
-        console.log("TSV export completed successfully");
-        alert('TSV database exported successfully! Ready for LackeyCCG import.');
+        // Export each set as a separate TSV file
+        for (const set of allSets) {
+            await exportSetAsTSV(set, state);
+        }
+        
+        console.log("TSV export completed successfully for all sets");
+        alert(`TSV database exported successfully! ${allSets.size} set file(s) downloaded.`);
         return true;
         
     } catch (error) {
@@ -494,4 +415,273 @@ export async function exportAllCardsAsTSV() {
         alert(`TSV export failed: ${error.message}`);
         throw error;
     }
+}
+
+// Helper function to export a single set as TSV
+async function exportSetAsTSV(setName, state) {
+    console.log(`Exporting TSV for set: ${setName}`);
+    
+    // Filter cards for this set
+    const setCards = state.cardDatabase.filter(card => card.set === setName);
+    
+    if (setCards.length === 0) {
+        console.warn(`No cards found for set: ${setName}`);
+        return;
+    }
+    
+    // Create TSV content with exact LackeyCCG headers
+    const headers = ['Name', 'Sets', 'ImageFile', 'Cost', 'Damage', 'Momentum', 'Type', 'Target', 'Traits', 'Wrestler Logo', 'Game Text'];
+    let tsvContent = headers.join('\t') + '\n';
+    
+    // Helper to clean text for TSV
+    const cleanForTSV = (text) => {
+        if (!text) return '';
+        // Replace tabs with spaces, newlines with spaces, and remove any extra whitespace
+        return text.replace(/\t/g, ' ').replace(/\n/g, ' ').replace(/\r/g, ' ').trim();
+    };
+    
+    // Add all cards in this set
+    setCards.forEach(card => {
+        // Generate PascalCase image filename
+        const imageFile = state.toPascalCase(card.title) + '.png';
+        
+        // Handle special cost values for personas
+        let costValue = card.cost;
+        let damageValue = card.damage;
+        let momentumValue = card.momentum;
+        
+        // For persona cards (Wrestler, Manager, Call Name, Faction), use N/a for cost/damage
+        if (['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type)) {
+            costValue = 'N/a';
+            damageValue = 'N/a';
+            // For Call Names, check if momentum is null/undefined
+            if (card.card_type === 'Call Name' && (momentumValue === null || momentumValue === undefined)) {
+                momentumValue = '';
+            }
+        }
+        
+        // Get wrestler logo from Starting column (kit cards)
+        let wrestlerLogo = '';
+        if (card['Starting'] && card['Starting'].trim() !== '') {
+            wrestlerLogo = card['Starting'].trim();
+        }
+        
+        // Get traits from text_box.traits or Traits column
+        let traits = '';
+        if (card.text_box?.traits && card.text_box.traits.length > 0) {
+            traits = card.text_box.traits.map(t => 
+                t.value ? `${t.name}:${t.value}` : t.name
+            ).join(',');
+        } else if (card['Traits']) {
+            traits = card['Traits'];
+        }
+        
+        // Get target - FIXED: Check both text_box.traits AND the Target field from TSV
+        let target = '';
+        
+        // First check text_box.traits
+        if (card.text_box?.traits) {
+            const targetTrait = card.text_box.traits.find(t => t.name && t.name.trim() === 'Target');
+            if (targetTrait && targetTrait.value) {
+                target = targetTrait.value;
+            }
+        }
+        
+        // If not found in traits, check the card's Target field (from TSV column)
+        if (!target && card['Target'] && card['Target'].trim() !== '') {
+            target = card['Target'].trim();
+        }
+        
+        // Clean game text
+        const gameText = cleanForTSV(card.text_box?.raw_text || '');
+        
+        // Build the row exactly like your example
+        const row = [
+            card.title || '',                          // Name
+            'AEW',                                     // Sets (always AEW)
+            imageFile,                                 // ImageFile (PascalCase.png)
+            costValue !== null ? costValue : '',       // Cost
+            damageValue !== null ? damageValue : '',   // Damage
+            momentumValue !== null ? momentumValue : '', // Momentum
+            card.card_type || '',                      // Type
+            target,                                    // Target - FIXED
+            traits,                                    // Traits
+            wrestlerLogo,                              // Wrestler Logo
+            gameText                                   // Game Text
+        ];
+        
+        tsvContent += row.join('\t') + '\n';
+    });
+    
+    // Create and download file
+    const blob = new Blob([tsvContent], { type: 'text/tab-separated-values' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    
+    // Use the set name for the filename (e.g., "Core.tsv", "Advanced.tsv")
+    const safeSetName = setName.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
+    a.download = `${safeSetName}.tsv`;
+    
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    
+    console.log(`Exported ${setCards.length} cards for set: ${setName}`);
+}
+
+// Alternative: Export all sets as a ZIP file containing separate TSV files
+export async function exportAllCardsAsTSVZip() {
+    try {
+        console.log("Starting TSV ZIP export for LackeyCCG...");
+        
+        // Lazy load dependencies
+        const { state } = await getDependencies();
+        
+        if (typeof JSZip === 'undefined') {
+            throw new Error('JSZip library not loaded. Please refresh the page.');
+        }
+        
+        // Get all unique sets from the card database
+        const allSets = new Set();
+        state.cardDatabase.forEach(card => {
+            if (card.set) {
+                allSets.add(card.set);
+            }
+        });
+        
+        console.log("Found sets:", Array.from(allSets));
+        
+        const zip = new JSZip();
+        
+        // Add each set as a separate TSV file to the ZIP
+        for (const set of allSets) {
+            const setCards = state.cardDatabase.filter(card => card.set === set);
+            
+            if (setCards.length === 0) continue;
+            
+            // Create TSV content for this set
+            const tsvContent = generateTSVContentForSet(setCards, state);
+            
+            // Use the set name for the filename (e.g., "Core.tsv", "Advanced.tsv")
+            const safeSetName = set.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
+            zip.file(`${safeSetName}.tsv`, tsvContent);
+            
+            console.log(`Added ${setCards.length} cards for set: ${set} to ZIP`);
+        }
+        
+        // Generate zip file
+        const content = await zip.generateAsync({ 
+            type: 'blob',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 }
+        });
+        
+        // Download
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(content);
+        a.download = `AEW_Card_Database_Sets_${new Date().toISOString().slice(0,10)}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+        
+        console.log("TSV ZIP export completed successfully");
+        alert(`TSV database exported successfully! ZIP file with ${allSets.size} set file(s) downloaded.`);
+        return true;
+        
+    } catch (error) {
+        console.error("TSV ZIP export failed:", error);
+        alert(`TSV ZIP export failed: ${error.message}`);
+        throw error;
+    }
+}
+
+// Helper function to generate TSV content for a specific set
+function generateTSVContentForSet(setCards, state) {
+    // Create TSV content with exact LackeyCCG headers
+    const headers = ['Name', 'Sets', 'ImageFile', 'Cost', 'Damage', 'Momentum', 'Type', 'Target', 'Traits', 'Wrestler Logo', 'Game Text'];
+    let tsvContent = headers.join('\t') + '\n';
+    
+    // Helper to clean text for TSV
+    const cleanForTSV = (text) => {
+        if (!text) return '';
+        // Replace tabs with spaces, newlines with spaces, and remove any extra whitespace
+        return text.replace(/\t/g, ' ').replace(/\n/g, ' ').replace(/\r/g, ' ').trim();
+    };
+    
+    // Add all cards in this set
+    setCards.forEach(card => {
+        // Generate PascalCase image filename
+        const imageFile = state.toPascalCase(card.title) + '.png';
+        
+        // Handle special cost values for personas
+        let costValue = card.cost;
+        let damageValue = card.damage;
+        let momentumValue = card.momentum;
+        
+        // For persona cards (Wrestler, Manager, Call Name, Faction), use N/a for cost/damage
+        if (['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type)) {
+            costValue = 'N/a';
+            damageValue = 'N/a';
+            // For Call Names, check if momentum is null/undefined
+            if (card.card_type === 'Call Name' && (momentumValue === null || momentumValue === undefined)) {
+                momentumValue = '';
+            }
+        }
+        
+        // Get wrestler logo from Starting column (kit cards)
+        let wrestlerLogo = '';
+        if (card['Starting'] && card['Starting'].trim() !== '') {
+            wrestlerLogo = card['Starting'].trim();
+        }
+        
+        // Get traits from text_box.traits or Traits column
+        let traits = '';
+        if (card.text_box?.traits && card.text_box.traits.length > 0) {
+            traits = card.text_box.traits.map(t => 
+                t.value ? `${t.name}:${t.value}` : t.name
+            ).join(',');
+        } else if (card['Traits']) {
+            traits = card['Traits'];
+        }
+        
+        // Get target - FIXED: Check both text_box.traits AND the Target field from TSV
+        let target = '';
+        
+        // First check text_box.traits
+        if (card.text_box?.traits) {
+            const targetTrait = card.text_box.traits.find(t => t.name && t.name.trim() === 'Target');
+            if (targetTrait && targetTrait.value) {
+                target = targetTrait.value;
+            }
+        }
+        
+        // If not found in traits, check the card's Target field (from TSV column)
+        if (!target && card['Target'] && card['Target'].trim() !== '') {
+            target = card['Target'].trim();
+        }
+        
+        // Clean game text
+        const gameText = cleanForTSV(card.text_box?.raw_text || '');
+        
+        // Build the row exactly like your example
+        const row = [
+            card.title || '',                          // Name
+            'AEW',                                     // Sets (always AEW)
+            imageFile,                                 // ImageFile (PascalCase.png)
+            costValue !== null ? costValue : '',       // Cost
+            damageValue !== null ? damageValue : '',   // Damage
+            momentumValue !== null ? momentumValue : '', // Momentum
+            card.card_type || '',                      // Type
+            target,                                    // Target - FIXED
+            traits,                                    // Traits
+            wrestlerLogo,                              // Wrestler Logo
+            gameText                                   // Game Text
+        ];
+        
+        tsvContent += row.join('\t') + '\n';
+    });
+    
+    return tsvContent;
 }
