@@ -438,13 +438,20 @@ export async function exportAllCardsAsTSV() {
                 traits = card['Traits'];
             }
             
-            // Get target
+            // Get target - FIXED: Check both text_box.traits AND the Target field from TSV
             let target = '';
+            
+            // First check text_box.traits
             if (card.text_box?.traits) {
-                const targetTrait = card.text_box.traits.find(t => t.name.trim() === 'Target');
+                const targetTrait = card.text_box.traits.find(t => t.name && t.name.trim() === 'Target');
                 if (targetTrait && targetTrait.value) {
                     target = targetTrait.value;
                 }
+            }
+            
+            // If not found in traits, check the card's Target field (from TSV column)
+            if (!target && card['Target'] && card['Target'].trim() !== '') {
+                target = card['Target'].trim();
             }
             
             // Clean game text
@@ -459,7 +466,7 @@ export async function exportAllCardsAsTSV() {
                 damageValue !== null ? damageValue : '',   // Damage
                 momentumValue !== null ? momentumValue : '', // Momentum
                 card.card_type || '',                      // Type
-                target,                                    // Target
+                target,                                    // Target - FIXED
                 traits,                                    // Traits
                 wrestlerLogo,                              // Wrestler Logo
                 gameText                                   // Game Text
