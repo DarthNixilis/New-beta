@@ -449,6 +449,253 @@ export function generateLackeyCCGDeck() {
     return text;
 }
 
+// NEW: Generate Spoiler Format Export
+export function generateSpoilerFormatDeck() {
+    // Get all cards in the deck (starting + purchase)
+    const allCards = [...state.startingDeck, ...state.purchaseDeck]
+        .map(title => state.cardTitleCache[title])
+        .filter(card => card !== undefined);
+    
+    // Get active persona cards
+    const activePersonaCards = [];
+    if (state.selectedWrestler) activePersonaCards.push(state.selectedWrestler);
+    if (state.selectedManager) activePersonaCards.push(state.selectedManager);
+    if (state.selectedCallName) activePersonaCards.push(state.selectedCallName);
+    if (state.selectedFaction) activePersonaCards.push(state.selectedFaction);
+    
+    // Get kit cards for all personas
+    const activePersonaTitles = activePersonaCards.map(p => p.title);
+    const allKitCards = state.cardDatabase.filter(card => 
+        state.isKitCard(card) && 
+        !['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type) &&
+        activePersonaTitles.includes(card['Starting'].trim())
+    );
+    
+    // Combine all cards including persona and kit cards
+    const allCardsToExport = [...allCards, ...activePersonaCards, ...allKitCards];
+    
+    // Remove duplicates by title
+    const uniqueCards = [];
+    const seenTitles = new Set();
+    
+    allCardsToExport.forEach(card => {
+        if (!seenTitles.has(card.title)) {
+            seenTitles.add(card.title);
+            uniqueCards.push(card);
+        }
+    });
+    
+    // Helper function to format traits
+    const formatTraits = (card) => {
+        if (!card.text_box?.traits || card.text_box.traits.length === 0) {
+            return 'None';
+        }
+        return card.text_box.traits.map(t => {
+            if (t.value) {
+                return `${t.name}:${t.value}`;
+            }
+            return t.name;
+        }).join(', ');
+    };
+    
+    // Helper function to get starting info (only for non-Call Name/Faction cards)
+    const getStartingInfo = (card) => {
+        if (['Call Name', 'Faction'].includes(card.card_type)) {
+            return '';
+        }
+        if (card['Starting'] && card['Starting'].trim() !== '') {
+            return ` (${card['Starting'].trim()})`;
+        }
+        return '';
+    };
+    
+    // Helper function to format cost/damage/momentum line
+    const formatStatsLine = (card) => {
+        const cost = card.cost !== null && card.cost !== undefined ? card.cost : 'N/A';
+        const damage = card.damage !== null && card.damage !== undefined ? card.damage : 'N/A';
+        const momentum = card.momentum !== null && card.momentum !== undefined ? card.momentum : 'N/A';
+        
+        let stats = `${cost}C/${damage}D/${momentum}M`;
+        
+        // Add target if it's a maneuver
+        if (['Strike', 'Grapple', 'Submission'].includes(card.card_type)) {
+            const target = state.getCardTarget(card);
+            if (target) {
+                stats += `  [Target: ${target}]`;
+            }
+        }
+        
+        return stats;
+    };
+    
+    // Separate cards by type for organization
+    const cardsByType = {
+        'Action': [],
+        'Strike': [],
+        'Grapple': [],
+        'Submission': [],
+        'Response': [],
+        'Call Name': [],
+        'Faction': [],
+        'Manager': [],
+        'Wrestler': []
+    };
+    
+    // Organize cards by type
+    uniqueCards.forEach(card => {
+        const type = card.card_type || 'Unknown';
+        if (cardsByType[type]) {
+            cardsByType[type].push(card);
+        } else if (['Strike', 'Grapple', 'Submission'].includes(type)) {
+            // These should already be handled above
+        } else {
+            // Fallback for unknown types
+            cardsByType['Action'].push(card);
+        }
+    });
+    
+    // Sort each type group by cost, then alphabetically
+    Object.keys(cardsByType).forEach(type => {
+        cardsByType[type].sort((a, b) => {
+            // First by cost (null/undefined costs go last)
+            const costA = a.cost === null || a.cost === undefined ? 999 : a.cost;
+            const costB = b.cost === null || b.cost === undefined ? 999 : b.cost;
+            
+            if (costA !== costB) {
+                return costA - costB;
+            }
+            
+            // Then by title
+            return a.title.localeCompare(b.title);
+        });
+    });
+    
+    // Get wrestler's kit cards to include with wrestler
+    const wrestlerKitCards = allKitCards.filter(card => 
+        state.selectedWrestler && card['Starting'] === state.selectedWrestler.title
+    );
+    
+    // Start building the spoiler format
+    let spoiler = '=== DECK SPOILER FORMAT ===\n\n';
+    
+    let cardNumber = 1;
+    
+    // Process each type in the specified order
+    const typeOrder = ['Action', 'Strike', 'Grapple', 'Submission', 'Response', 'Call Name', 'Faction', 'Manager', 'Wrestler'];
+    
+    for (const type of typeOrder) {
+        const cardsOfType = cardsByType[type];
+        
+        if (cardsOfType.length === 0) continue;
+        
+        // Special handling for Wrestler type
+        if (type === 'Wrestler' && state.selectedWrestler) {
+            spoiler += `--- WRESTLER ---\n\n`;
+            
+            // Add wrestler card
+            const wrestler = state.selectedWrestler;
+            spoiler += `[${cardNumber++}]\n`;
+            spoiler += `[${wrestler.title}]\n`;
+            spoiler += `[${wrestler.set || 'Unknown'}]\n`;
+            spoiler += `[${wrestler.card_type}]\n`;
+            spoiler += `[${formatTraits(wrestler)}]\n`;
+            spoiler += `[${wrestler.text_box?.raw_text || ''}]\n`;
+            spoiler += `[${formatStatsLine(wrestler)}]\n\n`;
+            
+            // Add wrestler's kit cards
+            if (wrestlerKitCards.length > 0) {
+                spoiler += `--- ${wrestler.title}'s Kit Cards ---\n\n`;
+                
+                wrestlerKitCards.forEach(kitCard => {
+                    spoiler += `[${cardNumber++}]\n`;
+                    spoiler += `[${kitCard.title}${getStartingInfo(kitCard)}]\n`;
+                    spoiler += `[${kitCard.set || 'Unknown'}]\n`;
+                    spoiler += `[${kitCard.card_type}]\n`;
+                    spoiler += `[${formatTraits(kitCard)}]\n`;
+                    spoiler += `[${kitCard.text_box?.raw_text || ''}]\n`;
+                    spoiler += `[${formatStatsLine(kitCard)}]\n\n`;
+                });
+            }
+        } else if (type === 'Faction' && state.selectedFaction) {
+            // Special handling for Faction type
+            const faction = state.selectedFaction;
+            spoiler += `--- FACTION ---\n\n`;
+            
+            // Add faction card
+            spoiler += `[${cardNumber++}]\n`;
+            spoiler += `[${faction.title}]\n`;
+            spoiler += `[${faction.set || 'Unknown'}]\n`;
+            spoiler += `[${faction.card_type}]\n`;
+            spoiler += `[${formatTraits(faction)}]\n`;
+            spoiler += `[${faction.text_box?.raw_text || ''}]\n`;
+            spoiler += `[${formatStatsLine(faction)}]\n\n`;
+            
+            // Get faction's kit cards
+            const factionKitCards = allKitCards.filter(card => 
+                card['Starting'] === faction.title
+            );
+            
+            if (factionKitCards.length > 0) {
+                spoiler += `--- ${faction.title}'s Kit Cards ---\n\n`;
+                
+                factionKitCards.forEach(kitCard => {
+                    spoiler += `[${cardNumber++}]\n`;
+                    spoiler += `[${kitCard.title}${getStartingInfo(kitCard)}]\n`;
+                    spoiler += `[${kitCard.set || 'Unknown'}]\n`;
+                    spoiler += `[${kitCard.card_type}]\n`;
+                    spoiler += `[${formatTraits(kitCard)}]\n`;
+                    spoiler += `[${kitCard.text_box?.raw_text || ''}]\n`;
+                    spoiler += `[${formatStatsLine(kitCard)}]\n\n`;
+                });
+            }
+        } else {
+            // Regular type handling
+            spoiler += `--- ${type.toUpperCase()} ---\n\n`;
+            
+            cardsOfType.forEach(card => {
+                // Skip if this is a wrestler kit card (already handled)
+                if (state.selectedWrestler && card['Starting'] === state.selectedWrestler.title) {
+                    return;
+                }
+                
+                // Skip if this is a faction kit card (already handled)
+                if (state.selectedFaction && card['Starting'] === state.selectedFaction.title) {
+                    return;
+                }
+                
+                spoiler += `[${cardNumber++}]\n`;
+                spoiler += `[${card.title}${getStartingInfo(card)}]\n`;
+                spoiler += `[${card.set || 'Unknown'}]\n`;
+                spoiler += `[${card.card_type}]\n`;
+                spoiler += `[${formatTraits(card)}]\n`;
+                spoiler += `[${card.text_box?.raw_text || ''}]\n`;
+                spoiler += `[${formatStatsLine(card)}]\n\n`;
+            });
+        }
+    }
+    
+    // Add deck summary at the end
+    spoiler += '=== DECK SUMMARY ===\n\n';
+    spoiler += `Total Cards: ${uniqueCards.length}\n`;
+    spoiler += `Starting Deck: ${state.startingDeck.length}/24 cards\n`;
+    spoiler += `Purchase Deck: ${state.purchaseDeck.length} cards\n`;
+    
+    if (state.selectedWrestler) {
+        spoiler += `Wrestler: ${state.getKitPersona(state.selectedWrestler)}\n`;
+    }
+    if (state.selectedManager) {
+        spoiler += `Manager: ${state.selectedManager.title}\n`;
+    }
+    if (state.selectedCallName) {
+        spoiler += `Call Name: ${state.selectedCallName.title}\n`;
+    }
+    if (state.selectedFaction) {
+        spoiler += `Faction: ${state.selectedFaction.title}\n`;
+    }
+    
+    return spoiler;
+}
+
 export async function exportDeckAsImage() {
     const uniquePersonaAndKit = [];
     const activePersonaTitles = [];

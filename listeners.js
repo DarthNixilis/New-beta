@@ -3,7 +3,7 @@ import * as state from './config.js';
 import * as ui from './ui.js';
 import * as deck from './deck.js';
 import { parseAndLoadDeck } from './importer.js';
-import { generatePlainTextDeck, exportDeckAsImage, generateLackeyCCGDeck } from './exporter.js';
+import { generatePlainTextDeck, exportDeckAsImage, generateLackeyCCGDeck, generateSpoilerFormatDeck } from './exporter.js';
 import { exportAllCardsAsImages, exportAllCardsAsImagesFallback } from './master-export.js';
 
 export function initializeAllEventListeners(refreshCardPool) {
@@ -59,8 +59,8 @@ export function initializeAllEventListeners(refreshCardPool) {
     // Create or get the LackeyCCG export button
     const exportLackeyBtn = document.getElementById('exportLackeyBtn') || createLackeyExportButton();
     
-    // NEW: Create or get the TSV export button
-    const exportTSVBtn = document.getElementById('exportTSVBtn') || createTSVExportButton();
+    // NEW: Create or get the Spoiler Format export button
+    const exportSpoilerBtn = document.getElementById('exportSpoilerBtn') || createSpoilerExportButton();
 
     wrestlerSelect.addEventListener('change', (e) => {
         const newWrestler = state.cardTitleCache[e.target.value] || null;
@@ -150,6 +150,20 @@ export function initializeAllEventListeners(refreshCardPool) {
         URL.revokeObjectURL(a.href);
     });
 
+    // NEW: Spoiler Format Export
+    exportSpoilerBtn.addEventListener('click', () => {
+        const text = generateSpoilerFormatDeck();
+        const blob = new Blob([text], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        const wrestlerName = state.selectedWrestler ? state.toPascalCase(state.selectedWrestler.title) : "Deck";
+        a.download = `${wrestlerName}-Spoiler.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+    });
+
     exportAsImageBtn.addEventListener('click', exportDeckAsImage);
     
     // Export All Cards button - now shows modal
@@ -159,20 +173,6 @@ export function initializeAllEventListeners(refreshCardPool) {
         });
     }
     
-    // NEW: TSV Database Export
-    if (exportTSVBtn) {
-        exportTSVBtn.addEventListener('click', async () => {
-            try {
-                // Import the TSV export function
-                const { exportAllCardsAsTSV } = await import('./master-export.js');
-                await exportAllCardsAsTSV();
-            } catch (error) {
-                console.error("TSV export failed:", error);
-                alert(`TSV export failed: ${error.message}`);
-            }
-        });
-    }
-
     // MODAL LISTENERS
     const importDeckBtn = document.getElementById('importDeck');
     const importModal = document.getElementById('importModal');
@@ -315,39 +315,41 @@ function createLackeyExportButton() {
     return lackeyBtn;
 }
 
-// NEW: Helper to create the TSV export button
-function createTSVExportButton() {
+// NEW: Helper to create the Spoiler export button
+function createSpoilerExportButton() {
     const deckActions = document.querySelector('.deck-actions');
     if (!deckActions) return null;
     
-    const tsvBtn = document.createElement('button');
-    tsvBtn.id = 'exportTSVBtn';
-    tsvBtn.textContent = 'Export TSV Database';
-    tsvBtn.style.backgroundColor = '#28a745';
-    tsvBtn.style.color = 'white';
-    tsvBtn.style.border = 'none';
-    tsvBtn.style.borderRadius = '4px';
-    tsvBtn.style.cursor = 'pointer';
-    tsvBtn.style.padding = '10px 15px';
-    tsvBtn.style.marginLeft = '10px';
-    tsvBtn.style.marginBottom = '5px';
-    tsvBtn.title = 'Export all cards in LackeyCCG database format (TSV)';
+    const spoilerBtn = document.createElement('button');
+    spoilerBtn.id = 'exportSpoilerBtn';
+    spoilerBtn.textContent = 'Export Spoiler Format';
+    spoilerBtn.style.backgroundColor = '#ff6b35';
+    spoilerBtn.style.color = 'white';
+    spoilerBtn.style.border = 'none';
+    spoilerBtn.style.borderRadius = '4px';
+    spoilerBtn.style.cursor = 'pointer';
+    spoilerBtn.style.padding = '10px 15px';
+    spoilerBtn.style.marginLeft = '10px';
+    spoilerBtn.style.marginBottom = '5px';
     
-    // Insert after exportAllCardsBtn if it exists
-    const exportAllCardsBtn = document.getElementById('exportAllCards');
-    if (exportAllCardsBtn) {
-        deckActions.insertBefore(tsvBtn, exportAllCardsBtn.nextSibling);
+    // Insert after exportLackeyBtn or before exportAsImageBtn
+    const exportLackeyBtn = document.getElementById('exportLackeyBtn');
+    const exportAsImageBtn = document.getElementById('exportAsImageBtn');
+    
+    if (exportLackeyBtn && exportAsImageBtn) {
+        deckActions.insertBefore(spoilerBtn, exportAsImageBtn);
+    } else if (exportLackeyBtn) {
+        deckActions.insertBefore(spoilerBtn, exportLackeyBtn.nextSibling);
     } else {
-        // Otherwise insert after the last button
-        const lastButton = deckActions.querySelector('button:last-child');
-        if (lastButton) {
-            deckActions.insertBefore(tsvBtn, lastButton.nextSibling);
+        const exportDeckBtn = document.getElementById('exportDeck');
+        if (exportDeckBtn) {
+            deckActions.insertBefore(spoilerBtn, exportDeckBtn.nextSibling);
         } else {
-            deckActions.appendChild(tsvBtn);
+            deckActions.appendChild(spoilerBtn);
         }
     }
     
-    return tsvBtn;
+    return spoilerBtn;
 }
 
 // Export Modal function

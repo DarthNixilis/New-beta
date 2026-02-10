@@ -10,6 +10,7 @@
     --danger-color: #dc3545;
     --secondary-color: #6c757d;
     --purchase-color: #6f42c1;
+    --spoiler-color: #ff6b35;
 }
 
 body {
@@ -68,6 +69,8 @@ button.btn-purchase { background-color: var(--purchase-color); color: white; bor
 .deck-actions button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; margin-bottom: 5px; }
 #exportDeck { background-color: var(--primary-color); color: white; }
 #clearDeck { background-color: var(--secondary-color); color: white; }
+#exportSpoilerBtn { background-color: var(--spoiler-color); color: white; }
+#exportSpoilerBtn:hover { background-color: #e55a2b; }
 #exportAsImageBtn { background-color: var(--success-color); color: white; }
 #exportAllCards { background-color: #20c997; color: white; }
 #exportAllCards:hover { background-color: #1aa179; }
@@ -191,22 +194,6 @@ button.btn-purchase { background-color: var(--purchase-color); color: white; bor
     font-weight: bold;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) { 
-    .container { flex-direction: column; padding: 10px; } 
-    .search-panel, .deck-panel { min-width: 100%; width: 100%; } 
-    .view-controls-container { align-items: flex-start; } 
-    .card-list.grid-view { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; } 
-    .deck-actions { flex-direction: column; align-items: stretch; }
-    .deck-actions button { margin-left: 0; margin-bottom: 10px; }
-    .kit-persona-display {
-        font-size: 9px;
-    }
-    .grid-kit-info {
-        font-size: 10px;
-    }
-}
-
 /* Export Options Styling */
 .export-options-container {
     max-height: 70vh;
@@ -320,4 +307,20 @@ input[type="number"] {
     width: 80px;
     display: inline-block;
     margin: 0 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) { 
+    .container { flex-direction: column; padding: 10px; } 
+    .search-panel, .deck-panel { min-width: 100%; width: 100%; } 
+    .view-controls-container { align-items: flex-start; } 
+    .card-list.grid-view { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; } 
+    .deck-actions { flex-direction: column; align-items: stretch; }
+    .deck-actions button { margin-left: 0; margin-bottom: 10px; width: 100%; }
+    .kit-persona-display {
+        font-size: 9px;
+    }
+    .grid-kit-info {
+        font-size: 10px;
+    }
 }
