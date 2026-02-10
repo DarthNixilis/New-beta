@@ -73,7 +73,8 @@
                 <button id="importDeck">Import Deck</button>
                 <button id="exportDeck">Export as Text</button>
                 <button id="exportLackeyBtn">Export for LackeyCCG</button>
-                <button id="exportSpoilerBtn">Export Spoiler Format</button>
+                <button id="exportSpoilerBtn">Export Deck Spoiler</button>
+                <button id="exportFullSpoilerBtn">Export Full Database Spoiler</button>
                 <button id="exportAsImageBtn">Export as Image</button>
                 <button id="exportAllCards">Export All Cards as Images</button>
                 <button id="clearDeck">Clear Deck</button>
@@ -199,6 +200,114 @@
                         <div id="exportProgressBar" style="width: 0%; height: 100%; background: #4CAF50; transition: width 0.3s;"></div>
                     </div>
                     <div id="exportStatus" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Full Database Spoiler Export Modal -->
+    <div id="fullSpoilerModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <span class="modal-close-button">&times;</span>
+            <h3>Export Full Database in Spoiler Format</h3>
+            <p>Select filters to customize which cards to include in the spoiler format export.</p>
+            
+            <div class="spoiler-options-container">
+                <!-- Card Type Selection -->
+                <div class="spoiler-section">
+                    <h4>Card Types</h4>
+                    <div class="checkbox-grid">
+                        <label><input type="checkbox" class="card-type-checkbox" data-type="Wrestler" checked> Wrestler</label>
+                        <label><input type="checkbox" class="card-type-checkbox" data-type="Manager" checked> Manager</label>
+                        <label><input type="checkbox" class="card-type-checkbox" data-type="Call Name" checked> Call Name</label>
+                        <label><input type="checkbox" class="card-type-checkbox" data-type="Faction" checked> Faction</label>
+                        <label><input type="checkbox" class="card-type-checkbox" data-type="Action" checked> Action</label>
+                        <label><input type="checkbox" class="card-type-checkbox" data-type="Strike" checked> Strike</label>
+                        <label><input type="checkbox" class="card-type-checkbox" data-type="Grapple" checked> Grapple</label>
+                        <label><input type="checkbox" class="card-type-checkbox" data-type="Submission" checked> Submission</label>
+                        <label><input type="checkbox" class="card-type-checkbox" data-type="Response" checked> Response</label>
+                        <label><input type="checkbox" class="card-type-checkbox" data-type="Boon" checked> Boon</label>
+                        <label><input type="checkbox" class="card-type-checkbox" data-type="Injury" checked> Injury</label>
+                    </div>
+                    <div class="spoiler-controls">
+                        <button id="selectAllTypes" class="btn-small">Select All</button>
+                        <button id="deselectAllTypes" class="btn-small">Deselect All</button>
+                    </div>
+                </div>
+                
+                <!-- Set Selection -->
+                <div class="spoiler-section">
+                    <h4>Sets</h4>
+                    <div class="checkbox-grid">
+                        <label><input type="checkbox" class="set-checkbox" data-set="Core" checked> Core</label>
+                        <label><input type="checkbox" class="set-checkbox" data-set="Advanced" checked> Advanced</label>
+                    </div>
+                    <div class="spoiler-controls">
+                        <button id="selectAllSets" class="btn-small">Select All</button>
+                        <button id="deselectAllSets" class="btn-small">Deselect All</button>
+                    </div>
+                </div>
+                
+                <!-- Cost Filter -->
+                <div class="spoiler-section">
+                    <h4>Cost Filter</h4>
+                    <div class="checkbox-grid">
+                        <label><input type="checkbox" class="cost-checkbox" data-cost="zeroCost" checked> 0-Cost Cards</label>
+                        <label><input type="checkbox" class="cost-checkbox" data-cost="nonZeroCost" checked> Non-0-Cost Cards</label>
+                    </div>
+                </div>
+                
+                <!-- Card Category Filter -->
+                <div class="spoiler-section">
+                    <h4>Card Categories</h4>
+                    <div class="checkbox-grid">
+                        <label><input type="checkbox" class="category-checkbox" data-category="kitCards" checked> Include Kit Cards</label>
+                        <label><input type="checkbox" class="category-checkbox" data-category="nonKitCards" checked> Include Non-Kit Cards</label>
+                    </div>
+                </div>
+                
+                <!-- Sorting Options -->
+                <div class="spoiler-section">
+                    <h4>Sorting</h4>
+                    <div class="spoiler-sort-options">
+                        <label>
+                            <input type="radio" name="spoilerSort" value="type-cost-name" checked> Sort by Type → Cost → Name
+                        </label>
+                        <label>
+                            <input type="radio" name="spoilerSort" value="name"> Sort Alphabetically by Name
+                        </label>
+                        <label>
+                            <input type="radio" name="spoilerSort" value="cost"> Sort by Cost (Low to High)
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Preview Info -->
+                <div class="spoiler-section" id="spoilerPreviewSection" style="display: none;">
+                    <h4>Export Preview</h4>
+                    <div id="spoilerPreviewInfo">
+                        <p>Selected: <span id="previewCardCount">0</span> cards</p>
+                        <p>Types: <span id="previewTypes">None</span></p>
+                        <p>Sets: <span id="previewSets">None</span></p>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="spoiler-actions">
+                    <button id="cancelFullSpoiler" class="btn-secondary">Cancel</button>
+                    <button id="previewFullSpoiler" class="btn-info">Preview Selection</button>
+                    <button id="startFullSpoilerExport" class="btn-primary">Export Spoiler</button>
+                </div>
+                
+                <!-- Preview Area -->
+                <div id="spoilerPreviewArea" style="display: none; margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 4px; border: 1px solid #ddd;">
+                    <h4>Export Preview</h4>
+                    <div id="spoilerPreviewContent" style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; white-space: pre-wrap; background: white; padding: 10px; border-radius: 4px;">
+                        Preview will appear here...
+                    </div>
+                    <div style="text-align: right; margin-top: 10px;">
+                        <button id="closePreview" class="btn-small">Close Preview</button>
+                    </div>
                 </div>
             </div>
         </div>

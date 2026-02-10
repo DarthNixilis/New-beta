@@ -11,6 +11,8 @@
     --secondary-color: #6c757d;
     --purchase-color: #6f42c1;
     --spoiler-color: #ff6b35;
+    --info-color: #17a2b8;
+    --full-spoiler-color: #8e44ad;
 }
 
 body {
@@ -68,9 +70,12 @@ button.btn-purchase { background-color: var(--purchase-color); color: white; bor
 .deck-actions { margin-top: auto; padding-top: 20px; text-align: right; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
 .deck-actions button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; margin-bottom: 5px; }
 #exportDeck { background-color: var(--primary-color); color: white; }
-#clearDeck { background-color: var(--secondary-color); color: white; }
+#exportLackeyBtn { background-color: var(--info-color); color: white; }
 #exportSpoilerBtn { background-color: var(--spoiler-color); color: white; }
 #exportSpoilerBtn:hover { background-color: #e55a2b; }
+#exportFullSpoilerBtn { background-color: var(--full-spoiler-color); color: white; }
+#exportFullSpoilerBtn:hover { background-color: #7d3c98; }
+#clearDeck { background-color: var(--secondary-color); color: white; }
 #exportAsImageBtn { background-color: var(--success-color); color: white; }
 #exportAllCards { background-color: #20c997; color: white; }
 #exportAllCards:hover { background-color: #1aa179; }
@@ -194,6 +199,140 @@ button.btn-purchase { background-color: var(--purchase-color); color: white; bor
     font-weight: bold;
 }
 
+/* Spoiler Export Modal Styles */
+.spoiler-options-container {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.spoiler-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.spoiler-section h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.checkbox-grid label {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.checkbox-grid label:hover {
+    background: #eef5ff;
+}
+
+.checkbox-grid input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.spoiler-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.9em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-small:hover {
+    background: #7f8c8d;
+}
+
+.spoiler-sort-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.spoiler-sort-options label {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.spoiler-sort-options input[type="radio"] {
+    margin-right: 8px;
+}
+
+.spoiler-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-info:hover {
+    background: #138496;
+}
+
 /* Export Options Styling */
 .export-options-container {
     max-height: 70vh;
@@ -260,33 +399,6 @@ button.btn-purchase { background-color: var(--purchase-color); color: white; bor
     border-top: 1px solid #ddd;
 }
 
-.btn-primary {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.btn-primary:hover {
-    background: #2980b9;
-}
-
-.btn-secondary {
-    background: #95a5a6;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-secondary:hover {
-    background: #7f8c8d;
-}
-
 input[type="number"] {
     padding: 4px 8px;
     border: 1px solid #ddd;
@@ -322,5 +434,12 @@ input[type="number"] {
     }
     .grid-kit-info {
         font-size: 10px;
+    }
+    .checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+    .modal-content {
+        width: 95%;
+        padding: 15px;
     }
 }

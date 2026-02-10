@@ -1,43 +1,24 @@
 // config.js
-export let cardDatabase = [];
-export let keywordDatabase = {};
-export let cardTitleCache = {};
-export let startingDeck = [];
-export let purchaseDeck = [];
-export let selectedWrestler = null;
-export let selectedManager = null;
-export let selectedCallName = null;
-export let selectedFaction = null;
-export let activeFilters = [{}, {}, {}];
-export let currentViewMode = 'grid';
-export let currentSort = 'alpha-asc';
-export let showZeroCost = true;
-export let showNonZeroCost = true;
-export let numGridColumns = 2;
-export let lastFocusedElement;
-export const CACHE_KEY = 'aewDeckBuilderCache';
 
-export function setCardDatabase(db) { cardDatabase = db; }
-export function setKeywordDatabase(db) { keywordDatabase = db; }
-export function setStartingDeck(deck) { startingDeck = deck; }
-export function setPurchaseDeck(deck) { purchaseDeck = deck; }
-export function setSelectedWrestler(wrestler) { selectedWrestler = wrestler; }
-export function setSelectedManager(manager) { selectedManager = manager; }
-export function setSelectedCallName(callName) { selectedCallName = callName; }
-export function setSelectedFaction(faction) { selectedFaction = faction; }
-export function setActiveFilters(filters) { activeFilters = filters; }
-export function setCurrentViewMode(mode) { currentViewMode = mode; }
-export function setCurrentSort(sort) { currentSort = sort; }
-export function setShowZeroCost(value) { showZeroCost = value; }
-export function setShowNonZeroCost(value) { showNonZeroCost = value; }
-export function setNumGridColumns(num) { numGridColumns = num; }
-export function setLastFocusedElement(el) { lastFocusedElement = el; }
+// STATE MANAGEMENT
+let cardDatabase = [];
+let cardTitleCache = {};
+let keywordDatabase = {};
+let selectedWrestler = null;
+let selectedManager = null;
+let selectedCallName = null;
+let selectedFaction = null;
+let startingDeck = [];
+let purchaseDeck = [];
+let currentViewMode = 'list';
+let currentSort = 'alpha-asc';
+let numGridColumns = 3;
+let showZeroCost = true;
+let showNonZeroCost = true;
+let activeFilters = [{}, {}, {}];
+let lastFocusedElement = null;
 
-export function toPascalCase(str) {
-    if (!str) return '';
-    return str.replace(/[^a-zA-Z0-9\s]+/g, '').split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
-}
-
+// UTILITY FUNCTIONS
 export function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -50,18 +31,129 @@ export function debounce(func, wait) {
     };
 }
 
-export function saveStateToCache() {
-    const stateToSave = {
-        wrestler: selectedWrestler ? selectedWrestler.title : null,
-        manager: selectedManager ? selectedManager.title : null,
-        callName: selectedCallName ? selectedCallName.title : null,
-        faction: selectedFaction ? selectedFaction.title : null,
-        startingDeck: startingDeck,
-        purchaseDeck: purchaseDeck
-    };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(stateToSave));
+export function toPascalCase(str) {
+    if (!str) return '';
+    return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()).replace(/\s+/g, '');
 }
 
+// Helper to get kit persona name
+export function getKitPersona(card) {
+    if (!card) return '';
+    
+    // Check if it's a kit card by looking for Starting field
+    if (card['Starting'] && card['Starting'].trim() !== '') {
+        // Return the persona name from Starting
+        return card['Starting'].trim();
+    }
+    
+    // Check if it's a persona card itself
+    if (card.card_type === 'Wrestler' || card.card_type === 'Manager') {
+        // Extract persona name from title
+        const title = card.title || '';
+        return title.replace(' Wrestler', '').replace(' Manager', '').trim();
+    }
+    
+    return '';
+}
+
+// Check if a card is a kit/signature card
+export function isKitCard(card) {
+    if (!card) return false;
+    
+    // Check for Starting field
+    if (card['Starting'] && card['Starting'].trim() !== '') {
+        return true;
+    }
+    
+    // Check for Wrestler Kit field
+    if (card['Wrestler Kit'] === 'TRUE' || card['Wrestler Kit'] === true) {
+        return true;
+    }
+    
+    // Check for Signature For field
+    if (card['Signature For'] && card['Signature For'].trim() !== '') {
+        return true;
+    }
+    
+    return false;
+}
+
+// Get the persona this card is a signature for
+export function isSignatureFor(card) {
+    if (!card) return false;
+    
+    // Check if this card is a signature for a persona
+    if (isKitCard(card) && card['Starting'] && card['Starting'].trim() !== '') {
+        // Find if there's a persona with this name
+        const personaTitle = card['Starting'].trim();
+        return cardDatabase.some(personaCard => 
+            personaCard.title === personaTitle && 
+            ['Wrestler', 'Manager'].includes(personaCard.card_type)
+        );
+    }
+    
+    return false;
+}
+
+// Get card target for maneuvers
+export function getCardTarget(card) {
+    if (!card) return '';
+    
+    // First check the Target field from TSV
+    if (card['Target'] && card['Target'].trim() !== '') {
+        return card['Target'].trim();
+    }
+    
+    // Then check text_box.traits for Target trait
+    if (card.text_box?.traits) {
+        const targetTrait = card.text_box.traits.find(t => 
+            t.name && t.name.trim().toLowerCase() === 'target'
+        );
+        if (targetTrait && targetTrait.value) {
+            return targetTrait.value.trim();
+        }
+    }
+    
+    return '';
+}
+
+// SETTERS
+export function setCardDatabase(db) { cardDatabase = db; }
+export function setCardTitleCache(cache) { cardTitleCache = cache; }
+export function setKeywordDatabase(keywords) { keywordDatabase = keywords; }
+export function setSelectedWrestler(wrestler) { selectedWrestler = wrestler; }
+export function setSelectedManager(manager) { selectedManager = manager; }
+export function setSelectedCallName(callName) { selectedCallName = callName; }
+export function setSelectedFaction(faction) { selectedFaction = faction; }
+export function setStartingDeck(deck) { startingDeck = deck; }
+export function setPurchaseDeck(deck) { purchaseDeck = deck; }
+export function setCurrentViewMode(mode) { currentViewMode = mode; }
+export function setCurrentSort(sort) { currentSort = sort; }
+export function setNumGridColumns(cols) { numGridColumns = cols; }
+export function setShowZeroCost(show) { showZeroCost = show; }
+export function setShowNonZeroCost(show) { showNonZeroCost = show; }
+export function setActiveFilters(filters) { activeFilters = filters; }
+export function setLastFocusedElement(element) { lastFocusedElement = element; }
+
+// GETTERS
+export function getCardDatabase() { return cardDatabase; }
+export function getCardTitleCache() { return cardTitleCache; }
+export function getKeywordDatabase() { return keywordDatabase; }
+export function getSelectedWrestler() { return selectedWrestler; }
+export function getSelectedManager() { return selectedManager; }
+export function getSelectedCallName() { return selectedCallName; }
+export function getSelectedFaction() { return selectedFaction; }
+export function getStartingDeck() { return startingDeck; }
+export function getPurchaseDeck() { return purchaseDeck; }
+export function getCurrentViewMode() { return currentViewMode; }
+export function getCurrentSort() { return currentSort; }
+export function getNumGridColumns() { return numGridColumns; }
+export function getShowZeroCost() { return showZeroCost; }
+export function getShowNonZeroCost() { return showNonZeroCost; }
+export function getActiveFilters() { return activeFilters; }
+export function getLastFocusedElement() { return lastFocusedElement; }
+
+// Build cache of card titles for quick lookup
 export function buildCardTitleCache() {
     cardTitleCache = {};
     cardDatabase.forEach(card => {
@@ -71,68 +163,72 @@ export function buildCardTitleCache() {
     });
 }
 
-export function isKitCard(card) {
-    // Check if Starting column has a value (persona name)
-    return card && card['Starting'] && card['Starting'].trim() !== '';
-}
-
-export function isSignatureFor(card) {
-    if (!card || !card['Starting']) return false;
-    const personaName = card['Starting'].trim();
-    if (!personaName) return false;
-    
-    const activePersonaTitles = [];
-    if (selectedWrestler) activePersonaTitles.push(selectedWrestler.title);
-    if (selectedManager) activePersonaTitles.push(selectedManager.title);
-    if (selectedCallName) activePersonaTitles.push(selectedCallName.title);
-    if (selectedFaction) activePersonaTitles.push(selectedFaction.title);
-    
-    return activePersonaTitles.includes(personaName);
-}
-
-// Get card target for maneuvers - SAFE VERSION
-export function getCardTarget(card) {
+// Save state to localStorage for persistence
+export function saveStateToCache() {
     try {
-        if (!card || !card.text_box || !card.text_box.traits) return null;
-        const targetTrait = card.text_box.traits.find(t => t && t.name && t.name.trim() === 'Target');
-        return targetTrait && targetTrait.value ? targetTrait.value : null;
+        const state = {
+            selectedWrestlerTitle: selectedWrestler ? selectedWrestler.title : null,
+            selectedManagerTitle: selectedManager ? selectedManager.title : null,
+            selectedCallNameTitle: selectedCallName ? selectedCallName.title : null,
+            selectedFactionTitle: selectedFaction ? selectedFaction.title : null,
+            startingDeck: startingDeck,
+            purchaseDeck: purchaseDeck,
+            currentSort: currentSort,
+            numGridColumns: numGridColumns,
+            showZeroCost: showZeroCost,
+            showNonZeroCost: showNonZeroCost,
+            activeFilters: activeFilters
+        };
+        localStorage.setItem('aewDeckState', JSON.stringify(state));
     } catch (e) {
-        console.error("Error getting card target:", e, card);
-        return null;
+        console.error("Failed to save state:", e);
     }
 }
 
-// Get kit persona name (without "Wrestler", "Manager", etc.) - SAFE VERSION
-export function getKitPersona(card) {
+// Load state from localStorage
+export function loadStateFromCache() {
     try {
-        if (!card) return null;
-        
-        // First try Starting column
-        if (card['Starting'] && card['Starting'].trim() !== '') {
-            const personaName = card['Starting'].trim();
-            // Remove "Wrestler" suffix if present
-            let cleanName = personaName.replace(/\s*Wrestler$/, '');
-            // Also remove "Manager", "Call Name", "Faction" suffixes
-            cleanName = cleanName.replace(/\s*Manager$/, '');
-            cleanName = cleanName.replace(/\s*Call Name$/, '');
-            cleanName = cleanName.replace(/\s*Faction$/, '');
-            return cleanName;
+        const saved = localStorage.getItem('aewDeckState');
+        if (saved) {
+            const state = JSON.parse(saved);
+            
+            // Restore simple values
+            currentSort = state.currentSort || 'alpha-asc';
+            numGridColumns = state.numGridColumns || 3;
+            showZeroCost = state.showZeroCost !== undefined ? state.showZeroCost : true;
+            showNonZeroCost = state.showNonZeroCost !== undefined ? state.showNonZeroCost : true;
+            activeFilters = state.activeFilters || [{}, {}, {}];
+            
+            // Restore decks
+            startingDeck = state.startingDeck || [];
+            purchaseDeck = state.purchaseDeck || [];
+            
+            // Return the persona titles to be restored after card database loads
+            return {
+                wrestlerTitle: state.selectedWrestlerTitle,
+                managerTitle: state.selectedManagerTitle,
+                callNameTitle: state.selectedCallNameTitle,
+                factionTitle: state.selectedFactionTitle
+            };
         }
-        
-        // If it's a persona card itself, return its name without the type
-        if (card.card_type === 'Wrestler' || card.card_type === 'Manager' || 
-            card.card_type === 'Call Name' || card.card_type === 'Faction') {
-            let cleanName = card.title || '';
-            cleanName = cleanName.replace(/\s*Wrestler$/, '');
-            cleanName = cleanName.replace(/\s*Manager$/, '');
-            cleanName = cleanName.replace(/\s*Call Name$/, '');
-            cleanName = cleanName.replace(/\s*Faction$/, '');
-            return cleanName;
-        }
-        
-        return null;
     } catch (e) {
-        console.error("Error getting kit persona:", e, card);
-        return null;
+        console.error("Failed to load state:", e);
+    }
+    return null;
+}
+
+// Restore selected personas after card database loads
+export function restoreSelectedPersonas(wrestlerTitle, managerTitle, callNameTitle, factionTitle) {
+    if (wrestlerTitle && cardTitleCache[wrestlerTitle]) {
+        selectedWrestler = cardTitleCache[wrestlerTitle];
+    }
+    if (managerTitle && cardTitleCache[managerTitle]) {
+        selectedManager = cardTitleCache[managerTitle];
+    }
+    if (callNameTitle && cardTitleCache[callNameTitle]) {
+        selectedCallName = cardTitleCache[callNameTitle];
+    }
+    if (factionTitle && cardTitleCache[factionTitle]) {
+        selectedFaction = cardTitleCache[factionTitle];
     }
 }
