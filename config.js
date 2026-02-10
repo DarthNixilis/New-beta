@@ -1,22 +1,22 @@
 // config.js
 
-// STATE MANAGEMENT
-let cardDatabase = [];
-let cardTitleCache = {};
-let keywordDatabase = {};
-let selectedWrestler = null;
-let selectedManager = null;
-let selectedCallName = null;
-let selectedFaction = null;
-let startingDeck = [];
-let purchaseDeck = [];
-let currentViewMode = 'list';
-let currentSort = 'alpha-asc';
-let numGridColumns = 3;
-let showZeroCost = true;
-let showNonZeroCost = true;
-let activeFilters = [{}, {}, {}];
-let lastFocusedElement = null;
+// ✅ EXPORT STATE BINDINGS (so other modules can do state.cardDatabase, state.selectedWrestler, etc.)
+export let cardDatabase = [];
+export let cardTitleCache = {};
+export let keywordDatabase = {};
+export let selectedWrestler = null;
+export let selectedManager = null;
+export let selectedCallName = null;
+export let selectedFaction = null;
+export let startingDeck = [];
+export let purchaseDeck = [];
+export let currentViewMode = 'list';
+export let currentSort = 'alpha-asc';
+export let numGridColumns = 3;
+export let showZeroCost = true;
+export let showNonZeroCost = true;
+export let activeFilters = [{}, {}, {}];
+export let lastFocusedElement = null;
 
 // UTILITY FUNCTIONS
 export function debounce(func, wait) {
@@ -33,91 +33,76 @@ export function debounce(func, wait) {
 
 export function toPascalCase(str) {
     if (!str) return '';
-    return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()).replace(/\s+/g, '');
+    return str
+        .replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase())
+        .replace(/\s+/g, '');
 }
 
 // Helper to get kit persona name
 export function getKitPersona(card) {
     if (!card) return '';
-    
+
     // Check if it's a kit card by looking for Starting field
     if (card['Starting'] && card['Starting'].trim() !== '') {
-        // Return the persona name from Starting
         return card['Starting'].trim();
     }
-    
+
     // Check if it's a persona card itself
     if (card.card_type === 'Wrestler' || card.card_type === 'Manager') {
-        // Extract persona name from title
         const title = card.title || '';
         return title.replace(' Wrestler', '').replace(' Manager', '').trim();
     }
-    
+
     return '';
 }
 
 // Check if a card is a kit/signature card
 export function isKitCard(card) {
     if (!card) return false;
-    
-    // Check for Starting field
-    if (card['Starting'] && card['Starting'].trim() !== '') {
-        return true;
-    }
-    
-    // Check for Wrestler Kit field
-    if (card['Wrestler Kit'] === 'TRUE' || card['Wrestler Kit'] === true) {
-        return true;
-    }
-    
-    // Check for Signature For field
-    if (card['Signature For'] && card['Signature For'].trim() !== '') {
-        return true;
-    }
-    
+
+    if (card['Starting'] && card['Starting'].trim() !== '') return true;
+    if (card['Wrestler Kit'] === 'TRUE' || card['Wrestler Kit'] === true) return true;
+    if (card['Signature For'] && card['Signature For'].trim() !== '') return true;
+
     return false;
 }
 
 // Get the persona this card is a signature for
 export function isSignatureFor(card) {
     if (!card) return false;
-    
-    // Check if this card is a signature for a persona
+
     if (isKitCard(card) && card['Starting'] && card['Starting'].trim() !== '') {
-        // Find if there's a persona with this name
         const personaTitle = card['Starting'].trim();
-        return cardDatabase.some(personaCard => 
-            personaCard.title === personaTitle && 
+        return cardDatabase.some(personaCard =>
+            personaCard.title === personaTitle &&
             ['Wrestler', 'Manager'].includes(personaCard.card_type)
         );
     }
-    
+
     return false;
 }
 
 // Get card target for maneuvers
 export function getCardTarget(card) {
     if (!card) return '';
-    
-    // First check the Target field from TSV
+
     if (card['Target'] && card['Target'].trim() !== '') {
         return card['Target'].trim();
     }
-    
-    // Then check text_box.traits for Target trait
+
     if (card.text_box?.traits) {
-        const targetTrait = card.text_box.traits.find(t => 
+        const targetTrait = card.text_box.traits.find(t =>
             t.name && t.name.trim().toLowerCase() === 'target'
         );
         if (targetTrait && targetTrait.value) {
             return targetTrait.value.trim();
         }
     }
-    
+
     return '';
 }
 
-// SETTERS
+// SETTERS (keep these, they update the exported bindings above)
 export function setCardDatabase(db) { cardDatabase = db; }
 export function setCardTitleCache(cache) { cardTitleCache = cache; }
 export function setKeywordDatabase(keywords) { keywordDatabase = keywords; }
@@ -129,13 +114,13 @@ export function setStartingDeck(deck) { startingDeck = deck; }
 export function setPurchaseDeck(deck) { purchaseDeck = deck; }
 export function setCurrentViewMode(mode) { currentViewMode = mode; }
 export function setCurrentSort(sort) { currentSort = sort; }
-export function setNumGridColumns(cols) { numGridColumns = cols; }
-export function setShowZeroCost(show) { showZeroCost = show; }
-export function setShowNonZeroCost(show) { showNonZeroCost = show; }
+export function setNumGridColumns(cols) { numGridColumns = Number(cols); }
+export function setShowZeroCost(show) { showZeroCost = !!show; }
+export function setShowNonZeroCost(show) { showNonZeroCost = !!show; }
 export function setActiveFilters(filters) { activeFilters = filters; }
 export function setLastFocusedElement(element) { lastFocusedElement = element; }
 
-// GETTERS
+// GETTERS (optional but fine)
 export function getCardDatabase() { return cardDatabase; }
 export function getCardTitleCache() { return cardTitleCache; }
 export function getKeywordDatabase() { return keywordDatabase; }
@@ -171,13 +156,13 @@ export function saveStateToCache() {
             selectedManagerTitle: selectedManager ? selectedManager.title : null,
             selectedCallNameTitle: selectedCallName ? selectedCallName.title : null,
             selectedFactionTitle: selectedFaction ? selectedFaction.title : null,
-            startingDeck: startingDeck,
-            purchaseDeck: purchaseDeck,
-            currentSort: currentSort,
-            numGridColumns: numGridColumns,
-            showZeroCost: showZeroCost,
-            showNonZeroCost: showNonZeroCost,
-            activeFilters: activeFilters
+            startingDeck,
+            purchaseDeck,
+            currentSort,
+            numGridColumns,
+            showZeroCost,
+            showNonZeroCost,
+            activeFilters
         };
         localStorage.setItem('aewDeckState', JSON.stringify(state));
     } catch (e) {
@@ -191,19 +176,16 @@ export function loadStateFromCache() {
         const saved = localStorage.getItem('aewDeckState');
         if (saved) {
             const state = JSON.parse(saved);
-            
-            // Restore simple values
+
             currentSort = state.currentSort || 'alpha-asc';
             numGridColumns = state.numGridColumns || 3;
             showZeroCost = state.showZeroCost !== undefined ? state.showZeroCost : true;
             showNonZeroCost = state.showNonZeroCost !== undefined ? state.showNonZeroCost : true;
             activeFilters = state.activeFilters || [{}, {}, {}];
-            
-            // Restore decks
+
             startingDeck = state.startingDeck || [];
             purchaseDeck = state.purchaseDeck || [];
-            
-            // Return the persona titles to be restored after card database loads
+
             return {
                 wrestlerTitle: state.selectedWrestlerTitle,
                 managerTitle: state.selectedManagerTitle,
@@ -219,16 +201,8 @@ export function loadStateFromCache() {
 
 // Restore selected personas after card database loads
 export function restoreSelectedPersonas(wrestlerTitle, managerTitle, callNameTitle, factionTitle) {
-    if (wrestlerTitle && cardTitleCache[wrestlerTitle]) {
-        selectedWrestler = cardTitleCache[wrestlerTitle];
-    }
-    if (managerTitle && cardTitleCache[managerTitle]) {
-        selectedManager = cardTitleCache[managerTitle];
-    }
-    if (callNameTitle && cardTitleCache[callNameTitle]) {
-        selectedCallName = cardTitleCache[callNameTitle];
-    }
-    if (factionTitle && cardTitleCache[factionTitle]) {
-        selectedFaction = cardTitleCache[factionTitle];
-    }
+    if (wrestlerTitle && cardTitleCache[wrestlerTitle]) selectedWrestler = cardTitleCache[wrestlerTitle];
+    if (managerTitle && cardTitleCache[managerTitle]) selectedManager = cardTitleCache[managerTitle];
+    if (callNameTitle && cardTitleCache[callNameTitle]) selectedCallName = cardTitleCache[callNameTitle];
+    if (factionTitle && cardTitleCache[factionTitle]) selectedFaction = cardTitleCache[factionTitle];
 }
