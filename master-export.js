@@ -18,7 +18,9 @@ export async function exportCardsWithOptions(options = {}) {
         format = 'zip',
         naming = 'pascal',
         width = 400,
-        height = 600
+        height = 600,
+        filterSets = null, // NEW: filter by sets
+        filterTypes = null  // NEW: filter by card types
     } = options;
     
     try {
@@ -31,6 +33,7 @@ export async function exportCardsWithOptions(options = {}) {
         // Filter cards based on type
         let cardsToExport = state.cardDatabase;
         
+        // Apply card type filter
         if (cardType !== 'all') {
             const typeMap = {
                 'wrestlers': 'Wrestler',
@@ -54,8 +57,21 @@ export async function exportCardsWithOptions(options = {}) {
             }
         }
         
+        // Apply additional filters if provided
+        if (filterSets && filterSets.length > 0) {
+            cardsToExport = cardsToExport.filter(card => 
+                filterSets.includes(card.set)
+            );
+        }
+        
+        if (filterTypes && filterTypes.length > 0) {
+            cardsToExport = cardsToExport.filter(card => 
+                filterTypes.includes(card.card_type)
+            );
+        }
+        
         if (cardsToExport.length === 0) {
-            throw new Error(`No ${cardType} cards found to export.`);
+            throw new Error(`No cards found to export.`);
         }
         
         // Set image dimensions based on size option
@@ -449,13 +465,13 @@ export async function exportAllCardsAsTSV() {
 }
 
 // Helper function to export a single set as TSV (with .txt extension)
-async function exportSetAsTSV(setName, state) {
+async function exportSetAsTSV(setName, state, setCards = null) {
     console.log(`Exporting TSV for set: ${setName}`);
     
-    // Filter cards for this set
-    const setCards = state.cardDatabase.filter(card => card.set === setName);
+    // Use provided cards or filter from database
+    const cards = setCards || state.cardDatabase.filter(card => card.set === setName);
     
-    if (setCards.length === 0) {
+    if (cards.length === 0) {
         console.warn(`No cards found for set: ${setName}`);
         return;
     }
@@ -472,7 +488,7 @@ async function exportSetAsTSV(setName, state) {
     };
     
     // Add all cards in this set
-    setCards.forEach(card => {
+    cards.forEach(card => {
         // Generate PascalCase image filename
         const imageFile = state.toPascalCase(card.title) + '.png';
         
@@ -550,16 +566,16 @@ async function exportSetAsTSV(setName, state) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     
-    // Use the set name for the filename with .txt extension (e.g., "Core.txt", "Advanced.txt")
+    // Use the set name for the filename with Set.txt extension (e.g., "CoreSet.txt", "AdvancedSet.txt")
     const safeSetName = sanitizeFolderName(setName);
-    a.download = `${safeSetName}.txt`;  // CHANGED: .txt instead of .tsv
+    a.download = `${safeSetName}Set.txt`;  // CHANGED: Set.txt pattern
     
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
     
-    console.log(`Exported ${setCards.length} cards for set: ${setName} as ${safeSetName}.txt`);
+    console.log(`Exported ${cards.length} cards for set: ${setName} as ${safeSetName}Set.txt`);
 }
 
 // Alternative: Export all sets as a ZIP file containing separate TSV files (as .txt)
@@ -586,7 +602,7 @@ export async function exportAllCardsAsTSVZip() {
         
         const zip = new JSZip();
         
-        // Add each set as a separate TSV file to the ZIP (with .txt extension)
+        // Add each set as a separate TSV file to the ZIP (with Set.txt extension)
         for (const set of allSets) {
             const setCards = state.cardDatabase.filter(card => card.set === set);
             
@@ -595,11 +611,11 @@ export async function exportAllCardsAsTSVZip() {
             // Create TSV content for this set
             const tsvContent = generateTSVContentForSet(setCards, state);
             
-            // Use the set name for the filename with .txt extension (e.g., "Core.txt", "Advanced.txt")
+            // Use the set name for the filename with Set.txt extension (e.g., "CoreSet.txt", "AdvancedSet.txt")
             const safeSetName = sanitizeFolderName(set);
-            zip.file(`${safeSetName}.txt`, tsvContent);  // CHANGED: .txt instead of .tsv
+            zip.file(`${safeSetName}Set.txt`, tsvContent);  // CHANGED: Set.txt pattern
             
-            console.log(`Added ${setCards.length} cards for set: ${set} to ZIP as ${safeSetName}.txt`);
+            console.log(`Added ${setCards.length} cards for set: ${set} to ZIP as ${safeSetName}Set.txt`);
         }
         
         // Generate zip file
@@ -717,4 +733,375 @@ function generateTSVContentForSet(setCards, state) {
     });
     
     return tsvContent;
+}
+
+// NEW: Modal export function with checkboxes
+export async function showExportModal() {
+    // Lazy load state
+    const { state } = await getDependencies();
+    
+    // Create modal if it doesn't exist
+    if (!document.getElementById('exportModal')) {
+        createExportModal(state);
+    }
+    
+    // Get all unique card types
+    const cardTypes = [...new Set(state.cardDatabase.map(card => card.card_type))].sort();
+    
+    // Get available sets from state
+    const availableSets = state.availableSets || ['Core', 'Advanced']; // Fallback
+    
+    // Populate checkboxes
+    populateTypeCheckboxes(cardTypes);
+    populateSetCheckboxes(availableSets);
+    
+    // Show modal
+    document.getElementById('exportModal').style.display = 'flex';
+}
+
+function createExportModal(state) {
+    // Check if modal already exists
+    if (document.getElementById('exportModal')) return;
+    
+    const modalHTML = `
+    <div id="exportModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <span class="modal-close-button">&times;</span>
+            <h3>Export Database</h3>
+            
+            <div class="export-options-container">
+                <!-- Card Type Selection -->
+                <div class="export-section">
+                    <h4>Card Types to Export</h4>
+                    <div class="type-selection-header">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="selectAllTypes" checked> Select All Types
+                        </label>
+                    </div>
+                    <div class="export-type-grid" id="cardTypeCheckboxes" style="
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                        gap: 10px;
+                        margin-top: 15px;
+                    ">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Set Selection -->
+                <div class="export-section">
+                    <h4>Sets to Export</h4>
+                    <div class="set-selection-header">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="selectAllSets" checked> Select All Sets
+                        </label>
+                    </div>
+                    <div class="export-set-grid" id="setCheckboxes" style="
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                        gap: 10px;
+                        margin-top: 15px;
+                    ">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Export Format -->
+                <div class="export-section">
+                    <h4>Export Format</h4>
+                    <div class="export-format-options" style="
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                    ">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="exportFormat" value="tsv" checked> TSV Database File (.txt)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="exportFormat" value="tsv-zip"> ZIP with TSV Files
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="exportFormat" value="images-zip"> ZIP with Card Images
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="exportFormat" value="images-individual"> Individual Card Images
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Image Options (only shown for image exports) -->
+                <div id="imageOptions" class="export-section" style="display: none;">
+                    <h4>Image Options</h4>
+                    <div class="export-size-options" style="display: flex; flex-direction: column; gap: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="exportSize" value="standard" checked> Standard MTG Size (744x1039px)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="exportSize" value="lackey"> LackeyCCG Size (214x308px)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="exportSize" value="custom"> Custom Size:
+                            <input type="number" id="customWidth" placeholder="Width" value="400" min="100" max="2000" style="width: 80px; margin-left: 10px;">
+                            x
+                            <input type="number" id="customHeight" placeholder="Height" value="600" min="100" max="2000" style="width: 80px;">
+                            px
+                        </label>
+                    </div>
+                    <div class="export-name-options" style="margin-top: 15px;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            File Naming:
+                            <select id="imageNaming" style="margin-left: 10px; padding: 5px;">
+                                <option value="pascal">PascalCase (OneWingedAngel.jpg)</option>
+                                <option value="original">Original Name (One Winged Angel.jpg)</option>
+                                <option value="lackey">LackeyCCG Format (OneWingedAngel.jpg)</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div id="exportProgress" style="display: none; margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span id="exportProgressText">Preparing export...</span>
+                        <span id="exportProgressPercent">0%</span>
+                    </div>
+                    <div style="width: 100%; height: 20px; background: #ddd; border-radius: 10px; overflow: hidden;">
+                        <div id="exportProgressBar" style="width: 0%; height: 100%; background: #4CAF50; transition: width 0.3s;"></div>
+                    </div>
+                    <div id="exportStatus" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="export-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button id="cancelExport" class="btn-secondary" style="
+                        background: #95a5a6;
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    ">Cancel</button>
+                    <button id="startExport" class="btn-primary" style="
+                        background: #3498db;
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-weight: bold;
+                    ">Start Export</button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Add event listeners
+    setTimeout(() => {
+        const modal = document.getElementById('exportModal');
+        const closeBtn = modal.querySelector('.modal-close-button');
+        const cancelBtn = document.getElementById('cancelExport');
+        const startBtn = document.getElementById('startExport');
+        const formatRadios = document.querySelectorAll('input[name="exportFormat"]');
+        const selectAllTypes = document.getElementById('selectAllTypes');
+        const selectAllSets = document.getElementById('selectAllSets');
+        
+        // Close modal
+        closeBtn.onclick = () => modal.style.display = 'none';
+        cancelBtn.onclick = () => modal.style.display = 'none';
+        modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+        
+        // Show/hide image options
+        formatRadios.forEach(radio => {
+            radio.onchange = (e) => {
+                const imageOptions = document.getElementById('imageOptions');
+                const isImageExport = e.target.value.includes('image');
+                imageOptions.style.display = isImageExport ? 'block' : 'none';
+            };
+        });
+        
+        // Select all types
+        selectAllTypes.onchange = (e) => {
+            const checkboxes = document.querySelectorAll('#cardTypeCheckboxes input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+        };
+        
+        // Select all sets
+        selectAllSets.onchange = (e) => {
+            const checkboxes = document.querySelectorAll('#setCheckboxes input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+        };
+        
+        // Start export
+        startBtn.onclick = startExport;
+    }, 100);
+}
+
+function populateTypeCheckboxes(cardTypes) {
+    const container = document.getElementById('cardTypeCheckboxes');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    cardTypes.forEach(type => {
+        if (!type) return;
+        
+        const label = document.createElement('label');
+        label.className = 'type-checkbox-label';
+        label.style.cssText = `
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid #e0e0e0;
+        `;
+        
+        label.innerHTML = `
+            <input type="checkbox" value="${type}" checked style="margin-right: 8px;"> ${type}
+        `;
+        
+        container.appendChild(label);
+    });
+}
+
+function populateSetCheckboxes(sets) {
+    const container = document.getElementById('setCheckboxes');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    sets.forEach(set => {
+        const label = document.createElement('label');
+        label.className = 'set-checkbox-label';
+        label.style.cssText = `
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid #e0e0e0;
+        `;
+        
+        label.innerHTML = `
+            <input type="checkbox" value="${set}" checked style="margin-right: 8px;"> ${set}
+        `;
+        
+        container.appendChild(label);
+    });
+}
+
+async function startExport() {
+    // Get selected card types
+    const typeCheckboxes = document.querySelectorAll('#cardTypeCheckboxes input[type="checkbox"]:checked');
+    const selectedTypes = Array.from(typeCheckboxes).map(cb => cb.value);
+    
+    // Get selected sets
+    const setCheckboxes = document.querySelectorAll('#setCheckboxes input[type="checkbox"]:checked');
+    const selectedSets = Array.from(setCheckboxes).map(cb => cb.value);
+    
+    // Get export format
+    const format = document.querySelector('input[name="exportFormat"]:checked').value;
+    
+    // Show progress
+    const progress = document.getElementById('exportProgress');
+    progress.style.display = 'block';
+    const startBtn = document.getElementById('startExport');
+    const cancelBtn = document.getElementById('cancelExport');
+    startBtn.disabled = true;
+    cancelBtn.disabled = true;
+    
+    try {
+        // Import state
+        const { state } = await getDependencies();
+        
+        // Filter cards by selected types and sets
+        const filteredCards = state.cardDatabase.filter(card => {
+            const typeMatch = selectedTypes.includes(card.card_type);
+            const setMatch = selectedSets.includes(card.set);
+            return typeMatch && setMatch;
+        });
+        
+        if (filteredCards.length === 0) {
+            throw new Error('No cards match the selected criteria.');
+        }
+        
+        // Update progress
+        updateProgressUI(0, filteredCards.length, `Found ${filteredCards.length} cards to export...`);
+        
+        switch(format) {
+            case 'tsv':
+                // Export selected sets as TSV
+                for (const setName of selectedSets) {
+                    await exportSingleSetAsTSV(setName);
+                }
+                break;
+            case 'tsv-zip':
+                // Export all sets as ZIP
+                await exportAllCardsAsTSVZip();
+                break;
+            case 'images-zip':
+                const imageSize = document.querySelector('input[name="exportSize"]:checked').value;
+                const naming = document.getElementById('imageNaming').value;
+                
+                await exportCardsWithOptions({
+                    cardType: 'all', // Already filtered
+                    imageSize: imageSize,
+                    format: 'zip',
+                    naming: naming,
+                    filterSets: selectedSets,
+                    filterTypes: selectedTypes
+                });
+                break;
+            case 'images-individual':
+                const imageSize2 = document.querySelector('input[name="exportSize"]:checked').value;
+                const naming2 = document.getElementById('imageNaming').value;
+                
+                await exportCardsWithOptions({
+                    cardType: 'all', // Already filtered
+                    imageSize: imageSize2,
+                    format: 'individual',
+                    naming: naming2,
+                    filterSets: selectedSets,
+                    filterTypes: selectedTypes
+                });
+                break;
+        }
+        
+        updateProgressUI(filteredCards.length, filteredCards.length, 'Export complete!', true);
+        
+        // Auto-close after 3 seconds
+        setTimeout(() => {
+            document.getElementById('exportModal').style.display = 'none';
+            progress.style.display = 'none';
+            startBtn.disabled = false;
+            cancelBtn.disabled = false;
+        }, 3000);
+        
+    } catch (error) {
+        console.error("Export failed:", error);
+        updateProgressUI(0, 0, `Error: ${error.message}`, true);
+        startBtn.disabled = false;
+        cancelBtn.disabled = false;
+    }
+}
+
+// Helper function to export a single set as TSV
+async function exportSingleSetAsTSV(setName) {
+    const { state } = await getDependencies();
+    
+    // Filter cards for this set
+    const setCards = state.cardDatabase.filter(card => card.set === setName);
+    
+    if (setCards.length === 0) {
+        console.warn(`No cards found for set: ${setName}`);
+        return;
+    }
+    
+    await exportSetAsTSV(setName, state, setCards);
 }

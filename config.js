@@ -205,4 +205,11 @@ export function restoreSelectedPersonas(wrestlerTitle, managerTitle, callNameTit
     if (managerTitle && cardTitleCache[managerTitle]) selectedManager = cardTitleCache[managerTitle];
     if (callNameTitle && cardTitleCache[callNameTitle]) selectedCallName = cardTitleCache[callNameTitle];
     if (factionTitle && cardTitleCache[factionTitle]) selectedFaction = cardTitleCache[factionTitle];
-}
+
+// Add these lines at the end of config.js (before the closing braces)
+
+export let availableSets = [];
+
+export function setAvailableSets(sets) { availableSets = sets; }
+
+} 

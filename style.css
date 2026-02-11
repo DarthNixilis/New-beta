@@ -443,3 +443,38 @@ input[type="number"] {
         padding: 15px;
     }
 }
+
+/* Add to the end of style.css */
+
+.export-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.export-section h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.type-checkbox-label:hover,
+.set-checkbox-label:hover {
+    background: #eef5ff;
+    border-color: #3498db;
+}
+
+.type-checkbox-label input[type="checkbox"],
+.set-checkbox-label input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}

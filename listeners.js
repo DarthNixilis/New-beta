@@ -3,7 +3,7 @@ import * as state from './config.js';
 import * as ui from './ui.js';
 import * as deck from './deck.js';
 import { parseAndLoadDeck } from './importer.js';
-import { generatePlainTextDeck, exportDeckAsImage, generateLackeyCCGDeck, generateSpoilerFormatDeck } from './exporter.js';
+import { generatePlainTextDeck, exportDeckAsImage, generateLackeyCCGDeck } from './exporter.js';
 import { exportAllCardsAsImages, exportAllCardsAsImagesFallback } from './master-export.js';
 
 export function initializeAllEventListeners(refreshCardPool) {
@@ -59,8 +59,8 @@ export function initializeAllEventListeners(refreshCardPool) {
     // Create or get the LackeyCCG export button
     const exportLackeyBtn = document.getElementById('exportLackeyBtn') || createLackeyExportButton();
     
-    // NEW: Create or get the Spoiler Format export button
-    const exportSpoilerBtn = document.getElementById('exportSpoilerBtn') || createSpoilerExportButton();
+    // NEW: Create or get the TSV export button
+    const exportTSVBtn = document.getElementById('exportTSVBtn') || createTSVExportButton();
 
     wrestlerSelect.addEventListener('change', (e) => {
         const newWrestler = state.cardTitleCache[e.target.value] || null;
@@ -150,29 +150,44 @@ export function initializeAllEventListeners(refreshCardPool) {
         URL.revokeObjectURL(a.href);
     });
 
-    // NEW: Spoiler Format Export
-    exportSpoilerBtn.addEventListener('click', () => {
-        const text = generateSpoilerFormatDeck();
-        const blob = new Blob([text], { type: 'text/plain' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        const wrestlerName = state.selectedWrestler ? state.toPascalCase(state.selectedWrestler.title) : "Deck";
-        a.download = `${wrestlerName}-Spoiler.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-    });
-
     exportAsImageBtn.addEventListener('click', exportDeckAsImage);
     
     // Export All Cards button - now shows modal
     if (exportAllCardsBtn) {
-        exportAllCardsBtn.addEventListener('click', () => {
-            showExportModal();
+        exportAllCardsBtn.addEventListener('click', async () => {
+            try {
+                // Import the modal function from master-export.js
+                const { showExportModal } = await import('./master-export.js');
+                await showExportModal();
+            } catch (error) {
+                console.error("Failed to show export modal:", error);
+                alert('Failed to load export options. ' + error.message);
+                
+                // Fallback to old behavior
+                try {
+                    const { exportAllCardsAsImages } = await import('./master-export.js');
+                    await exportAllCardsAsImages();
+                } catch (fallbackError) {
+                    console.error("Fallback also failed:", fallbackError);
+                }
+            }
         });
     }
     
+    // NEW: TSV Database Export
+    if (exportTSVBtn) {
+        exportTSVBtn.addEventListener('click', async () => {
+            try {
+                // Import the TSV export function
+                const { exportAllCardsAsTSV } = await import('./master-export.js');
+                await exportAllCardsAsTSV();
+            } catch (error) {
+                console.error("TSV export failed:", error);
+                alert(`TSV export failed: ${error.message}`);
+            }
+        });
+    }
+
     // MODAL LISTENERS
     const importDeckBtn = document.getElementById('importDeck');
     const importModal = document.getElementById('importModal');
@@ -222,53 +237,7 @@ export function initializeAllEventListeners(refreshCardPool) {
         if (e.target === exportModal) exportModal.style.display = 'none'; 
     });
     
-    startExportBtn.addEventListener('click', async () => {
-        const exportType = document.querySelector('input[name="exportType"]:checked').value;
-        const exportSize = document.querySelector('input[name="exportSize"]:checked').value;
-        const exportFormat = document.querySelector('input[name="exportFormat"]:checked').value;
-        const exportNaming = document.querySelector('input[name="exportNaming"]:checked').value;
-        
-        let width = 400, height = 600;
-        
-        if (exportSize === 'custom') {
-            width = parseInt(document.getElementById('customWidth').value) || 400;
-            height = parseInt(document.getElementById('customHeight').value) || 600;
-        }
-        
-        // Show progress bar
-        document.getElementById('exportProgress').style.display = 'block';
-        startExportBtn.disabled = true;
-        cancelExportBtn.disabled = true;
-        
-        try {
-            const { exportCardsWithOptions } = await import('./master-export.js');
-            await exportCardsWithOptions({
-                cardType: exportType,
-                imageSize: exportSize,
-                format: exportFormat,
-                naming: exportNaming,
-                width: width,
-                height: height
-            });
-            
-            // Close modal after successful export
-            setTimeout(() => {
-                exportModal.style.display = 'none';
-                startExportBtn.disabled = false;
-                cancelExportBtn.disabled = false;
-                document.getElementById('exportProgress').style.display = 'none';
-                // Reset progress bar
-                document.getElementById('exportProgressBar').style.width = '0%';
-                document.getElementById('exportProgressBar').style.background = '#4CAF50';
-            }, 2000);
-            
-        } catch (error) {
-            console.error("Export failed:", error);
-            startExportBtn.disabled = false;
-            cancelExportBtn.disabled = false;
-            alert(`Export failed: ${error.message}`);
-        }
-    });
+    // REMOVED: Old startExportBtn event listener - new one is in master-export.js modal
 
     modalCloseButton.addEventListener('click', () => cardModal.style.display = 'none');
     cardModal.addEventListener('click', (e) => { if (e.target === cardModal) cardModal.style.display = 'none'; });
@@ -315,72 +284,37 @@ function createLackeyExportButton() {
     return lackeyBtn;
 }
 
-// NEW: Helper to create the Spoiler export button
-function createSpoilerExportButton() {
+// NEW: Helper to create the TSV export button
+function createTSVExportButton() {
     const deckActions = document.querySelector('.deck-actions');
     if (!deckActions) return null;
     
-    const spoilerBtn = document.createElement('button');
-    spoilerBtn.id = 'exportSpoilerBtn';
-    spoilerBtn.textContent = 'Export Spoiler Format';
-    spoilerBtn.style.backgroundColor = '#ff6b35';
-    spoilerBtn.style.color = 'white';
-    spoilerBtn.style.border = 'none';
-    spoilerBtn.style.borderRadius = '4px';
-    spoilerBtn.style.cursor = 'pointer';
-    spoilerBtn.style.padding = '10px 15px';
-    spoilerBtn.style.marginLeft = '10px';
-    spoilerBtn.style.marginBottom = '5px';
+    const tsvBtn = document.createElement('button');
+    tsvBtn.id = 'exportTSVBtn';
+    tsvBtn.textContent = 'Export TSV Database';
+    tsvBtn.style.backgroundColor = '#28a745';
+    tsvBtn.style.color = 'white';
+    tsvBtn.style.border = 'none';
+    tsvBtn.style.borderRadius = '4px';
+    tsvBtn.style.cursor = 'pointer';
+    tsvBtn.style.padding = '10px 15px';
+    tsvBtn.style.marginLeft = '10px';
+    tsvBtn.style.marginBottom = '5px';
+    tsvBtn.title = 'Export all cards in LackeyCCG database format (TSV)';
     
-    // Insert after exportLackeyBtn or before exportAsImageBtn
-    const exportLackeyBtn = document.getElementById('exportLackeyBtn');
-    const exportAsImageBtn = document.getElementById('exportAsImageBtn');
-    
-    if (exportLackeyBtn && exportAsImageBtn) {
-        deckActions.insertBefore(spoilerBtn, exportAsImageBtn);
-    } else if (exportLackeyBtn) {
-        deckActions.insertBefore(spoilerBtn, exportLackeyBtn.nextSibling);
+    // Insert after exportAllCardsBtn if it exists
+    const exportAllCardsBtn = document.getElementById('exportAllCards');
+    if (exportAllCardsBtn) {
+        deckActions.insertBefore(tsvBtn, exportAllCardsBtn.nextSibling);
     } else {
-        const exportDeckBtn = document.getElementById('exportDeck');
-        if (exportDeckBtn) {
-            deckActions.insertBefore(spoilerBtn, exportDeckBtn.nextSibling);
+        // Otherwise insert after the last button
+        const lastButton = deckActions.querySelector('button:last-child');
+        if (lastButton) {
+            deckActions.insertBefore(tsvBtn, lastButton.nextSibling);
         } else {
-            deckActions.appendChild(spoilerBtn);
+            deckActions.appendChild(tsvBtn);
         }
     }
     
-    return spoilerBtn;
-}
-
-// Export Modal function
-function showExportModal() {
-    // Reset form
-    document.querySelector('input[name="exportType"][value="all"]').checked = true;
-    document.querySelector('input[name="exportSize"][value="standard"]').checked = true;
-    document.querySelector('input[name="exportFormat"][value="zip"]').checked = true;
-    document.querySelector('input[name="exportNaming"][value="pascal"]').checked = true;
-    
-    // Reset custom size inputs
-    document.getElementById('customWidth').value = '400';
-    document.getElementById('customHeight').value = '600';
-    
-    // Hide progress bar
-    document.getElementById('exportProgress').style.display = 'none';
-    
-    // Enable buttons
-    document.getElementById('startExport').disabled = false;
-    document.getElementById('cancelExport').disabled = false;
-    
-    // Reset progress bar
-    const progressBar = document.getElementById('exportProgressBar');
-    progressBar.style.width = '0%';
-    progressBar.style.background = '#4CAF50';
-    
-    // Clear status text
-    document.getElementById('exportProgressText').textContent = 'Preparing export...';
-    document.getElementById('exportProgressPercent').textContent = '0%';
-    document.getElementById('exportStatus').textContent = '';
-    
-    // Show modal
-    document.getElementById('exportModal').style.display = 'flex';
+    return tsvBtn;
 }

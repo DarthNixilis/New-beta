@@ -73,8 +73,6 @@
                 <button id="importDeck">Import Deck</button>
                 <button id="exportDeck">Export as Text</button>
                 <button id="exportLackeyBtn">Export for LackeyCCG</button>
-                <button id="exportSpoilerBtn">Export Deck Spoiler</button>
-                <button id="exportFullSpoilerBtn">Export Full Database Spoiler</button>
                 <button id="exportAsImageBtn">Export as Image</button>
                 <button id="exportAllCards">Export All Cards as Images</button>
                 <button id="clearDeck">Clear Deck</button>
@@ -105,51 +103,81 @@
 
     <!-- Export Options Modal -->
     <div id="exportModal" class="modal-backdrop" style="display: none;">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
             <span class="modal-close-button">&times;</span>
-            <h3>Export Options</h3>
+            <h3>Export Database</h3>
             
             <div class="export-options-container">
+                <!-- Card Type Selection -->
                 <div class="export-section">
-                    <h4>Card Type to Export</h4>
-                    <div class="export-type-options">
-                        <label>
-                            <input type="radio" name="exportType" value="all" checked> All Cards
+                    <h4>Card Types to Export</h4>
+                    <div class="type-selection-header">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="selectAllTypes" checked> Select All Types
                         </label>
-                        <label>
-                            <input type="radio" name="exportType" value="wrestlers"> Wrestlers Only
+                    </div>
+                    <div class="export-type-grid" id="cardTypeCheckboxes" style="
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                        gap: 10px;
+                        margin-top: 15px;
+                    ">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Set Selection -->
+                <div class="export-section">
+                    <h4>Sets to Export</h4>
+                    <div class="set-selection-header">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="selectAllSets" checked> Select All Sets
                         </label>
-                        <label>
-                            <input type="radio" name="exportType" value="managers"> Managers Only
+                    </div>
+                    <div class="export-set-grid" id="setCheckboxes" style="
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                        gap: 10px;
+                        margin-top: 15px;
+                    ">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Export Format -->
+                <div class="export-section">
+                    <h4>Export Format</h4>
+                    <div class="export-format-options" style="
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                    ">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="exportFormat" value="tsv" checked> TSV Database File (.txt)
                         </label>
-                        <label>
-                            <input type="radio" name="exportType" value="actions"> Actions Only
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="exportFormat" value="tsv-zip"> ZIP with TSV Files
                         </label>
-                        <label>
-                            <input type="radio" name="exportType" value="maneuvers"> Maneuvers Only
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="exportFormat" value="images-zip"> ZIP with Card Images
                         </label>
-                        <label>
-                            <input type="radio" name="exportType" value="responses"> Responses Only
-                        </label>
-                        <label>
-                            <input type="radio" name="exportType" value="callnames"> Call Names Only
-                        </label>
-                        <label>
-                            <input type="radio" name="exportType" value="factions"> Factions Only
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="exportFormat" value="images-individual"> Individual Card Images
                         </label>
                     </div>
                 </div>
                 
-                <div class="export-section">
-                    <h4>Image Size</h4>
-                    <div class="export-size-options">
-                        <label>
+                <!-- Image Options (only shown for image exports) -->
+                <div id="imageOptions" class="export-section" style="display: none;">
+                    <h4>Image Options</h4>
+                    <div class="export-size-options" style="display: flex; flex-direction: column; gap: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="radio" name="exportSize" value="standard" checked> Standard MTG Size (744x1039px)
                         </label>
-                        <label>
+                        <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="radio" name="exportSize" value="lackey"> LackeyCCG Size (214x308px)
                         </label>
-                        <label>
+                        <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="radio" name="exportSize" value="custom"> Custom Size:
                             <input type="number" id="customWidth" placeholder="Width" value="400" min="100" max="2000" style="width: 80px; margin-left: 10px;">
                             x
@@ -157,40 +185,19 @@
                             px
                         </label>
                     </div>
-                </div>
-                
-                <div class="export-section">
-                    <h4>Export Format</h4>
-                    <div class="export-format-options">
-                        <label>
-                            <input type="radio" name="exportFormat" value="zip" checked> ZIP File (All images in one file)
-                        </label>
-                        <label>
-                            <input type="radio" name="exportFormat" value="individual"> Individual Files (Download one by one)
+                    <div class="export-name-options" style="margin-top: 15px;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            File Naming:
+                            <select id="imageNaming" style="margin-left: 10px; padding: 5px;">
+                                <option value="pascal">PascalCase (OneWingedAngel.jpg)</option>
+                                <option value="original">Original Name (One Winged Angel.jpg)</option>
+                                <option value="lackey">LackeyCCG Format (OneWingedAngel.jpg)</option>
+                            </select>
                         </label>
                     </div>
                 </div>
                 
-                <div class="export-section">
-                    <h4>Naming Convention</h4>
-                    <div class="export-name-options">
-                        <label>
-                            <input type="radio" name="exportNaming" value="pascal" checked> PascalCase (OneWingedAngel.jpg)
-                        </label>
-                        <label>
-                            <input type="radio" name="exportNaming" value="original"> Original Name (One Winged Angel.jpg)
-                        </label>
-                        <label>
-                            <input type="radio" name="exportNaming" value="lackey"> LackeyCCG Format (OneWingedAngel.jpg)
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="export-actions">
-                    <button id="cancelExport" class="btn-secondary">Cancel</button>
-                    <button id="startExport" class="btn-primary">Start Export</button>
-                </div>
-                
+                <!-- Progress Bar -->
                 <div id="exportProgress" style="display: none; margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                         <span id="exportProgressText">Preparing export...</span>
@@ -201,113 +208,26 @@
                     </div>
                     <div id="exportStatus" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- NEW: Full Database Spoiler Export Modal -->
-    <div id="fullSpoilerModal" class="modal-backdrop" style="display: none;">
-        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
-            <span class="modal-close-button">&times;</span>
-            <h3>Export Full Database in Spoiler Format</h3>
-            <p>Select filters to customize which cards to include in the spoiler format export.</p>
-            
-            <div class="spoiler-options-container">
-                <!-- Card Type Selection -->
-                <div class="spoiler-section">
-                    <h4>Card Types</h4>
-                    <div class="checkbox-grid">
-                        <label><input type="checkbox" class="card-type-checkbox" data-type="Wrestler" checked> Wrestler</label>
-                        <label><input type="checkbox" class="card-type-checkbox" data-type="Manager" checked> Manager</label>
-                        <label><input type="checkbox" class="card-type-checkbox" data-type="Call Name" checked> Call Name</label>
-                        <label><input type="checkbox" class="card-type-checkbox" data-type="Faction" checked> Faction</label>
-                        <label><input type="checkbox" class="card-type-checkbox" data-type="Action" checked> Action</label>
-                        <label><input type="checkbox" class="card-type-checkbox" data-type="Strike" checked> Strike</label>
-                        <label><input type="checkbox" class="card-type-checkbox" data-type="Grapple" checked> Grapple</label>
-                        <label><input type="checkbox" class="card-type-checkbox" data-type="Submission" checked> Submission</label>
-                        <label><input type="checkbox" class="card-type-checkbox" data-type="Response" checked> Response</label>
-                        <label><input type="checkbox" class="card-type-checkbox" data-type="Boon" checked> Boon</label>
-                        <label><input type="checkbox" class="card-type-checkbox" data-type="Injury" checked> Injury</label>
-                    </div>
-                    <div class="spoiler-controls">
-                        <button id="selectAllTypes" class="btn-small">Select All</button>
-                        <button id="deselectAllTypes" class="btn-small">Deselect All</button>
-                    </div>
-                </div>
-                
-                <!-- Set Selection -->
-                <div class="spoiler-section">
-                    <h4>Sets</h4>
-                    <div class="checkbox-grid">
-                        <label><input type="checkbox" class="set-checkbox" data-set="Core" checked> Core</label>
-                        <label><input type="checkbox" class="set-checkbox" data-set="Advanced" checked> Advanced</label>
-                    </div>
-                    <div class="spoiler-controls">
-                        <button id="selectAllSets" class="btn-small">Select All</button>
-                        <button id="deselectAllSets" class="btn-small">Deselect All</button>
-                    </div>
-                </div>
-                
-                <!-- Cost Filter -->
-                <div class="spoiler-section">
-                    <h4>Cost Filter</h4>
-                    <div class="checkbox-grid">
-                        <label><input type="checkbox" class="cost-checkbox" data-cost="zeroCost" checked> 0-Cost Cards</label>
-                        <label><input type="checkbox" class="cost-checkbox" data-cost="nonZeroCost" checked> Non-0-Cost Cards</label>
-                    </div>
-                </div>
-                
-                <!-- Card Category Filter -->
-                <div class="spoiler-section">
-                    <h4>Card Categories</h4>
-                    <div class="checkbox-grid">
-                        <label><input type="checkbox" class="category-checkbox" data-category="kitCards" checked> Include Kit Cards</label>
-                        <label><input type="checkbox" class="category-checkbox" data-category="nonKitCards" checked> Include Non-Kit Cards</label>
-                    </div>
-                </div>
-                
-                <!-- Sorting Options -->
-                <div class="spoiler-section">
-                    <h4>Sorting</h4>
-                    <div class="spoiler-sort-options">
-                        <label>
-                            <input type="radio" name="spoilerSort" value="type-cost-name" checked> Sort by Type → Cost → Name
-                        </label>
-                        <label>
-                            <input type="radio" name="spoilerSort" value="name"> Sort Alphabetically by Name
-                        </label>
-                        <label>
-                            <input type="radio" name="spoilerSort" value="cost"> Sort by Cost (Low to High)
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Preview Info -->
-                <div class="spoiler-section" id="spoilerPreviewSection" style="display: none;">
-                    <h4>Export Preview</h4>
-                    <div id="spoilerPreviewInfo">
-                        <p>Selected: <span id="previewCardCount">0</span> cards</p>
-                        <p>Types: <span id="previewTypes">None</span></p>
-                        <p>Sets: <span id="previewSets">None</span></p>
-                    </div>
-                </div>
                 
                 <!-- Actions -->
-                <div class="spoiler-actions">
-                    <button id="cancelFullSpoiler" class="btn-secondary">Cancel</button>
-                    <button id="previewFullSpoiler" class="btn-info">Preview Selection</button>
-                    <button id="startFullSpoilerExport" class="btn-primary">Export Spoiler</button>
-                </div>
-                
-                <!-- Preview Area -->
-                <div id="spoilerPreviewArea" style="display: none; margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 4px; border: 1px solid #ddd;">
-                    <h4>Export Preview</h4>
-                    <div id="spoilerPreviewContent" style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; white-space: pre-wrap; background: white; padding: 10px; border-radius: 4px;">
-                        Preview will appear here...
-                    </div>
-                    <div style="text-align: right; margin-top: 10px;">
-                        <button id="closePreview" class="btn-small">Close Preview</button>
-                    </div>
+                <div class="export-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button id="cancelExport" class="btn-secondary" style="
+                        background: #95a5a6;
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    ">Cancel</button>
+                    <button id="startExport" class="btn-primary" style="
+                        background: #3498db;
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-weight: bold;
+                    ">Start Export</button>
                 </div>
             </div>
         </div>
