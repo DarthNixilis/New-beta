@@ -116,6 +116,20 @@ export function getCardTarget(card) {
 }
 
 // --------------------
+// INTERNAL NOTIFY HELPERS
+// --------------------
+function notifyDeckCountsChanged() {
+  try {
+    if (typeof window !== 'undefined' && typeof window.updateDeckCountColors === 'function') {
+      window.updateDeckCountColors();
+    }
+  } catch (e) {
+    // Never break app flow over UI coloring
+    console.warn('updateDeckCountColors failed:', e);
+  }
+}
+
+// --------------------
 // SETTERS (these update the exported bindings above)
 // --------------------
 export function setCardDatabase(db) { cardDatabase = db; }
@@ -127,8 +141,14 @@ export function setSelectedManager(manager) { selectedManager = manager; }
 export function setSelectedCallName(callName) { selectedCallName = callName; }
 export function setSelectedFaction(faction) { selectedFaction = faction; }
 
-export function setStartingDeck(deck) { startingDeck = deck; }
-export function setPurchaseDeck(deck) { purchaseDeck = deck; }
+export function setStartingDeck(deck) {
+  startingDeck = deck;
+  notifyDeckCountsChanged();
+}
+export function setPurchaseDeck(deck) {
+  purchaseDeck = deck;
+  notifyDeckCountsChanged();
+}
 
 export function setCurrentViewMode(mode) { currentViewMode = mode; }
 export function setCurrentSort(sort) { currentSort = sort; }
@@ -182,7 +202,7 @@ export function buildCardTitleCache() {
 // Save state to localStorage for persistence
 export function saveStateToCache() {
   try {
-    const state = {
+    const stateObj = {
       selectedWrestlerTitle: selectedWrestler ? selectedWrestler.title : null,
       selectedManagerTitle: selectedManager ? selectedManager.title : null,
       selectedCallNameTitle: selectedCallName ? selectedCallName.title : null,
@@ -195,7 +215,7 @@ export function saveStateToCache() {
       showNonZeroCost,
       activeFilters
     };
-    localStorage.setItem('aewDeckState', JSON.stringify(state));
+    localStorage.setItem('aewDeckState', JSON.stringify(stateObj));
   } catch (e) {
     console.error("Failed to save state:", e);
   }
@@ -206,22 +226,25 @@ export function loadStateFromCache() {
   try {
     const saved = localStorage.getItem('aewDeckState');
     if (saved) {
-      const state = JSON.parse(saved);
+      const stateObj = JSON.parse(saved);
 
-      currentSort = state.currentSort || 'alpha-asc';
-      numGridColumns = state.numGridColumns || 3;
-      showZeroCost = state.showZeroCost !== undefined ? state.showZeroCost : true;
-      showNonZeroCost = state.showNonZeroCost !== undefined ? state.showNonZeroCost : true;
-      activeFilters = state.activeFilters || [{}, {}, {}];
+      currentSort = stateObj.currentSort || 'alpha-asc';
+      numGridColumns = stateObj.numGridColumns || 3;
+      showZeroCost = stateObj.showZeroCost !== undefined ? stateObj.showZeroCost : true;
+      showNonZeroCost = stateObj.showNonZeroCost !== undefined ? stateObj.showNonZeroCost : true;
+      activeFilters = stateObj.activeFilters || [{}, {}, {}];
 
-      startingDeck = state.startingDeck || [];
-      purchaseDeck = state.purchaseDeck || [];
+      startingDeck = stateObj.startingDeck || [];
+      purchaseDeck = stateObj.purchaseDeck || [];
+
+      // Update UI colors after restore
+      notifyDeckCountsChanged();
 
       return {
-        wrestlerTitle: state.selectedWrestlerTitle,
-        managerTitle: state.selectedManagerTitle,
-        callNameTitle: state.selectedCallNameTitle,
-        factionTitle: state.selectedFactionTitle
+        wrestlerTitle: stateObj.selectedWrestlerTitle,
+        managerTitle: stateObj.selectedManagerTitle,
+        callNameTitle: stateObj.selectedCallNameTitle,
+        factionTitle: stateObj.selectedFactionTitle
       };
     }
   } catch (e) {

@@ -1,24 +1,82 @@
-Finisher: When an opponent attempts to reverse this, they must pay an additional cost: either pay Momentum from their Ring equal to this card's Damage, or discard a second valid reversal.
+========================
+CORE SET KEYWORDS
+========================
 
-Permanent: This card is not removed from the Ring during the End of Turn sequence.
-
-Ongoing: This card's text provides a continuous effect while it is in the Ring.
-
-Power Attack: As you play this maneuver, you may have it enter the Ring committed to add its Momentum value to its Damage.
-
-Focus Attack: As you play this, you may commit another card in your Ring with the same Target to add its Momentum to this card's Damage.
-
-Follow-Up: Grants additional effects if played immediately after a specified condition is met, ignoring normal priority.
+Combo Attack: As you play this, you may commit another card in your Ring with a matching Trait to add its Momentum to this card's Damage.
 
 Cycling: You may discard this card from your hand at any time to draw a card.
 
-Resilient: You may discard this card from your hand before an opponent's maneuver resolves to reduce its damage by this card's Momentum.
-
-Stun: Your opponent must choose and commit one card in their Ring.
-
-Relentless: You may play this card from your discard pile by paying its Momentum cost. If reversed, it is placed on the bottom of your draw deck.
-
-Sudden: You may play this card from your Market by paying double its Momentum cost.
+Echo: While this card is in your Market, your Market Size is increased by 1.
 
 Enters: An ability that triggers once, immediately after this card successfully enters the Ring.
 
+Finisher: When an opponent attempts to reverse this, they must pay an additional cost: either pay Momentum from their Ring equal to this card's Damage, or discard a second valid reversal.
+
+Follow-Up: This card may be played immediately after a card played. Then if the specified condition is met the card gets a bonus. This will ignore normal priority changing
+
+Focus Attack: As you play this, you may commit another card in your Ring with the same Target to add its Momentum to this card's Damage.
+
+Ongoing: This card's text provides a continuous effect while it is in the Ring.
+
+Permanent: This card is not removed from the Ring during the End of Turn sequence.
+
+Power Attack: As you play this maneuver, you may have it enter the Ring committed to add its own Momentum value to its Damage.
+
+Recovery: This ability will only happen during the Recovery phase. Any other time the card is played or activated it will not do this ability. 
+
+Relentless: You may play this card from your discard pile by paying its Momentum cost. If reversed from anywhere, it is placed on the bottom of your Draw Deck.
+
+Resilient: You may discard this card from your hand before an opponent's maneuver resolves to reduce its damage by this card's Momentum. You may still reverse that card. 
+
+Rope Break: When a card with Rope Break is tucked during a Pin or Submission, it ends. 
+
+Scout: Look at the top card of your Draw Deck. You may place it into your Discard Pile.
+
+Stun: Your opponent must choose and commit one card in their Ring.
+
+Sudden: You may play this card from your Market by paying double its Momentum cost.
+
+Tie-Up: This ability will only happen during the Tie-Up phase. Any other time the card is played or activated it will not do this ability. 
+
+Trigger: An ongoing ability that activates automatically when the listed condition occurs.
+
+Tuck: Place a card on the bottom of its owner's Purchase Deck.
+
+Uses: This card enters the Ring with Use Counters. It has Permanent while it has one or more Use Counters. When all Use Counters are removed, it loses Permanent.
+
+
+========================
+ADVANCED SET KEYWORDS
+========================
+
+Attempt: To Attempt a card means to create a Token copy of that card and immediately play it, following all normal timing rules unless otherwise specified.
+
+Commit: To Commit a card means to turn it sideways. A committed card still exists in the Ring and contributes to game state checks, but cannot be committed again to pay costs. Such as buying cards or contributing to Focus Attack. 
+
+Cunning Attack: As you play this, you may commit a non-Maneuver card in your Ring to add its Momentum to this card's Damage.
+
+Flip: Turn a double-sided Faction card face down to use its once-per-game ability.
+
+Hidden: Whenever you can play a card with Hidden you may play it face down, and choose a Maneuver type (Strike, Grapple, Submission). The card is played as a 0C/2/2 of the chosen type that has 'Enters - This gains Permanent this turn'. It can be played from your ring by paying it's cost and turning it face up. While in your ring a face down card is the 0/2/2 with no type or text
+
+Illegal: Damage from this will not be able to reduce an opponent's Stamina below 1.
+
+Pin: “Try to Pin Opponent” initiates a Pin minigame. 
+
+Ready: This ability will only happen during the Ready phase. Any other time the card is played or activated it will not do this ability. 
+
+Retaliate: This card gains the listed bonus if it is played immediately after you were successfully dealt damage by an opponent's maneuver.
+
+Risky X: Reversals to this card are +ND. 
+
+Special: Things that don't fit anywhere else, they will be described by the card itself. 
+
+Staggered: You are considered Staggered when at or below half your starting Stamina. 
+
+Stealth Attack: As you play this, you may commit another card in your Ring with Hidden or that is face down to add its Momentum to this card's Damage.
+
+Stylish Attack: As you play this, you may commit another card in your Ring with a matching Style to add its Momentum to this card's Damage.
+
+Sturdy: This card counts double its Momentum when defending against Pin or Submit attempts in all zones. Also counts as two cards for Submissions when from hand, deck, and discard. 
+
+Submit: “Try to Submit Opponent" begin the Submission minigame. 

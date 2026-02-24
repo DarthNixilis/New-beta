@@ -4,7 +4,14 @@ import * as ui from './ui.js';
 import * as filters from './filters.js';
 import { initializeAllEventListeners } from './listeners.js'; // Corrected path
 
+// Minimums (edit here if they change)
+const MIN_STARTING_DECK = 24;
+const MIN_PURCHASE_DECK = 36;
+
 export function initializeApp() {
+    // Expose a global updater so config.js can call it whenever deck arrays change
+    window.updateDeckCountColors = updateDeckCountColors;
+
     populatePersonaSelectors();
     loadStateFromCache();
     setupInitialUI();
@@ -14,6 +21,30 @@ export function initializeApp() {
     ui.renderPersonaDisplay();
     initializeAllEventListeners(refreshCardPool);
     refreshCardPool();
+
+    // Ensure colors are correct on initial load
+    updateDeckCountColors();
+}
+
+function updateDeckCountColors() {
+    const startingCountEl = document.getElementById('startingDeckCount');
+    const purchaseCountEl = document.getElementById('purchaseDeckCount');
+
+    if (startingCountEl) {
+        const n = Array.isArray(state.startingDeck) ? state.startingDeck.length : 0;
+        startingCountEl.style.color = getMinColor(n, MIN_STARTING_DECK);
+    }
+
+    if (purchaseCountEl) {
+        const n = Array.isArray(state.purchaseDeck) ? state.purchaseDeck.length : 0;
+        purchaseCountEl.style.color = getMinColor(n, MIN_PURCHASE_DECK);
+    }
+}
+
+function getMinColor(count, min) {
+    if (count < min) return 'red';
+    if (count === min) return 'green';
+    return 'gold'; // yellow that is readable on light backgrounds
 }
 
 function populatePersonaSelectors() {
@@ -21,27 +52,27 @@ function populatePersonaSelectors() {
     const managerSelect = document.getElementById('managerSelect');
     const callNameSelect = document.getElementById('callNameSelect');
     const factionSelect = document.getElementById('factionSelect');
-    
+
     // Clear and add default options
     wrestlerSelect.length = 1;
     managerSelect.length = 1;
     if (callNameSelect) callNameSelect.length = 1;
     if (factionSelect) factionSelect.length = 1;
-    
+
     // Get personas by type
     const wrestlers = state.cardDatabase.filter(c => c && c.card_type === 'Wrestler').sort((a, b) => a.title.localeCompare(b.title));
     const managers = state.cardDatabase.filter(c => c && c.card_type === 'Manager').sort((a, b) => a.title.localeCompare(b.title));
     const callNames = state.cardDatabase.filter(c => c && c.card_type === 'Call Name').sort((a, b) => a.title.localeCompare(b.title));
     const factions = state.cardDatabase.filter(c => c && c.card_type === 'Faction').sort((a, b) => a.title.localeCompare(b.title));
-    
+
     // Populate dropdowns
     wrestlers.forEach(w => wrestlerSelect.add(new Option(w.title, w.title)));
     managers.forEach(m => managerSelect.add(new Option(m.title, m.title)));
-    
+
     if (callNameSelect) {
         callNames.forEach(cn => callNameSelect.add(new Option(cn.title, cn.title)));
     }
-    
+
     if (factionSelect) {
         factions.forEach(f => factionSelect.add(new Option(f.title, f.title)));
     }
@@ -54,19 +85,19 @@ function loadStateFromCache() {
             const parsed = JSON.parse(cachedState);
             state.setStartingDeck(parsed.startingDeck || []);
             state.setPurchaseDeck(parsed.purchaseDeck || []);
-            
+
             if (parsed.wrestler) {
                 const wrestlerSelect = document.getElementById('wrestlerSelect');
                 wrestlerSelect.value = parsed.wrestler;
                 state.setSelectedWrestler(state.cardTitleCache[parsed.wrestler] || null);
             }
-            
+
             if (parsed.manager) {
                 const managerSelect = document.getElementById('managerSelect');
                 managerSelect.value = parsed.manager;
                 state.setSelectedManager(state.cardTitleCache[parsed.manager] || null);
             }
-            
+
             if (parsed.callName) {
                 const callNameSelect = document.getElementById('callNameSelect');
                 if (callNameSelect) {
@@ -74,7 +105,7 @@ function loadStateFromCache() {
                     state.setSelectedCallName(state.cardTitleCache[parsed.callName] || null);
                 }
             }
-            
+
             if (parsed.faction) {
                 const factionSelect = document.getElementById('factionSelect');
                 if (factionSelect) {
@@ -100,24 +131,24 @@ function setupInitialUI() {
 function addDeckSearchFunctionality() {
     const startingDeckList = document.getElementById('startingDeckList');
     const purchaseDeckList = document.getElementById('purchaseDeckList');
-    
+
     const startingDeckSearch = document.createElement('input');
     startingDeckSearch.type = 'text';
     startingDeckSearch.placeholder = 'Search starting deck...';
     startingDeckSearch.className = 'deck-search-input';
     startingDeckSearch.addEventListener('input', state.debounce(() => ui.filterDeckList(startingDeckList, startingDeckSearch.value), 300));
-    
+
     const purchaseDeckSearch = document.createElement('input');
     purchaseDeckSearch.type = 'text';
     purchaseDeckSearch.placeholder = 'Search purchase deck...';
     purchaseDeckSearch.className = 'deck-search-input';
     purchaseDeckSearch.addEventListener('input', state.debounce(() => ui.filterDeckList(purchaseDeckList, purchaseDeckSearch.value), 300));
-    
+
     startingDeckList.parentNode.insertBefore(startingDeckSearch, startingDeckList);
     purchaseDeckList.parentNode.insertBefore(purchaseDeckSearch, purchaseDeckList);
 }
 
-function refreshCardPool() {
+export function refreshCardPool() {
     const finalCards = filters.getFilteredAndSortedCardPool();
     ui.renderCardPool(finalCards);
 }

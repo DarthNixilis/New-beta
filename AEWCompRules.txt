@@ -1,0 +1,140 @@
+100. General Principles
+100.1. These rules are the single source of truth for the AEW Trading Card Game. 
+100.2. The game is played between two players. Each player provides their own Persona, Starting Draw Deck, and Purchase Deck.
+100.3. Specific rules override general rules.
+100.4. If an effect states a player "cannot" perform an action while another effect states they "can," the "cannot" effect takes precedence.
+100.5. Modified values always take precedence over printed values. The game engine evaluates the current state of a card after all modifiers (cost reductions, damage buffs, etc.) are applied.
+100.6. Timing and resolution are deterministic. Effects resolve in the order they are triggered or placed into the Combo Queue.
+
+101. Winning and Losing the Game
+101.1. A player wins the game when their opponent's Stamina is reduced to 0. 
+101.1a. If a card possesses the Illegal keyword, its damage cannot reduce an opponent's Stamina to 0. A subsequent legal damage source or alternate win condition is required.
+101.2. A player wins the game if they successfully resolve an Alternate Win Condition (Pin, Submission, or Knockout).
+101.3. A player loses the game if they are unable to meet the requirements of an Alternate Win Condition attempt initiated by the opponent.
+101.4. In the event of a simultaneous loss condition, [PLACEHOLDER -- RULE REQUIRES DESIGN INPUT].
+
+200. Card Anatomy
+201. Title: The name of the card.
+202. Type: The classification of the card (Maneuver, Action, Response, or Persona type).
+203. Cost (C): The Momentum value required to purchase the card from the Market.
+204. Damage (D): The amount of Stamina loss caused by a successful Maneuver.
+205. Momentum (M): The resource value provided when the card is Committed.
+206. Target (H/T/A/L): The body part targeted by a Maneuver: Head (H), Torso (T), Arms (A), or Legs (L).
+207. Text Box: Contains Keywords, Traits, and Abilities.
+207.1. Keywords: Shorthand for standardized rules text.
+207.2. Traits: Descriptive labels (e.g., Punch, Kick, Suplex) with no inherent rules but referenced by other abilities.
+207.3. Styles: Specialized symbols (e.g., Sloth, Technician) located in the cost box or text box that carry economic and mechanical weight.
+
+300. Card Types
+301. Maneuver: Offensive cards played during the Tie-Up Phase. Subtypes include Strike, Grapple, and Submission.
+302. Action: Strategic cards that provide utility or setup. Played during Ready, Tie-Up, or Recovery Phases.
+303. Response: Reactive cards played in the Response Window to reverse or interact with an opponent's play.
+304. Persona: Identity cards that start the game in the Ring and cannot be removed by standard cleanup.
+304.1. Wrestler: The primary character card.
+304.2. Manager: A supporting character card.
+304.3. Faction: A multi-member group card, often double-faced.
+304.4. Call Name: A title or moniker card that may modify deck construction.
+
+400. Game Zones
+401. Starting Draw Deck: A 24-card deck used at the start of the game.
+402. Purchase Deck: A deck of at least 36 cards used to refill the Market.
+403. Hand: Cards held by a player. Default Hand size is 8. Default Hold is 2.
+404. Ring: The active play area. Successful Maneuvers and resolved Actions/Responses enter the Ring.
+405. Discard Pile: A face-up stack for cards that leave play, are reversed, or are purchased. It serves as a reshuffle queue.
+406. The Market: A public zone containing Kit cards and the Purchase Row.
+406.1. Kit: Cards tethered to a Persona that are always available for purchase and cannot be Tucked.
+406.2. Purchase Row: Four cards revealed from the owner's Purchase Deck available for purchase.
+
+500. Deck Construction and Legality
+501. A Starting Draw Deck must contain exactly 24 cards. Every card must have a printed Cost of 0, unless modified by a Call Name Persona. A player may include a maximum of two copies of any single card.
+502. A Purchase Deck must contain at least 36 cards.
+503. A player may include a maximum of three copies of any single card total across both the Starting Draw Deck and the Purchase Deck.
+504. A player's Kit must consist of three cards from their Wrestler and one card from their Faction.
+
+600. Game Setup
+601. Each player places their chosen Persona cards (Wrestler, Manager, Faction, Call Name) in their Ring.
+602. Players shuffle their Starting Draw Deck and Purchase Deck and place them in their respective zones.
+603. Each player reveals the top four cards of their Purchase Deck to form their Purchase Row and places their Kit cards in the Market.
+604. Each player sets their Stamina to 50.
+605. Each player draws 8 cards from their Starting Draw Deck.
+606. Players randomly determine the first player to receive Initiative.
+
+700. Turn Structure
+701. A turn consists of three phases and an End Step.
+702. Ready Phase: Players may play Action cards or use Ready abilities. Maneuvers cannot be played. Purchases cannot be made.
+703. Tie-Up Phase: The only phase where Maneuvers may be played. Action cards and Responses are also permitted. Purchases cannot be made.
+704. Recovery Phase: The primary phase for purchasing from the Market. Action cards and Responses are also permitted. Maneuvers cannot be played.
+705. The End Step: A strict cleanup sequence with no priority. Both players resolve these steps simultaneously in order:
+705.1. Lock: All ongoing modifications to Hand, Hold, and Market size are finalized.
+705.2. Initiative: Total uncommitted Momentum in each Ring is calculated. The player with the higher value chooses who receives Initiative next turn. If tied, there is no change.
+705.3. Market Cleanup: Players may Tuck any number of cards from their Purchase Row and refill to their current Market size.
+705.4. Ring Cleanup: All non-Permanent cards and tokens without the Permanent keyword move to the Discard Pile.
+705.5. Hand Cleanup: Players discard down to their current Hold value.
+705.6. Draw Step: Players draw cards until their Hand size is reached. If a Draw Deck is empty, shuffle the Discard Pile to create a new Draw Deck.
+705.7. Reset: All Committed cards in the Ring are Uncommitted (turned upright).
+
+800. Priority and Timing
+801. Priority allows a player to take an action. Only one player holds priority at any time.
+802. At the start of each phase, the player with Initiative receives priority.
+803. When a player takes an action or passes, priority moves to the opponent.
+804. A phase ends when both players pass priority consecutively.
+805. Response Window: When a player plays a card or activates an ability, the opponent receives a window to play a Response.
+805.1. If the card is reversed, it is moved to the Discard Pile without resolving its Enters effects. Priority passes to the player who played the reversal.
+805.2. If the card is not reversed, it resolves. Damage is dealt first, followed by Enters abilities.
+806. Priority after Resolution: After a successful Maneuver resolves, priority must pass to the opponent unless the active player utilizes a Follow-Up.
+
+900. Costs and Momentum
+901. Momentum is generated by Committing (turning sideways) uncommitted cards in the Ring.
+902. Momentum is potential energy and cannot be banked. Any generated Momentum exceeding a cost is lost immediately.
+903. Style Penalties: If a player plays or purchases a card with a Style symbol not present in their Ring, they must pay an additional cost of 2 Momentum per missing symbol.
+904. Purchasing: Cards are purchased during the Recovery Phase by Committing cards in the Ring equal to the card's Cost. Purchased cards move directly to the Discard Pile.
+905. Commitment for Abilities: Specific keywords (Power Attack, Focus Attack, etc.) require Committing cards as a cost during the Play step.
+
+1000. Keyword Definitions
+1001. Permanent: The card remains in the Ring during Ring Cleanup.
+1002. Ongoing: The card provides a continuous effect while it is in the Ring.
+1003. Finisher: To reverse this Maneuver, an opponent must meet an additional cost: either Commit Momentum from their Ring equal to the Maneuver's current Damage, or discard a second valid reversal from their hand.
+1004. Power Attack: As this is played, the player may Commit it to add its Momentum value to its Damage.
+1005. Focus Attack: As this is played, the player may Commit another card in their Ring with a matching Target to add its Momentum value to this Maneuver's Damage.
+1006. Combo Attack: As this is played, the player may Commit another card in their Ring with a matching Trait to add its Momentum value to this Maneuver's Damage.
+1007. Cunning Attack: As this is played, the player may Commit a non-maneuver card in their Ring to add its Momentum value to this Maneuver's Damage.
+1008. Follow-Up: This card may be played immediately after a player's previous card resolves successfully, bypassing the standard priority pass.
+1009. Sudden: This card may be played from the Market by paying double its modified Purchase Cost.
+1010. Relentless: This card may be played from the Discard Pile by paying its modified Purchase Cost in Momentum. If reversed, it is placed on the bottom of the Draw Deck.
+1011. Resilient: This card may be discarded from the hand during the Response Window to reduce a Maneuver's damage by this card's Momentum value.
+1012. Stun: The opponent must select and Commit one uncommitted card in their Ring.
+1013. Pressing: As an additional cost to reverse this Maneuver, the opponent must Commit any one card in their Ring.
+1014. Tuck: Move a card to the bottom of its owner's Purchase Deck.
+1015. Scout: Look at the top card of the Draw Deck; the player may move it to the Discard Pile.
+1016. Sturdy: This card provides double its Momentum when defending in a Pin or Submission attempt. During a Submission, it counts as two cards toward the Tuck requirement.
+
+1100. Specialized Mechanics
+1101. Hidden: A card played face-down from the hand enters as a 0 Cost/2 Damage/2 Momentum Maneuver of a chosen subtype and target. It gains Permanent for the turn it is played. 
+1101.1. A player may play a Hidden card from their Ring by paying its modified printed cost during a valid timing window.
+1102. Turned: An ability that triggers only when a card is revealed (played face-up) from the Ring.
+1103. Tokens: Temporary cards created by effects. Tokens exist only in the Ring or Market. If moved to any other zone, they cease to exist after triggering relevant entrance effects for that zone.
+1103.1. "Attempt to [Card Name]" creates a token and immediately plays it, triggering a reversal window.
+1103.2. Boon/Injury tokens are placed directly into a zone and do not trigger a reversal window.
+1104. Flip: A one-way transition for Faction cards to activate a once-per-game ability. Flipped Factions remain in the Ring as Momentum sources.
+1105. Uses: The card enters with Use Counters. It is Permanent as long as it possesses at least one counter. Counters are removed as specified by the card's text.
+1106. Sequential Trigger Resolution (Combo Queue): Multiple triggers are resolved one by one. If any Maneuver in a triggered sequence is reversed, all remaining effects in the queue are discarded.
+
+1200. Alternate Win Conditions
+1201. Pin Attempt: A contest of Momentum vs. Momentum initiated by an effect (e.g., Try to Pin). 
+1201.1. The attacker's Pinning Power is their Maneuver's current Momentum.
+1201.2. The defender may Commit cards from the Ring to reduce this power.
+1201.3. The defender then Tucks up to three cards from their hand, discard, or deck one at a time. Each card reduces the power by its modified Momentum.
+1201.4. If a card with Rope Break is Tucked, the attempt ends immediately.
+1201.5. If the power is not reduced to 0 after three Tucks, the defender loses.
+1202. Submission Attempt: A contest of Damage vs. Momentum initiated by an effect (e.g., Try to Submit).
+1202.1. The attacker Commits matching targets to add Damage. The defender Commits Ring resources to add Momentum.
+1202.2. If Damage exceeds Momentum, the defender must Tuck cards equal to the numerical difference.
+1202.3. If a card with Rope Break is Tucked, the attempt ends.
+1202.4. If the defender cannot meet the Tuck requirement and their Draw Deck ecosystem is empty, the defender loses.
+1203. Knockout: A threshold check performed after a Maneuver deals damage. If the attacker's uncommitted Punch Momentum in the Ring is higher than the opponent's current Stamina, the attacker wins.
+
+1300. State-Based Checks
+1301. Stamina Check: Stamina is evaluated after every Maneuver resolution. If 0, the player loses.
+1302. Staggered Check: If a player's Stamina is 25 or lower, they are Staggered. Staggered abilities on cards become active.
+1303. Cleanup Check: Any card or token moving to a zone outside the Ring or Market that is not a valid state for that card results in its immediate removal or cessation of existence.
+1304. Counter Check: If a card leaves the Ring, Market, or the state of being played, all counters on it are removed.
