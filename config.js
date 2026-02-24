@@ -1,6 +1,6 @@
 // config.js
 
-// ✅ EXPORT STATE BINDINGS (so other modules can do state.cardDatabase, state.selectedWrestler, etc.)
+// ✅ EXPORT STATE BINDINGS
 export let cardDatabase = [];
 export let cardTitleCache = {};
 export let keywordDatabase = {};
@@ -23,11 +23,20 @@ export let showNonZeroCost = true;
 export let activeFilters = [{}, {}, {}];
 export let lastFocusedElement = null;
 
-// ✅ Available sets (discovered by data-loader)
+// ✅ NEW: Deck panel view settings
+export let deckViewMode = 'list';      // 'list' | 'grid'
+export let deckGridColumns = 2;        // 1..4 recommended
+
+// ✅ Available sets
 export let availableSets = [];
 export function setAvailableSets(sets) {
   availableSets = Array.isArray(sets) ? sets : [];
 }
+
+// --------------------
+// CONSTANTS
+// --------------------
+export const CACHE_KEY = 'aewDeckBuilderCache';
 
 // --------------------
 // UTILITY FUNCTIONS
@@ -51,39 +60,29 @@ export function toPascalCase(str) {
     .replace(/\s+/g, '');
 }
 
-// Helper to get kit persona name
+// --------------------
+// CARD HELPERS
+// --------------------
 export function getKitPersona(card) {
   if (!card) return '';
-
-  // Check if it's a kit card by looking for Starting field
-  if (card['Starting'] && card['Starting'].trim() !== '') {
-    return card['Starting'].trim();
-  }
-
-  // Check if it's a persona card itself
+  if (card['Starting'] && card['Starting'].trim() !== '') return card['Starting'].trim();
   if (card.card_type === 'Wrestler' || card.card_type === 'Manager') {
     const title = card.title || '';
     return title.replace(' Wrestler', '').replace(' Manager', '').trim();
   }
-
   return '';
 }
 
-// Check if a card is a kit/signature card
 export function isKitCard(card) {
   if (!card) return false;
-
   if (card['Starting'] && card['Starting'].trim() !== '') return true;
   if (card['Wrestler Kit'] === 'TRUE' || card['Wrestler Kit'] === true) return true;
   if (card['Signature For'] && card['Signature For'].trim() !== '') return true;
-
   return false;
 }
 
-// Get the persona this card is a signature for
 export function isSignatureFor(card) {
   if (!card) return false;
-
   if (isKitCard(card) && card['Starting'] && card['Starting'].trim() !== '') {
     const personaTitle = card['Starting'].trim();
     return cardDatabase.some(personaCard =>
@@ -91,27 +90,19 @@ export function isSignatureFor(card) {
       ['Wrestler', 'Manager'].includes(personaCard.card_type)
     );
   }
-
   return false;
 }
 
-// Get card target for maneuvers
 export function getCardTarget(card) {
   if (!card) return '';
-
-  if (card['Target'] && card['Target'].trim() !== '') {
-    return card['Target'].trim();
-  }
+  if (card['Target'] && card['Target'].trim() !== '') return card['Target'].trim();
 
   if (card.text_box?.traits) {
     const targetTrait = card.text_box.traits.find(
       t => t.name && t.name.trim().toLowerCase() === 'target'
     );
-    if (targetTrait && targetTrait.value) {
-      return targetTrait.value.trim();
-    }
+    if (targetTrait && targetTrait.value) return targetTrait.value.trim();
   }
-
   return '';
 }
 
@@ -124,13 +115,22 @@ function notifyDeckCountsChanged() {
       window.updateDeckCountColors();
     }
   } catch (e) {
-    // Never break app flow over UI coloring
     console.warn('updateDeckCountColors failed:', e);
   }
 }
 
+function notifyDeckViewChanged() {
+  try {
+    if (typeof window !== 'undefined' && typeof window.applyDeckViewSettings === 'function') {
+      window.applyDeckViewSettings();
+    }
+  } catch (e) {
+    console.warn('applyDeckViewSettings failed:', e);
+  }
+}
+
 // --------------------
-// SETTERS (these update the exported bindings above)
+// SETTERS
 // --------------------
 export function setCardDatabase(db) { cardDatabase = db; }
 export function setCardTitleCache(cache) { cardTitleCache = cache; }
@@ -160,46 +160,30 @@ export function setShowNonZeroCost(show) { showNonZeroCost = !!show; }
 export function setActiveFilters(filters) { activeFilters = filters; }
 export function setLastFocusedElement(element) { lastFocusedElement = element; }
 
+// ✅ NEW: deck panel view setters
+export function setDeckViewMode(mode) {
+  deckViewMode = (mode === 'grid') ? 'grid' : 'list';
+  notifyDeckViewChanged();
+}
+export function setDeckGridColumns(cols) {
+  const n = Math.max(1, Math.min(6, Number(cols) || 2));
+  deckGridColumns = n;
+  notifyDeckViewChanged();
+}
+
 // --------------------
-// GETTERS (optional but fine)
+// BUILD CACHE
 // --------------------
-export function getCardDatabase() { return cardDatabase; }
-export function getCardTitleCache() { return cardTitleCache; }
-export function getKeywordDatabase() { return keywordDatabase; }
-
-export function getSelectedWrestler() { return selectedWrestler; }
-export function getSelectedManager() { return selectedManager; }
-export function getSelectedCallName() { return selectedCallName; }
-export function getSelectedFaction() { return selectedFaction; }
-
-export function getStartingDeck() { return startingDeck; }
-export function getPurchaseDeck() { return purchaseDeck; }
-
-export function getCurrentViewMode() { return currentViewMode; }
-export function getCurrentSort() { return currentSort; }
-export function getNumGridColumns() { return numGridColumns; }
-
-export function getShowZeroCost() { return showZeroCost; }
-export function getShowNonZeroCost() { return showNonZeroCost; }
-
-export function getActiveFilters() { return activeFilters; }
-export function getLastFocusedElement() { return lastFocusedElement; }
+export function buildCardTitleCache() {
+  cardTitleCache = {};
+  cardDatabase.forEach(card => {
+    if (card && card.title) cardTitleCache[card.title] = card;
+  });
+}
 
 // --------------------
 // CACHING / RESTORE
 // --------------------
-
-// Build cache of card titles for quick lookup
-export function buildCardTitleCache() {
-  cardTitleCache = {};
-  cardDatabase.forEach(card => {
-    if (card && card.title) {
-      cardTitleCache[card.title] = card;
-    }
-  });
-}
-
-// Save state to localStorage for persistence
 export function saveStateToCache() {
   try {
     const stateObj = {
@@ -213,47 +197,54 @@ export function saveStateToCache() {
       numGridColumns,
       showZeroCost,
       showNonZeroCost,
-      activeFilters
+      activeFilters,
+
+      // ✅ NEW
+      deckViewMode,
+      deckGridColumns
     };
-    localStorage.setItem('aewDeckState', JSON.stringify(stateObj));
+    localStorage.setItem(CACHE_KEY, JSON.stringify(stateObj));
   } catch (e) {
     console.error("Failed to save state:", e);
   }
 }
 
-// Load state from localStorage
 export function loadStateFromCache() {
   try {
-    const saved = localStorage.getItem('aewDeckState');
-    if (saved) {
-      const stateObj = JSON.parse(saved);
+    const saved = localStorage.getItem(CACHE_KEY);
+    if (!saved) return null;
 
-      currentSort = stateObj.currentSort || 'alpha-asc';
-      numGridColumns = stateObj.numGridColumns || 3;
-      showZeroCost = stateObj.showZeroCost !== undefined ? stateObj.showZeroCost : true;
-      showNonZeroCost = stateObj.showNonZeroCost !== undefined ? stateObj.showNonZeroCost : true;
-      activeFilters = stateObj.activeFilters || [{}, {}, {}];
+    const stateObj = JSON.parse(saved);
 
-      startingDeck = stateObj.startingDeck || [];
-      purchaseDeck = stateObj.purchaseDeck || [];
+    currentSort = stateObj.currentSort || 'alpha-asc';
+    numGridColumns = stateObj.numGridColumns || 3;
 
-      // Update UI colors after restore
-      notifyDeckCountsChanged();
+    showZeroCost = stateObj.showZeroCost !== undefined ? stateObj.showZeroCost : true;
+    showNonZeroCost = stateObj.showNonZeroCost !== undefined ? stateObj.showNonZeroCost : true;
+    activeFilters = stateObj.activeFilters || [{}, {}, {}];
 
-      return {
-        wrestlerTitle: stateObj.selectedWrestlerTitle,
-        managerTitle: stateObj.selectedManagerTitle,
-        callNameTitle: stateObj.selectedCallNameTitle,
-        factionTitle: stateObj.selectedFactionTitle
-      };
-    }
+    startingDeck = stateObj.startingDeck || [];
+    purchaseDeck = stateObj.purchaseDeck || [];
+
+    // ✅ NEW restore
+    deckViewMode = (stateObj.deckViewMode === 'grid') ? 'grid' : 'list';
+    deckGridColumns = Number.isFinite(stateObj.deckGridColumns) ? stateObj.deckGridColumns : 2;
+
+    notifyDeckCountsChanged();
+    notifyDeckViewChanged();
+
+    return {
+      wrestlerTitle: stateObj.selectedWrestlerTitle,
+      managerTitle: stateObj.selectedManagerTitle,
+      callNameTitle: stateObj.selectedCallNameTitle,
+      factionTitle: stateObj.selectedFactionTitle
+    };
   } catch (e) {
     console.error("Failed to load state:", e);
+    return null;
   }
-  return null;
 }
 
-// Restore selected personas after card database loads
 export function restoreSelectedPersonas(wrestlerTitle, managerTitle, callNameTitle, factionTitle) {
   if (wrestlerTitle && cardTitleCache[wrestlerTitle]) selectedWrestler = cardTitleCache[wrestlerTitle];
   if (managerTitle && cardTitleCache[managerTitle]) selectedManager = cardTitleCache[managerTitle];
