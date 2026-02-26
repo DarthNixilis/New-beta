@@ -24,18 +24,18 @@ export function renderCardPool(cards) {
         searchResults.className = `card-list ${state.currentViewMode}-view`;
         if (state.currentViewMode === 'grid') searchResults.setAttribute('data-columns', state.numGridColumns);
         else searchResults.removeAttribute('data-columns');
-        
+
         if (!cards || cards.length === 0) {
             searchResults.innerHTML = '<p>No cards match the current filters.</p>';
             return;
         }
-        
+
         cards.forEach(card => {
             if (!card || !card.title) return;
-            
+
             const cardElement = document.createElement('div');
             cardElement.className = state.currentViewMode === 'list' ? 'card-item' : 'grid-card-item';
-            
+
             try {
                 if (state.isSignatureFor(card)) {
                     cardElement.classList.add('signature-highlight');
@@ -43,39 +43,37 @@ export function renderCardPool(cards) {
             } catch (e) {
                 console.error("Error checking signature:", e);
             }
-            
+
             cardElement.dataset.title = card.title;
-            
+
             // Get target for maneuvers
             const target = state.getCardTarget(card);
             const isManeuver = ['Strike', 'Grapple', 'Submission'].includes(card.card_type);
-            
+
             // Get kit persona name
             const kitPersona = state.getKitPersona(card);
-            
+
             // Only show kit info for non-persona cards that go in decks
             const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
             const showKitInfo = kitPersona && !isPersonaCard;
-            
+
             if (state.currentViewMode === 'list') {
-                // Build the display string with target if applicable
                 let displayText = `${card.title} (C:${card.cost ?? 'N/A'}`;
-                
+
                 if (isManeuver && card.damage !== null) {
                     displayText += `, D:${card.damage}`;
                     if (target) displayText += ` [T:${target}]`;
                 } else if (card.damage !== null) {
                     displayText += `, D:${card.damage}`;
                 }
-                
+
                 displayText += `, M:${card.momentum ?? 'N/A'})`;
-                
+
                 cardElement.innerHTML = `<span data-title="${card.title}">${displayText}</span>`;
-                
+
                 const buttonsDiv = document.createElement('div');
                 buttonsDiv.className = 'card-buttons';
-                
-                // Add kit info if applicable
+
                 if (showKitInfo) {
                     const kitSpan = document.createElement('span');
                     kitSpan.className = 'kit-persona';
@@ -89,7 +87,7 @@ export function renderCardPool(cards) {
                     `;
                     cardElement.appendChild(kitSpan);
                 }
-                
+
                 if (card.cost === 0) {
                     buttonsDiv.innerHTML = `
                         <button data-title="${card.title}" data-deck-target="starting">Starting</button>
@@ -103,8 +101,7 @@ export function renderCardPool(cards) {
                 // Grid view
                 const visualHTML = generateCardVisualHTML(card);
                 cardElement.innerHTML = `<div class="card-visual" data-title="${card.title}">${visualHTML}</div>`;
-                
-                // Add kit info below the visual in grid view (stacked)
+
                 if (showKitInfo) {
                     const kitDiv = document.createElement('div');
                     kitDiv.className = 'grid-kit-info';
@@ -115,23 +112,22 @@ export function renderCardPool(cards) {
                         margin-top: 5px;
                         line-height: 1.2;
                     `;
-                    
-                    // Stack persona names (one word per line if multiple)
+
                     const personaWords = kitPersona.split(' ');
                     personaWords.forEach(word => {
                         const wordDiv = document.createElement('div');
                         wordDiv.textContent = word;
                         kitDiv.appendChild(wordDiv);
                     });
-                    
+
                     kitDiv.title = `${kitPersona}'s Kit`;
                     cardElement.appendChild(kitDiv);
                 }
-                
+
                 const buttonsDiv = document.createElement('div');
                 buttonsDiv.className = 'card-buttons';
                 buttonsDiv.style.marginTop = '8px';
-                
+
                 if (card.cost === 0) {
                     buttonsDiv.innerHTML = `
                         <button data-title="${card.title}" data-deck-target="starting" style="margin-bottom: 4px;">Starting</button>
@@ -142,7 +138,7 @@ export function renderCardPool(cards) {
                 }
                 cardElement.appendChild(buttonsDiv);
             }
-            
+
             searchResults.appendChild(cardElement);
         });
     } catch (error) {
@@ -153,21 +149,21 @@ export function renderCardPool(cards) {
 
 export function renderPersonaDisplay() {
     try {
-        if (!state.selectedWrestler && !state.selectedManager && !state.selectedCallName && !state.selectedFaction) { 
-            personaDisplay.style.display = 'none'; 
-            return; 
+        if (!state.selectedWrestler && !state.selectedManager && !state.selectedCallName && !state.selectedFaction) {
+            personaDisplay.style.display = 'none';
+            return;
         }
         personaDisplay.style.display = 'block';
         personaDisplay.innerHTML = '<h3>Persona & Kit</h3><div class="persona-card-list"></div>';
         const list = personaDisplay.querySelector('.persona-card-list');
-        list.innerHTML = ''; 
+        list.innerHTML = '';
         const cardsToShow = new Set();
         const activePersona = [];
         if (state.selectedWrestler) activePersona.push(state.selectedWrestler);
         if (state.selectedManager) activePersona.push(state.selectedManager);
         if (state.selectedCallName) activePersona.push(state.selectedCallName);
         if (state.selectedFaction) activePersona.push(state.selectedFaction);
-        
+
         activePersona.forEach(p => cardsToShow.add(p));
         const activePersonaTitles = activePersona.map(p => p.title);
         const kitCards = state.cardDatabase.filter(card => {
@@ -182,13 +178,11 @@ export function renderPersonaDisplay() {
             const typeOrder = ['Wrestler', 'Manager', 'Call Name', 'Faction', 'Action', 'Response', 'Strike', 'Grapple', 'Submission'];
             const aIndex = typeOrder.indexOf(a.card_type);
             const bIndex = typeOrder.indexOf(b.card_type);
-            
-            if (aIndex !== -1 && bIndex !== -1) {
-                return aIndex - bIndex;
-            }
-            
+
+            if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
             return a.title.localeCompare(b.title);
         });
+
         sortedCards.forEach(card => {
             const item = document.createElement('div');
             item.className = 'persona-card-item';
@@ -210,14 +204,12 @@ export function showCardModal(cardTitle) {
             console.error("Card not found:", cardTitle);
             return;
         }
-        
-        // Get target and kit info for the modal
+
         const target = state.getCardTarget(card);
         const kitPersona = state.getKitPersona(card);
         const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
         const showKitInfo = kitPersona && !isPersonaCard;
-        
-        // Generate custom placeholder with kit info
+
         const typeClass = `type-${card.card_type ? card.card_type.toLowerCase() : 'unknown'}`;
         const placeholderHTML = `
             <div class="placeholder-card">
@@ -241,7 +233,7 @@ export function showCardModal(cardTitle) {
                     <p>${card.text_box?.raw_text || ''}</p>
                 </div>
             </div>`;
-        
+
         modalCardContent.innerHTML = placeholderHTML;
         cardModal.style.display = 'flex';
         cardModal.setAttribute('role', 'dialog');
@@ -269,34 +261,67 @@ function renderDeckList(element, deck) {
     try {
         element.innerHTML = '';
         if (!deck || !Array.isArray(deck)) return;
-        
-        const cardCounts = deck.reduce((acc, cardTitle) => { 
-            acc[cardTitle] = (acc[cardTitle] || 0) + 1; 
-            return acc; 
+
+        const cardCounts = deck.reduce((acc, cardTitle) => {
+            acc[cardTitle] = (acc[cardTitle] || 0) + 1;
+            return acc;
         }, {});
-        
+
+        const isGrid = (state.deckViewMode === 'grid');
+        const deckName = element === startingDeckList ? 'starting' : 'purchase';
+
         Object.entries(cardCounts).forEach(([cardTitle, count]) => {
             const card = state.cardDatabase.find(c => c && c.title === cardTitle);
             if (!card) return;
-            
+
             const cardElement = document.createElement('div');
-            cardElement.className = 'card-item';
-            const deckName = element === startingDeckList ? 'starting' : 'purchase';
-            
+
             // Get kit info for deck list
             const kitPersona = state.getKitPersona(card);
             const isPersonaCard = ['Wrestler', 'Manager', 'Call Name', 'Faction'].includes(card.card_type);
             const showKitInfo = kitPersona && !isPersonaCard;
-            
-            let cardHTML = `<span data-title="${card.title}">${count}x ${card.title}</span>`;
-            
-            if (showKitInfo) {
-                cardHTML += `<span class="kit-persona" style="font-size: 10px; color: #888; display: block; margin-top: 2px;">${kitPersona}</span>`;
+
+            if (!isGrid) {
+                // List mode (compact)
+                cardElement.className = 'card-item';
+
+                let cardHTML = `<span data-title="${card.title}">${count}x ${card.title}</span>`;
+
+                if (showKitInfo) {
+                    cardHTML += `<span class="kit-persona" style="font-size: 10px; color: #888; display: block; margin-top: 2px;">${kitPersona}</span>`;
+                }
+
+                cardHTML += `<button data-title="${card.title}" data-deck="${deckName}">Remove</button>`;
+
+                cardElement.innerHTML = cardHTML;
+            } else {
+                // Grid mode (FULL TEXT)
+                cardElement.className = 'deck-card-tile';
+                cardElement.dataset.title = card.title;
+
+                const target = state.getCardTarget(card);
+                const isManeuver = ['Strike', 'Grapple', 'Submission'].includes(card.card_type);
+
+                const cost = (card.cost ?? 'N/A');
+                const dmg = (card.damage ?? '');
+                const mom = (card.momentum ?? 'N/A');
+                const rules = (card.text_box?.raw_text || '').trim();
+
+                const statParts = [];
+                statParts.push(`C:${cost}`);
+                if (dmg !== '' && dmg !== null && dmg !== undefined) statParts.push(`D:${dmg}`);
+                statParts.push(`M:${mom}`);
+                if (isManeuver && target) statParts.push(`T:${target}`);
+
+                cardElement.innerHTML = `
+                    <div class="deck-tile-title" data-title="${card.title}">${count}x ${card.title}</div>
+                    <div class="deck-tile-stats">${statParts.join('  ')}</div>
+                    ${showKitInfo ? `<div class="deck-tile-kit">${kitPersona}</div>` : ''}
+                    ${rules ? `<div class="deck-tile-rules">${escapeHtml(rules)}</div>` : `<div class="deck-tile-rules deck-tile-rules-empty">(No rules text)</div>`}
+                    <button class="deck-tile-remove" data-title="${card.title}" data-deck="${deckName}">Remove</button>
+                `;
             }
-            
-            cardHTML += `<button data-title="${card.title}" data-deck="${deckName}">Remove</button>`;
-            
-            cardElement.innerHTML = cardHTML;
+
             element.appendChild(cardElement);
         });
     } catch (error) {
@@ -309,10 +334,11 @@ function updateDeckCounts() {
     try {
         startingDeckCount.textContent = state.startingDeck ? state.startingDeck.length : 0;
         purchaseDeckCount.textContent = state.purchaseDeck ? state.purchaseDeck.length : 0;
-        startingDeckCount.parentElement.style.color = state.startingDeck && state.startingDeck.length === 24 ? 'green' : 'red';
-        startingDeckHeader.style.color = state.startingDeck && state.startingDeck.length === 24 ? 'green' : 'inherit';
-        purchaseDeckCount.parentElement.style.color = state.purchaseDeck && state.purchaseDeck.length >= 36 ? 'green' : 'red';
-        purchaseDeckHeader.style.color = state.purchaseDeck && state.purchaseDeck.length >= 36 ? 'green' : 'inherit';
+
+        // Do NOT set colors here.
+        // app-init.js owns color logic via window.updateDeckCountColors().
+        if (startingDeckHeader) startingDeckHeader.style.color = 'inherit';
+        if (purchaseDeckHeader) purchaseDeckHeader.style.color = 'inherit';
     } catch (error) {
         console.error("Error updating deck counts:", error);
     }
@@ -320,7 +346,7 @@ function updateDeckCounts() {
 
 export function filterDeckList(deckListElement, query) {
     try {
-        const items = deckListElement.querySelectorAll('.card-item');
+        const items = deckListElement.querySelectorAll('.card-item, .deck-card-tile');
         items.forEach(item => {
             const text = item.textContent.toLowerCase();
             item.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
@@ -328,4 +354,12 @@ export function filterDeckList(deckListElement, query) {
     } catch (error) {
         console.error("Error filtering deck list:", error);
     }
+}
+
+// Simple safe HTML escape so rules text can't break layout if it contains < or >
+function escapeHtml(str) {
+    return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
 }

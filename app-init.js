@@ -9,7 +9,6 @@ const MIN_STARTING_DECK = 24;
 const MIN_PURCHASE_DECK = 36;
 
 export function initializeApp() {
-  // Expose globals used by config.js setters
   window.updateDeckCountColors = updateDeckCountColors;
   window.applyDeckViewSettings = applyDeckViewSettings;
 
@@ -18,8 +17,6 @@ export function initializeApp() {
 
   populatePersonaSelectors();
 
-  // Load cached state through config helpers if your app uses them elsewhere
-  // If you already have a different cache system, keep it. This is safe.
   state.loadStateFromCache?.();
 
   setupInitialUI();
@@ -32,7 +29,6 @@ export function initializeApp() {
   initializeAllEventListeners(refreshCardPool);
   refreshCardPool();
 
-  // Initial UI state
   updateDeckCountColors();
   applyDeckViewSettings();
 }
@@ -55,11 +51,11 @@ function updateDeckCountColors() {
 function getMinColor(count, min) {
   if (count < min) return 'red';
   if (count === min) return 'green';
-  return 'gold'; // readable “yellow”
+  return 'gold';
 }
 
 // --------------------
-// NEW: Deck panel grid view
+// Deck panel grid view
 // --------------------
 function injectDeckGridCSS() {
   if (document.getElementById('deckGridInjectedCSS')) return;
@@ -67,7 +63,6 @@ function injectDeckGridCSS() {
   const style = document.createElement('style');
   style.id = 'deckGridInjectedCSS';
   style.textContent = `
-    /* Deck view controls */
     .deck-view-controls {
       display: flex;
       align-items: center;
@@ -104,36 +99,87 @@ function injectDeckGridCSS() {
     .deck-list-small.deck-grid {
       display: grid !important;
       grid-template-columns: repeat(var(--deck-cols, 2), minmax(0, 1fr));
-      gap: 8px;
+      gap: 10px;
       align-content: start;
+
+      /* ✅ critical: remove the 120px cap so full text can exist */
+      height: auto !important;
+      max-height: 65vh;         /* still scrolls */
+      overflow-y: auto !important;
     }
 
-    /* Try to make each entry look like a tile without knowing your exact markup */
-    .deck-list-small.deck-grid > * {
+    /* Tile wrapper (the element we render in ui.js) */
+    .deck-card-tile {
       border: 1px solid rgba(0,0,0,0.12);
-      border-radius: 8px;
-      padding: 6px 8px;
-      background: rgba(255,255,255,0.85);
+      border-radius: 10px;
+      padding: 10px 10px;
+      background: rgba(255,255,255,0.9);
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
-    /* Buttons inside tiles behave */
-    .deck-list-small.deck-grid button {
+    .deck-tile-title {
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1.2;
+    }
+
+    .deck-tile-stats {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0.85;
+    }
+
+    .deck-tile-kit {
+      font-size: 11px;
+      color: #666;
+      font-style: italic;
+    }
+
+    .deck-tile-rules {
+      font-size: 12px;
+      line-height: 1.25;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      padding-top: 6px;
+    }
+
+    .deck-tile-rules-empty {
+      opacity: 0.6;
+      font-style: italic;
+    }
+
+    .deck-tile-remove {
       margin-top: 6px;
       width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #dc3545;
+      color: #fff;
+      border: none;
+      white-space: nowrap;
+    }
+
+    /* In list mode, keep your original height behavior */
+    .deck-list-small:not(.deck-grid) {
+      height: 120px;
+      overflow-y: auto;
     }
   `;
   document.head.appendChild(style);
 }
 
 function ensureDeckViewControlsExist() {
-  // Insert controls into deck panel without touching index.html
   const deckPanel = document.querySelector('.deck-panel');
   if (!deckPanel) return;
 
-  // If controls already exist, skip
   if (document.getElementById('deckViewModeToggle')) return;
 
-  // Prefer to place under persona display if it exists, else top of deck panel
   const personaDisplay = document.getElementById('personaDisplay');
 
   const controls = document.createElement('div');
@@ -147,7 +193,6 @@ function ensureDeckViewControlsExist() {
   const toggleBtn = document.createElement('button');
   toggleBtn.id = 'deckViewModeToggle';
   toggleBtn.textContent = 'Deck: Switch to Grid View';
-
   left.appendChild(toggleBtn);
 
   const right = document.createElement('div');
@@ -185,7 +230,6 @@ function applyDeckViewSettings() {
   const mode = state.deckViewMode || 'list';
   const cols = Number(state.deckGridColumns || 2);
 
-  // Update lists
   [startingDeckList, purchaseDeckList].forEach(listEl => {
     if (!listEl) return;
     listEl.style.setProperty('--deck-cols', String(cols));
@@ -193,12 +237,10 @@ function applyDeckViewSettings() {
     else listEl.classList.remove('deck-grid');
   });
 
-  // Update toggle text
   if (toggleBtn) {
     toggleBtn.textContent = (mode === 'grid') ? 'Deck: Switch to List View' : 'Deck: Switch to Grid View';
   }
 
-  // Update active column button
   if (gridSizeControls) {
     gridSizeControls.querySelectorAll('button[data-columns]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.columns === String(cols));
@@ -253,8 +295,6 @@ function addDeckSearchFunctionality() {
   const purchaseDeckList = document.getElementById('purchaseDeckList');
 
   if (!startingDeckList || !purchaseDeckList) return;
-
-  // Avoid adding duplicate search inputs
   if (startingDeckList.previousElementSibling?.classList?.contains('deck-search-input')) return;
 
   const startingDeckSearch = document.createElement('input');
