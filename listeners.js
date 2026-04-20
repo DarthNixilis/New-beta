@@ -250,9 +250,33 @@ export function initializeAllEventListeners(refreshCardPool) {
   const cardModal = document.getElementById('cardModal');
   const modalCloseButton = cardModal.querySelector('.modal-close-button');
 
-  const exportModal = document.getElementById('exportModal');
-  const exportModalCloseBtn = exportModal?.querySelector('.modal-close-button');
-  const cancelExportBtn = document.getElementById('cancelExport');
+  // FIX: The export modal is created dynamically by master-export.js, so it does not
+  // exist in the DOM at init time. Use event delegation on document instead of trying
+  // to look up #exportModal, #cancelExport, and .modal-close-button directly here.
+  document.addEventListener('click', (e) => {
+    const exportModal = document.getElementById('exportModal');
+    if (!exportModal) return;
+
+    // Clicked the backdrop itself
+    if (e.target === exportModal) {
+      exportModal.style.display = 'none';
+      return;
+    }
+
+    // Clicked the Cancel button
+    if (e.target.id === 'cancelExport') {
+      exportModal.style.display = 'none';
+      return;
+    }
+
+    // Clicked the × close button inside the modal
+    if (
+      e.target.classList.contains('modal-close-button') &&
+      exportModal.contains(e.target)
+    ) {
+      exportModal.style.display = 'none';
+    }
+  });
 
   importDeckBtn.addEventListener('click', () => {
     importModal.style.display = 'flex';
@@ -281,14 +305,6 @@ export function initializeAllEventListeners(refreshCardPool) {
     }
   });
 
-  if (exportModal && exportModalCloseBtn) {
-    exportModalCloseBtn.addEventListener('click', () => exportModal.style.display = 'none');
-    exportModal.addEventListener('click', (e) => { if (e.target === exportModal) exportModal.style.display = 'none'; });
-  }
-  if (cancelExportBtn && exportModal) {
-    cancelExportBtn.addEventListener('click', () => exportModal.style.display = 'none');
-  }
-
   modalCloseButton.addEventListener('click', () => cardModal.style.display = 'none');
   cardModal.addEventListener('click', (e) => { if (e.target === cardModal) cardModal.style.display = 'none'; });
   importModal.addEventListener('click', (e) => { if (e.target === importModal) importModal.style.display = 'none'; });
@@ -297,6 +313,7 @@ export function initializeAllEventListeners(refreshCardPool) {
     if (e.key === 'Escape') {
       cardModal.style.display = 'none';
       importModal.style.display = 'none';
+      const exportModal = document.getElementById('exportModal');
       if (exportModal) exportModal.style.display = 'none';
       if (state.lastFocusedElement) state.lastFocusedElement.focus();
     }
@@ -367,7 +384,7 @@ function createSpoilerExportButton() {
   spoilerBtn.style.padding = '10px 15px';
   spoilerBtn.style.marginLeft = '10px';
   spoilerBtn.style.marginBottom = '5px';
-  spoilerBtn.title = 'Export full database in “spoiler” text format';
+  spoilerBtn.title = 'Export full database in "spoiler" text format';
 
   const exportTSVBtn = document.getElementById('exportTSVBtn');
   const exportAllCardsBtn = document.getElementById('exportAllCards');
